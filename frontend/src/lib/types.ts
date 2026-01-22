@@ -1,0 +1,33 @@
+export type ActionId = 
+  | 'MAINTAIN' 
+  | 'ESCALATE_PRESSURE' 
+  | 'DEESCALATE_PRESSURE' 
+  | 'FORCE_RETRY' 
+  | 'DRILL_SPECIFIC' 
+  | 'FAIL';
+
+export interface SignalMetrics {
+  fluency_wpm: number;
+  hesitation_ratio: number;
+  grammar_error_count: number;
+  filler_count: number;
+  coherence_score: number;
+  is_complete: boolean;
+}
+
+export interface Intervention {
+  action_id: ActionId;
+  next_task_prompt: string;
+  topic_core?: string;
+  constraints: Record<string, any>;
+  
+  // Educational Fields
+  ideal_response?: string;
+  feedback_markdown?: string;
+  keywords?: string[];
+}
+
+export interface TranslationResponse {
+  original: string;
+  translated: string;
+}
