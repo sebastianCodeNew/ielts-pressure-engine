@@ -15,25 +15,13 @@ llm = ChatOpenAI(
     temperature=0.1, # Keep it strict
 )
 
-def clean_json_string(s: str) -> str:
-    """
-    Robustly extracts JSON from a string, handling Markdown code blocks 
-    and extra conversational text.
-    """
-    # 1. Try to find content inside ```json ... ``` blocks first (Common in Llama)
-    json_block = re.search(r"```json\s*(\{.*?\})\s*```", s, re.DOTALL)
-    if json_block:
-        return json_block.group(1)
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.prompts import PromptTemplate
 
-    # 2. If no code blocks, look for the first outer { and last }
-    json_match = re.search(r"(\{.*\})", s, re.DOTALL)
-    if json_match:
-        return json_match.group(1)
-        
-    # 3. If nothing is found, return empty
-    return ""
+# Configure Output Parser
+parser = PydanticOutputParser(pydantic_object=Intervention)
 
-def formulate_strategy(state: AgentState, current_metrics: SignalMetrics) -> Intervention:
+def formulate_strategy(state: AgentState, current_metrics: SignalMetrics, current_part: str = "PART_1") -> Intervention:
     """
     Decides the next intervention based on the full User Session State.
     """
@@ -44,80 +32,71 @@ def formulate_strategy(state: AgentState, current_metrics: SignalMetrics) -> Int
         for h in state.history[-3:] # Last 3 only
     ])
     
-    prompt = f"""
-    You are the "Intervention Policy Engine" for an IELTS training app. 
-    Your goal is to manage the user's cognitive load to maximize learning pressure without causing panic.
+    # 2. Define Prompt with Format Instructions
+    prompt_template = PromptTemplate(
+        template="""
+        You are an expert IELTS Speaking Examiner. 
+        CURRENT PART: {current_part}
 
-    USER STATE:
-    - Stress Level: {state.stress_level:.2f} (0.0=Sleepy, 1.0=Panic)
-    - Fluency Trend: {state.fluency_trend}
-    - Consecutive Failures: {state.consecutive_failures}
-    
-    CURRENT ATTEMPT METRICS:
-    - WPM: {current_metrics.fluency_wpm} (Target: >100)
-    - Hesitation: {current_metrics.hesitation_ratio} (Target: <0.2)
-    - Coherence: {current_metrics.coherence_score} (Target: >0.5)
-    
-    RECENT HISTORY:
-    {history_str}
+        GOAL: Assess the user's performance and provide detailed educational feedback.
 
-    LOGIC MATRIX:
-    
-    1. IF Coherence < 0.5:
-       ACTION: "FAIL"
-       Constraint: "Explain clearly."
-       
-    2. IF Stress > 0.8:
-       ACTION: "DEESCALATE_PRESSURE"
-       Constraint: +20% Time.
-       
-    3. IF WPM < 90 AND Stress < 0.5:
-       ACTION: "ESCALATE_PRESSURE"
-       Constraint: -10% Time.
-       
-    4. IF Filler Words > 3:
-       ACTION: "MAINTAIN"
-       Constraint: "Avoid using 'um' or 'uh'."
-       
-    5. OTHERWISE:
-       ACTION: "MAINTAIN" 
-       
-    TEACHING MODE (REQUIRED):
-    - `ideal_response`: Rewrite the user's attempt as a Band 7.0 Native Speaker response (1-2 sentences).
-    - `feedback_markdown`: Bullet point list of specific grammar or vocabulary improvements.
-    - `keywords`: List of 5 sophisticated words relevant to the NEXT topic.
-      * CRITICAL: If User WPM < 60 (Low Fluency), provide SIMPLE but useful connectors (e.g., "However", "Therefore", "In my opinion").
-      * If User Fluency is High, provide SOPHISTICATED idioms.
-    
-    RESPONSE FORMAT:
-    {{
-      "action_id": "MAINTAIN" | "ESCALATE_PRESSURE" | "DEESCALATE_PRESSURE" | "FORCE_RETRY" | "DRILL_SPECIFIC" | "FAIL",
-      "next_task_prompt": "string",
-      "topic_core": "string",
-      "constraints": {{ "timer": int, "strictness": "low"|"high" }},
-      "ideal_response": "string",
-      "feedback_markdown": "string",
-      "keywords": ["string", "string", "string", "string", "string"]
-    }}
-    """
-    
-    print(f"--- AGENT: Analyzing State (Stress: {state.stress_level}) ---")
-    try:
-        response = llm.invoke([SystemMessage(content=prompt)])
-        raw_content = response.content
+        USER STATE:
+        - Stress Level: {stress_level:.2f}
+        - Fluency Trend: {fluency_trend}
         
-        json_str = clean_json_string(raw_content)
-        if not json_str:
-            raise ValueError("No JSON found")
-            
-        data = json.loads(json_str)
-        return Intervention(**data)
+        CURRENT ATTEMPT METRICS:
+        - WPM: {wpm}
+        - Coherence: {coherence}
+        
+        LOGIC MATRIX:
+        - If in PART 1: Ask personal, simple questions.
+        - If in PART 2: Provide a complex topic for a 2-minute "Cue Card" speech.
+        - If in PART 3: Ask abstract, analytical questions based on the Part 2 topic.
+
+        SCORING (0-9):
+        - `detailed_scores`: Provide scores for Fluency, Coherence, Lexical Resource, Grammar, and Pronunciation.
+        
+        TEACHING FEEDBACK:
+        - `grammar_advice`: One specific correction.
+        - `vocabulary_advice`: One better word.
+        - `pronunciation_advice`: One word to practice pronouncing.
+        
+        {format_instructions}
+        """,
+        input_variables=["stress_level", "fluency_trend", "consecutive_failures", "wpm", "hesitation", "coherence", "history", "current_part"],
+        partial_variables={"format_instructions": parser.get_format_instructions()}
+    )
+
+    print(f"--- AGENT: Analyzing State (Part: {current_part}) ---")
+    
+    try:
+        # 3. Invoke Chain
+        formatted_prompt = prompt_template.format(
+            stress_level=state.stress_level,
+            fluency_trend=state.fluency_trend,
+            consecutive_failures=state.consecutive_failures,
+            wpm=current_metrics.fluency_wpm,
+            hesitation=current_metrics.hesitation_ratio,
+            coherence=current_metrics.coherence_score,
+            history=history_str,
+            current_part=current_part
+        )
+        
+        response = llm.invoke([SystemMessage(content=formatted_prompt)])
+        
+        # 4. Parse Output
+        intervention = parser.parse(response.content)
+        return intervention
         
     except Exception as e:
         print(f"AGENT ERROR: {e}")
+        # Fallback
         return Intervention(
             action_id="MAINTAIN",
             next_task_prompt="Continue. Describe your favorite meal.",
             topic_core="Food", 
-            constraints={"timer": 45}
+            constraints={"timer": 45},
+            ideal_response="I enjoy eating pasta because it is versatile and delicious.",
+            feedback_markdown="- Speak more confidently.\n- Avoid pauses.",
+            keywords=["Delicious", "Versatile", "Cuisine", "Texture", "Flavor"]
         )

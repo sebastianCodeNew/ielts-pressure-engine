@@ -16,7 +16,8 @@ from app.core.translator import translate_to_english
 from app.core.cache import init_db as init_cache_db, get_cached_translation, save_translation_to_cache
 from app.core.state import AgentState, update_state
 from app.core.database import init_db, get_db, SessionModel
-from app.core.engine import process_user_attempt # <--- NEW SERVICE
+from app.core.engine import process_user_attempt
+from app.api.v1.api import api_router # <--- NEW
 
 # --- LIFESPAN MANAGER (Database Startup) ---
 @asynccontextmanager
@@ -28,6 +29,9 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="IELTS Pressure Engine", lifespan=lifespan)
+
+# Register new API Router
+app.include_router(api_router, prefix="/api/v1") # <--- NEW
 
 class TranslationRequest(BaseModel):
     text: str
