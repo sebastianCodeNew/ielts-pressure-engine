@@ -22,6 +22,9 @@ class SignalMetrics(BaseModel):
     grammar_error_count: int
     filler_count: int = 0
     coherence_score: float = 0.0 
+    lexical_diversity: float = 0.0 
+    grammar_complexity: float = 0.0 
+    pronunciation_score: float = 0.0
     is_complete: bool
     
     # Detailed AI feedback
@@ -62,3 +65,31 @@ class ExamSummary(BaseModel):
     breakdown: DetailedScores
     feedback: str
     recommendations: List[str]
+
+# --- VOCABULARY ---
+class VocabularyCreate(BaseModel):
+    word: str
+    definition: str
+    context_sentence: Optional[str] = None
+
+class VocabularyItemSchema(BaseModel):
+    id: int
+    word: str
+    definition: str
+    context_sentence: Optional[str] = None
+    mastery_level: int
+    last_reviewed_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# --- STUDY PLAN ---
+class StudyPlanItem(BaseModel):
+    day: str
+    focus: str
+    tasks: List[str]
+
+class StudyPlan(BaseModel):
+    user_id: str
+    created_at: datetime
+    plan: List[StudyPlanItem]

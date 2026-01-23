@@ -3,22 +3,21 @@ import { useState, useRef } from "react";
 export function useAudioRecorder() {
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setStream(mediaStream);
       
-      // 1. Force a solid codec (Opus is best for speech)
       const options = { mimeType: "audio/webm;codecs=opus" };
-      
-      // Fallback if browser doesn't support explicit codec
       const mimeType = MediaRecorder.isTypeSupported(options.mimeType) 
         ? options.mimeType 
         : "audio/webm";
 
-      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = new MediaRecorder(mediaStream, { mimeType });
       chunksRef.current = [];
 
       mediaRecorderRef.current.ondataavailable = (event) => {
@@ -26,14 +25,12 @@ export function useAudioRecorder() {
       };
 
       mediaRecorderRef.current.onstop = () => {
-        // Create blob with the CORRECT mime type
         const blob = new Blob(chunksRef.current, { type: mimeType });
         setAudioBlob(blob);
-        stream.getTracks().forEach((track) => track.stop());
+        mediaStream.getTracks().forEach((track) => track.stop());
+        setStream(null);
       };
 
-      // 2. Slice data every 200ms
-      // This ensures if you crash or stop abruptly, we have the data buffered.
       mediaRecorderRef.current.start(200); 
       setIsRecording(true);
     } catch (err) {
@@ -43,13 +40,12 @@ export function useAudioRecorder() {
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
-      // Small delay to catch the final syllable
       setTimeout(() => {
         mediaRecorderRef.current?.stop();
         setIsRecording(false);
-      }, 500); // 0.5s "Cool down" captures the end of the sentence
+      }, 500);
     }
   };
 
-  return { isRecording, startRecording, stopRecording, audioBlob, setAudioBlob };
+  return { isRecording, startRecording, stopRecording, audioBlob, setAudioBlob, stream };
 }

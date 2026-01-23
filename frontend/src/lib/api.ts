@@ -1,31 +1,49 @@
 import { Intervention, TranslationResponse } from "./types";
 
-const API_BASE_URL = "http://127.0.0.1:8000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
 
 export class ApiClient {
-  
+  private static async fetchWithRetry(url: string, options: RequestInit, retries: number = 3): Promise<Response> {
+    try {
+      const response = await fetch(url, options);
+      if (response.status === 429 && retries > 0) {
+        // Rate limited - wait and retry
+        const wait = response.headers.get("Retry-After") ? parseInt(response.headers.get("Retry-After")!) * 1000 : 2000;
+        await new Promise(r => setTimeout(r, wait));
+        return this.fetchWithRetry(url, options, retries - 1);
+      }
+      if (!response.ok && retries > 0 && response.status >= 500) {
+        await new Promise(r => setTimeout(r, 1000));
+        return this.fetchWithRetry(url, options, retries - 1);
+      }
+      return response;
+    } catch (err) {
+      if (retries > 0) {
+        await new Promise(r => setTimeout(r, 1000));
+        return this.fetchWithRetry(url, options, retries - 1);
+      }
+      throw err;
+    }
+  }
+
   static async submitAudio(blob: Blob, taskId: string = "default"): Promise<Intervention> {
     const formData = new FormData();
     formData.append("file", blob, "recording.webm");
     formData.append("task_id", taskId);
 
-    const res = await fetch(`${API_BASE_URL}/submit-audio`, {
+    const res = await this.fetchWithRetry(`${API_BASE_URL}/submit-audio`, {
       method: "POST",
       body: formData,
     });
-
-    if (!res.ok) {
-      throw new Error(`API Error: ${res.statusText}`);
-    }
-
+    if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
     return res.json();
   }
 
-  static async startExam(examType: string = "FULL_MOCK"): Promise<any> {
-    const res = await fetch(`${API_BASE_URL}/v1/exams/start`, {
+  static async startExam(userId: string, examType: string = "FULL_MOCK"): Promise<any> {
+    const res = await this.fetchWithRetry(`${API_BASE_URL}/v1/exams/start`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ exam_type: examType }),
+      body: JSON.stringify({ user_id: userId, exam_type: examType }),
     });
     if (!res.ok) throw new Error("Failed to start exam");
     return res.json();
@@ -35,29 +53,63 @@ export class ApiClient {
     const formData = new FormData();
     formData.append("file", blob, "recording.webm");
 
-    const res = await fetch(`${API_BASE_URL}/v1/exams/${sessionId}/submit-audio`, {
+    const res = await this.fetchWithRetry(`${API_BASE_URL}/v1/exams/${sessionId}/submit-audio`, {
       method: "POST",
       body: formData,
     });
-
-    if (!res.ok) {
-      throw new Error(`Exam API Error: ${res.statusText}`);
-    }
-
+    if (!res.ok) throw new Error(`Exam API Error: ${res.statusText}`);
     return res.json();
   }
 
   static async translateText(text: string): Promise<TranslationResponse> {
-    const res = await fetch(`${API_BASE_URL}/translate`, {
+    const res = await this.fetchWithRetry(`${API_BASE_URL}/translate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text }),
     });
+    if (!res.ok) throw new Error("Translation failed");
+    return res.json();
+  }
 
-    if (!res.ok) {
-      throw new Error("Translation failed");
-    }
+  static async getStats(): Promise<any> {
+    const res = await this.fetchWithRetry(`${API_BASE_URL}/v1/users/me/stats`, { method: "GET" });
+    if (!res.ok) throw new Error("Failed to fetch stats");
+    return res.json();
+  }
 
+  static async getHistory(): Promise<any[]> {
+    const res = await this.fetchWithRetry(`${API_BASE_URL}/v1/users/me/history`, { method: "GET" });
+    if (!res.ok) throw new Error("Failed to fetch history");
+    return res.json();
+  }
+
+  static async getExamSummary(sessionId: string): Promise<any> {
+    const res = await this.fetchWithRetry(`${API_BASE_URL}/v1/exams/${sessionId}/summary`, { method: "GET" });
+    if (!res.ok) throw new Error("Failed to fetch exam summary");
+    return res.json();
+  }
+
+  static async getExamStatus(sessionId: string): Promise<any> {
+    const res = await this.fetchWithRetry(`${API_BASE_URL}/v1/exams/${sessionId}/status`, { method: "GET" });
+    if (!res.ok) throw new Error("Failed to fetch exam status");
+    return res.json();
+  }
+
+  static async getTopics(): Promise<any[]> {
+    const res = await this.fetchWithRetry(`${API_BASE_URL}/v1/practice/topics`, { method: "GET" });
+    if (!res.ok) throw new Error("Failed to fetch topics");
+    return res.json();
+  }
+
+  static async getVocabulary(): Promise<any[]> {
+    const res = await this.fetchWithRetry(`${API_BASE_URL}/v1/vocabulary/`, { method: "GET" });
+    if (!res.ok) throw new Error("Failed to fetch vocabulary");
+    return res.json();
+  }
+
+  static async getStudyPlan(): Promise<any> {
+    const res = await this.fetchWithRetry(`${API_BASE_URL}/v1/study-plan/`, { method: "GET" });
+    if (!res.ok) throw new Error("Failed to fetch study plan");
     return res.json();
   }
 }

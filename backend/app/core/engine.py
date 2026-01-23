@@ -6,6 +6,7 @@ from app.core.evaluator import extract_signals
 from app.core.agent import formulate_strategy
 from app.core.state import AgentState, update_state
 from app.core.database import SessionModel, ExamSession, QuestionAttempt
+from app.core.pronunciation import analyze_pronunciation
 
 def process_user_attempt(
     file_path: str, 
@@ -20,13 +21,16 @@ def process_user_attempt(
     """
     
     # 1. LOAD STATE FROM DB
+    current_part = "PART_1" # Default
+    current_prompt = "general topic"
+    
     if is_exam_mode:
         exam_session = db.query(ExamSession).filter(ExamSession.id == session_id).first()
         if not exam_session:
             raise ValueError(f"Exam session {session_id} not found")
         
         current_part = exam_session.current_part
-        current_prompt = exam_session.current_part # Use part name as default prompt
+        current_prompt = exam_session.current_part 
         
         current_state = AgentState(
             session_id=session_id,
@@ -34,7 +38,7 @@ def process_user_attempt(
             consecutive_failures=0,
             fluency_trend="stable",
             history=[],
-            current_part=current_part # Need to ensure AgentState supports this or pass separate
+            current_part=current_part
         )
     else:
         db_session = db.query(SessionModel).filter(SessionModel.session_id == session_id).first()
@@ -58,20 +62,22 @@ def process_user_attempt(
     print(f"--- Processing Attempt (ExamMode={is_exam_mode}) ---")
     transcript_data = transcribe_audio(file_path)
     
-    # 3. ANALYZE
+    # 3. ANALYZE (Linguistic)
     attempt = UserAttempt(
         task_id=task_id,
         transcript=transcript_data['text'],
         audio_duration=transcript_data['duration']
     )
-    
     signals = extract_signals(attempt, current_prompt_text=current_prompt)
     
-    # 4. AGENT DECISION
-    # Pass current_part to formulate_strategy
+    # 4. PRONUNCIATION ANALYSIS
+    pron_results = analyze_pronunciation(file_path)
+    signals.pronunciation_score = pron_results.get("pronunciation_score", 0.0)
+    
+    # 5. AGENT DECISION
     intervention = formulate_strategy(current_state, signals, current_part=current_part if is_exam_mode else None)
     
-    # 5. UPDATE STATE & PERSIST
+    # 6. UPDATE STATE & PERSIST
     if is_exam_mode:
         # Save to attempts log
         new_qa = QuestionAttempt(
@@ -83,6 +89,9 @@ def process_user_attempt(
             wpm=signals.fluency_wpm,
             coherence_score=signals.coherence_score,
             hesitation_ratio=signals.hesitation_ratio,
+            lexical_diversity=signals.lexical_diversity,
+            grammar_complexity=signals.grammar_complexity,
+            pronunciation_score=signals.pronunciation_score,
             feedback_markdown=intervention.feedback_markdown,
             improved_response=intervention.ideal_response
         )
@@ -102,7 +111,34 @@ def process_user_attempt(
             else:
                 exam_session.status = "COMPLETED"
                 exam_session.end_time = datetime.utcnow()
-                exam_session.overall_band_score = 7.0 
+                
+                # Calculate real summary scores from all attempts
+                all_attempts = db.query(QuestionAttempt).filter(QuestionAttempt.session_id == session_id).all()
+                if all_attempts:
+                    def safe_avg(values):
+                        nums = [v for v in values if v is not None]
+                        return sum(nums) / len(nums) if nums else 0.0
+
+                    avg_wpm = safe_avg([a.wpm for a in all_attempts])
+                    avg_coherence = safe_avg([a.coherence_score for a in all_attempts])
+                    avg_lexical = safe_avg([a.lexical_diversity for a in all_attempts])
+                    avg_grammar = safe_avg([a.grammar_complexity for a in all_attempts])
+                    avg_pron = safe_avg([a.pronunciation_score for a in all_attempts])
+                    
+                    # Map to IELTS scale (0-9)
+                    exam_session.fluency_score = min(max(avg_wpm / 18, 4.0), 9.0)
+                    exam_session.coherence_score = min(max(avg_coherence * 9, 4.0), 9.0)
+                    exam_session.lexical_resource_score = min(max(avg_lexical * 18, 4.0), 9.0)
+                    exam_session.grammatical_range_score = min(max(avg_grammar * 45, 4.0), 9.0)
+                    exam_session.pronunciation_score = min(max(avg_pron * 11, 4.0), 9.0)
+                    
+                    exam_session.overall_band_score = round((
+                        exam_session.fluency_score + 
+                        exam_session.coherence_score +
+                        exam_session.lexical_resource_score + 
+                        exam_session.grammatical_range_score + 
+                        exam_session.pronunciation_score
+                    ) / 5, 1) # Divided by 5 metrics now
     else:
         outcome = 'FAIL' if intervention.action_id == 'FAIL' else 'PASS'
         new_state = update_state(current_state, attempt, signals, outcome, current_prompt)

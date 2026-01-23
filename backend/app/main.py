@@ -1,94 +1,96 @@
 import shutil
 import os
+import time
+import uuid
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, UploadFile, File, Depends
+from fastapi import FastAPI, UploadFile, File, Depends, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from typing import Dict
 
 # Core Logic Imports
-# Core Logic Imports
-from app.schemas import UserAttempt, Intervention, SignalMetrics
-from app.core.transcriber import transcribe_audio
-from app.core.evaluator import extract_signals
-from app.core.agent import formulate_strategy
-from app.core.translator import translate_to_english
-from app.core.cache import init_db as init_cache_db, get_cached_translation, save_translation_to_cache
-from app.core.state import AgentState, update_state
-from app.core.database import init_db, get_db, SessionModel
+from app.core.database import init_db, get_db
+from app.core.cache import init_db as init_cache_db
 from app.core.engine import process_user_attempt
-from app.api.v1.api import api_router # <--- NEW
+from app.api.v1.api import api_router
 
-# --- LIFESPAN MANAGER (Database Startup) ---
+# --- RATE LIMITING ---
+class RateLimiter:
+    def __init__(self, limit: int, window: int):
+        self.limit = limit
+        self.window = window
+        self.requests: Dict[str, list] = {}
+
+    def is_allowed(self, client_id: str) -> bool:
+        now = time.time()
+        if client_id not in self.requests:
+            self.requests[client_id] = [now]
+            return True
+        
+        # Filter requests in the current window
+        self.requests[client_id] = [t for t in self.requests[client_id] if now - t < self.window]
+        
+        if len(self.requests[client_id]) < self.limit:
+            self.requests[client_id].append(now)
+            return True
+        return False
+
+audio_limiter = RateLimiter(limit=10, window=60) 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Create DBs
     init_cache_db()
-    init_db() # SQLite
-    print("--- Databases Loaded ---")
+    init_db()
+    print("--- Databases Loaded & Migrated ---")
     yield
 
 app = FastAPI(title="IELTS Pressure Engine", lifespan=lifespan)
 
-# Register new API Router
-app.include_router(api_router, prefix="/api/v1") # <--- NEW
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-class TranslationRequest(BaseModel):
-    text: str
+# Middleware for rate limiting audio endpoints
+@app.middleware("http")
+async def rate_limiting_middleware(request: Request, call_next):
+    if request.url.path.endswith("/submit-audio"):
+        client_ip = request.client.host
+        if not audio_limiter.is_allowed(client_ip):
+            raise HTTPException(status_code=429, detail="Rate limit exceeded. Try again in a minute.")
+    return await call_next(request)
+
+# Register API v1
+app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/")
 def health_check():
-    return {"status": "system_active", "mode": "adaptive"}
+    return {"status": "system_active", "mode": "performance_optimized"}
 
-# --- AUDIO ENDPOINT (Refactored) ---
-@app.post("/api/submit-audio", response_model=Intervention)
+@app.post("/api/submit-audio")
 def process_audio_attempt(file: UploadFile = File(...), task_id: str = "default", db: Session = Depends(get_db)):
+    # Use UUID to prevent collision if multiple users (or sessions) upload simultaneously
+    ext = os.path.splitext(file.filename)[1] or ".webm"
+    temp_filename = f"temp_{uuid.uuid4()}{ext}"
     
-    # SECURITY: Validate file size (Max 10MB)
-    MAX_FILE_SIZE = 10 * 1024 * 1024
-    file.file.seek(0, 2)
-    file_size = file.file.tell()
-    file.file.seek(0)
-    
-    if file_size > MAX_FILE_SIZE:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=413, detail="File too large. Max size is 10MB.")
-    
-    # 1. Save Temp File
-    temp_filename = f"temp_{file.filename}"
     with open(temp_filename, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
     try:
-        # 2. Delegate to Engine
         intervention = process_user_attempt(
             file_path=temp_filename,
             task_id=task_id,
             db=db,
-            session_id="default_user" # Hardcoded for single-user MVP
+            session_id="default_user"
         )
         return intervention
-        
     finally:
         if os.path.exists(temp_filename):
-            os.remove(temp_filename)
-
-# --- TRANSLATION ENDPOINT (With Caching) ---
-@app.post("/api/translate")
-def quick_translate(request: TranslationRequest):
-    # 1. CHECK CACHE (Fast Layer)
-    cached_result = get_cached_translation(request.text)
-    
-    if cached_result:
-        print(f"DEBUG: Cache Hit for '{request.text}'")
-        return {"original": request.text, "translated": cached_result}
-
-    # 2. CALL AI (Slow Layer)
-    print(f"DEBUG: Cache Miss. Asking Llama-3.2...")
-    english_text = translate_to_english(request.text)
-    
-    # 3. SAVE TO CACHE (Future Investment)
-    if english_text and "Error" not in english_text:
-        save_translation_to_cache(request.text, english_text)
-    
-    return {"original": request.text, "translated": english_text}
+            try:
+                os.remove(temp_filename)
+            except Exception as e:
+                print(f"Cleanup Error: {e}")

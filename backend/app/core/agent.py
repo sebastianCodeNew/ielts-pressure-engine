@@ -1,7 +1,6 @@
 import os
 import json
 import re
-import json
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage
 from app.core.state import AgentState
@@ -11,8 +10,8 @@ from app.schemas import SignalMetrics, Intervention
 llm = ChatOpenAI(
     base_url="https://api.deepinfra.com/v1/openai",
     api_key=os.getenv("DEEPINFRA_API_KEY"),
-    model="meta-llama/Llama-3.2-3B-Instruct",
-    temperature=0.1, # Keep it strict
+    model="meta-llama/Llama-3.3-70B-Instruct",
+    temperature=0.1, 
 )
 
 from langchain_core.output_parsers import PydanticOutputParser
@@ -29,7 +28,7 @@ def formulate_strategy(state: AgentState, current_metrics: SignalMetrics, curren
     # 1. Construct History Context (Compact format)
     history_str = "\n".join([
         f"- Attempt {h.attempt_id}: {h.outcome} (WPM: {h.metrics.fluency_wpm}, Coherence: {h.metrics.coherence_score})" 
-        for h in state.history[-3:] # Last 3 only
+        for h in state.history[-3:]
     ])
     
     # 2. Define Prompt with Format Instructions
@@ -47,23 +46,23 @@ def formulate_strategy(state: AgentState, current_metrics: SignalMetrics, curren
         CURRENT ATTEMPT METRICS:
         - WPM: {wpm}
         - Coherence: {coherence}
+        - Lexical Diversity (TTR): {lexical_diversity}
+        - Grammar Complexity: {grammar_complexity}
         
-        LOGIC MATRIX:
-        - If in PART 1: Ask personal, simple questions.
-        - If in PART 2: Provide a complex topic for a 2-minute "Cue Card" speech.
-        - If in PART 3: Ask abstract, analytical questions based on the Part 2 topic.
+        ADAPTIVE LOGIC:
+        - If the user provides a short or shallow answer, generate a FOLLOW-UP question to dig deeper.
+        - If the user is struggling (High Stress, Low WPM), DEESCALATE pressure by asking simpler, more encouraging questions.
+        - If the user is breezing through (Band 7+ metrics), ESCALATE pressure with complex, abstract questions.
 
         SCORING (0-9):
-        - `detailed_scores`: Provide scores for Fluency, Coherence, Lexical Resource, Grammar, and Pronunciation.
+        - Provide scores for Fluency, Coherence, Lexical Resource, Grammar, and Pronunciation based on IELTS band descriptors.
         
-        TEACHING FEEDBACK:
-        - `grammar_advice`: One specific correction.
-        - `vocabulary_advice`: One better word.
-        - `pronunciation_advice`: One word to practice pronouncing.
+        FEEDBACK:
+        - Be specific. Instead of "Improve grammar", say "Usage of present perfect in your second sentence was incorrect; try 'I have lived' instead of 'I live'".
         
         {format_instructions}
         """,
-        input_variables=["stress_level", "fluency_trend", "consecutive_failures", "wpm", "hesitation", "coherence", "history", "current_part"],
+        input_variables=["stress_level", "fluency_trend", "consecutive_failures", "wpm", "hesitation", "coherence", "lexical_diversity", "grammar_complexity", "history", "current_part"],
         partial_variables={"format_instructions": parser.get_format_instructions()}
     )
 
@@ -78,6 +77,8 @@ def formulate_strategy(state: AgentState, current_metrics: SignalMetrics, curren
             wpm=current_metrics.fluency_wpm,
             hesitation=current_metrics.hesitation_ratio,
             coherence=current_metrics.coherence_score,
+            lexical_diversity=current_metrics.lexical_diversity,
+            grammar_complexity=current_metrics.grammar_complexity,
             history=history_str,
             current_part=current_part
         )
