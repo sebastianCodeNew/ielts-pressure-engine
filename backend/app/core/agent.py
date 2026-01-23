@@ -83,7 +83,8 @@ def formulate_strategy(state: AgentState, current_metrics: SignalMetrics, curren
             current_part=current_part
         )
         
-        response = llm.invoke([SystemMessage(content=formatted_prompt)])
+        # We should include the formatted content in the message
+        response = llm.invoke(formatted_prompt)
         
         # 4. Parse Output
         intervention = parser.parse(response.content)

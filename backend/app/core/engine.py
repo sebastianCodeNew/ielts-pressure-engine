@@ -22,7 +22,7 @@ def process_user_attempt(
     
     # 1. LOAD STATE FROM DB
     current_part = "PART_1" # Default
-    current_prompt = "general topic"
+    current_prompt = "Tell me about your hometown." # Better default for IELTS PART 1
     
     if is_exam_mode:
         exam_session = db.query(ExamSession).filter(ExamSession.id == session_id).first()
@@ -30,8 +30,30 @@ def process_user_attempt(
             raise ValueError(f"Exam session {session_id} not found")
         
         current_part = exam_session.current_part
-        current_prompt = exam_session.current_part 
+        # The prompt is often stored in the session or can be derived from the last intervention
+        # For now, we'll try to get the last intervention's prompt if it exists
+        last_attempt = db.query(QuestionAttempt).filter(
+            QuestionAttempt.session_id == session_id
+        ).order_by(QuestionAttempt.created_at.desc()).first()
         
+        if last_attempt and last_attempt.improved_response: # Using improved_response or similar to store prompt? 
+            # Actually, let's look at how current_prompt was being used.
+            # It was being set to exam_session.current_part which is "PART_1" etc.
+            # We need to store the actual question text.
+            pass 
+        
+        # If it's the very first attempt in the session, use a default for the part
+        if not last_attempt:
+            if current_part == "PART_1":
+                current_prompt = "Can you tell me about your hometown?"
+            elif current_part == "PART_2":
+                current_prompt = "Describe a place you like to visit."
+            else:
+                current_prompt = "Let's talk more about the topic from Part 2."
+        else:
+            # We should have stored the prompt in QuestionAttempt.question_text
+            current_prompt = last_attempt.question_text if last_attempt.question_text else "General topic"
+
         current_state = AgentState(
             session_id=session_id,
             stress_level=0.5,
@@ -59,9 +81,13 @@ def process_user_attempt(
         current_prompt = db_session.current_prompt
     
     # 2. TRANSCRIBE
-    print(f"--- Processing Attempt (ExamMode={is_exam_mode}) ---")
-    transcript_data = transcribe_audio(file_path)
-    
+    print(f"--- Processing Attempt (ExamMode={is_exam_mode}, Prompt='{current_prompt}') ---")
+    try:
+        transcript_data = transcribe_audio(file_path)
+    except Exception as e:
+        print(f"TRANSCRIPTION ERROR: {e}")
+        transcript_data = {"text": "", "duration": 0.0, "language": "en"}
+
     # 3. ANALYZE (Linguistic)
     attempt = UserAttempt(
         task_id=task_id,
@@ -71,8 +97,12 @@ def process_user_attempt(
     signals = extract_signals(attempt, current_prompt_text=current_prompt)
     
     # 4. PRONUNCIATION ANALYSIS
-    pron_results = analyze_pronunciation(file_path)
-    signals.pronunciation_score = pron_results.get("pronunciation_score", 0.0)
+    try:
+        pron_results = analyze_pronunciation(file_path)
+        signals.pronunciation_score = pron_results.get("pronunciation_score", 0.0)
+    except Exception as e:
+        print(f"PRONUNCIATION ANALYSIS ERROR: {e}")
+        signals.pronunciation_score = 0.0
     
     # 5. AGENT DECISION
     intervention = formulate_strategy(current_state, signals, current_part=current_part if is_exam_mode else None)
@@ -83,7 +113,7 @@ def process_user_attempt(
         new_qa = QuestionAttempt(
             session_id=session_id,
             part=current_part,
-            question_text=current_prompt,
+            question_text=current_prompt, # This is the question the user JUST answered
             transcript=attempt.transcript,
             duration_seconds=attempt.audio_duration,
             wpm=signals.fluency_wpm,
@@ -96,6 +126,11 @@ def process_user_attempt(
             improved_response=intervention.ideal_response
         )
         db.add(new_qa)
+        
+        # Prepare for NEXT question: store the intervention prompt in QuestionAttempt for next time?
+        # Actually, it's better to store it in a way that we know what the user is SUPPOSED to answer next.
+        # We'll use QuestionAttempt to track history, but the "current_prompt" for the NEXT turn 
+        # comes from intervention.next_task_prompt.
         
         # Transition Logic
         part_count = db.query(QuestionAttempt).filter(
@@ -125,12 +160,12 @@ def process_user_attempt(
                     avg_grammar = safe_avg([a.grammar_complexity for a in all_attempts])
                     avg_pron = safe_avg([a.pronunciation_score for a in all_attempts])
                     
-                    # Map to IELTS scale (0-9)
-                    exam_session.fluency_score = min(max(avg_wpm / 18, 4.0), 9.0)
-                    exam_session.coherence_score = min(max(avg_coherence * 9, 4.0), 9.0)
-                    exam_session.lexical_resource_score = min(max(avg_lexical * 18, 4.0), 9.0)
-                    exam_session.grammatical_range_score = min(max(avg_grammar * 45, 4.0), 9.0)
-                    exam_session.pronunciation_score = min(max(avg_pron * 11, 4.0), 9.0)
+                    # Map to IELTS scale (0-9) - Refined mapping
+                    exam_session.fluency_score = min(max(avg_wpm / 15, 1.0), 9.0)
+                    exam_session.coherence_score = min(max(avg_coherence * 9, 1.0), 9.0)
+                    exam_session.lexical_resource_score = min(max(avg_lexical * 15, 1.0), 9.0)
+                    exam_session.grammatical_range_score = min(max(avg_grammar * 40, 1.0), 9.0)
+                    exam_session.pronunciation_score = min(max(avg_pron * 9, 1.0), 9.0)
                     
                     exam_session.overall_band_score = round((
                         exam_session.fluency_score + 
@@ -147,8 +182,11 @@ def process_user_attempt(
         db_session.consecutive_failures = new_state.consecutive_failures
         db_session.fluency_trend = new_state.fluency_trend
         
-        if intervention.topic_core:
-            db_session.current_prompt = intervention.topic_core
+        if intervention.next_task_prompt:
+            db_session.current_prompt = intervention.next_task_prompt # Store the prompt for the next turn
+
+    db.commit()
+    return intervention
 
     db.commit()
     return intervention

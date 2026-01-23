@@ -36,6 +36,10 @@ def test_database_persistence():
     
     # Create
     session_id = "test_user_v1"
+    # Clean up existing test session if it exists
+    db.query(SessionModel).filter(SessionModel.session_id == session_id).delete()
+    db.commit()
+
     new_session = SessionModel(session_id=session_id, stress_level=0.5)
     db.add(new_session)
     db.commit()

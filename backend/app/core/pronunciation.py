@@ -7,7 +7,29 @@ def analyze_pronunciation(audio_path: str) -> Dict[str, float]:
     Extracts acoustic features related to pronunciation clarity and fluency.
     """
     try:
-        y, sr = librosa.load(audio_path)
+        y, sr = None, None
+        
+        # Proactively check for .webm to avoid librosa warnings
+        if audio_path.endswith(".webm"):
+            try:
+                from faster_whisper.audio import decode_audio
+                y = decode_audio(audio_path, sampling_rate=22050)
+                sr = 22050
+            except Exception as e:
+                print(f"Faster-whisper decoder failed for webm: {e}")
+
+        # If not webm or if decoder failed, try librosa with silenced warnings
+        if y is None:
+            import warnings
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                try:
+                    y, sr = librosa.load(audio_path)
+                except Exception as e:
+                    # Final fallback to faster-whisper if librosa fails on other formats
+                    from faster_whisper.audio import decode_audio
+                    y = decode_audio(audio_path, sampling_rate=22050)
+                    sr = 22050
         
         # 1. Zero Crossing Rate (Higher ZCR often correlates with cleaner fricatives/clarity)
         zcr = librosa.feature.zero_crossing_rate(y)
@@ -36,5 +58,7 @@ def analyze_pronunciation(audio_path: str) -> Dict[str, float]:
             "avg_zcr": round(float(avg_zcr), 4)
         }
     except Exception as e:
+        import traceback
         print(f"PRONUNCIATION ERROR: {e}")
+        traceback.print_exc()
         return {"pronunciation_score": 0.0, "error": str(e)}
