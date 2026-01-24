@@ -25,6 +25,7 @@ def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
         user_id=request.user_id,
         exam_type=request.exam_type,
         current_part="PART_1",
+        current_prompt="Can you tell me about your hometown?", # Start with this
         status="IN_PROGRESS"
     )
     db.add(new_session)
@@ -44,13 +45,14 @@ def submit_exam_audio(
         raise HTTPException(status_code=404, detail="Session not found")
 
     # Use unique UUID for temp file
+    # Use unique UUID for temp file
     ext = os.path.splitext(file.filename)[1] or ".webm"
     temp_filename = f"temp_exam_{session_id}_{uuid.uuid4()}{ext}"
     
-    with open(temp_filename, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
     try:
+        with open(temp_filename, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
         intervention = process_user_attempt(
             file_path=temp_filename,
             task_id=session.current_part,
@@ -59,12 +61,15 @@ def submit_exam_audio(
             is_exam_mode=True
         )
         return intervention
+    except Exception as e:
+        print(f"Error processing exam audio: {e}")
+        raise HTTPException(status_code=500, detail="Error processing audio submission")
     finally:
         if os.path.exists(temp_filename):
             try:
                 os.remove(temp_filename)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"Failed to delete temp file {temp_filename}: {e}")
 
 @router.get("/{session_id}/summary")
 def get_exam_summary(session_id: str, db: Session = Depends(get_db)):

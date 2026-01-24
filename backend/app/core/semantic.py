@@ -14,6 +14,10 @@ def get_embedding(text: str) -> List[float]:
     # Safety: If text is empty/None, return a zero-vector
     if not text or not isinstance(text, str):
         return [0.0] * 768  # Gemma-300m uses 768 dimensions
+        
+    if not DEEPINFRA_KEY:
+        print("WARNING: DEEPINFRA_API_KEY is missing. Returning zero vector.")
+        return [0.0] * 768
 
     headers = {
         "Content-Type": "application/json",

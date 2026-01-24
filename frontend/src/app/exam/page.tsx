@@ -38,9 +38,9 @@ export default function ExamSimulator() {
       const session = await ApiClient.startExam("default_user", "FULL_MOCK");
       setSessionId(session.id);
       setExamPart("PART_1");
-      speak(
-        "Welcome to the IELTS Speaking Mock Exam. I am your examiner. Let's begin with Part 1. Can you tell me about your hometown?",
-      );
+      const initialPrompt = "Welcome to the IELTS Speaking Mock Exam. I am your examiner. Let's begin with Part 1. Can you tell me about your hometown?";
+      setFeedback({ next_task_prompt: initialPrompt });
+      speak(initialPrompt);
     } catch (e) {
       console.error(e);
     }
@@ -61,11 +61,16 @@ export default function ExamSimulator() {
           }
 
           const session = await ApiClient.getExamStatus(sessionId);
+          
           if (session.status === "COMPLETED") {
             setExamPart("FINISHED");
             router.push(`/exam/result/${sessionId}`);
           } else {
-            setExamPart(session.current_part as any);
+             // Safe type narrowing
+             const validParts = ["PART_1", "PART_2", "PART_3"];
+             if (validParts.includes(session.current_part)) {
+               setExamPart(session.current_part as "PART_1" | "PART_2" | "PART_3");
+             }
           }
         } catch (e) {
           console.error(e);

@@ -39,6 +39,7 @@ class ExamSession(Base):
     
     exam_type = Column(String, default="FULL_MOCK") 
     current_part = Column(String, default="PART_1") 
+    current_prompt = Column(String, nullable=True) # NEW
     
     # Overall Scores
     overall_band_score = Column(Float, nullable=True)
@@ -132,6 +133,8 @@ def init_db():
         cols_es = [row[1] for row in res]
         if "coherence_score" not in cols_es:
             conn.execute(text("ALTER TABLE exam_sessions ADD COLUMN coherence_score FLOAT"))
+        if "current_prompt" not in cols_es:
+            conn.execute(text("ALTER TABLE exam_sessions ADD COLUMN current_prompt TEXT"))
             
         conn.commit()
     print("--- Database Schema Verified & Migrated ---")

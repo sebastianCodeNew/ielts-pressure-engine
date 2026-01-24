@@ -30,36 +30,14 @@ def process_user_attempt(
             raise ValueError(f"Exam session {session_id} not found")
         
         current_part = exam_session.current_part
-        # The prompt is often stored in the session or can be derived from the last intervention
-        # For now, we'll try to get the last intervention's prompt if it exists
-        last_attempt = db.query(QuestionAttempt).filter(
-            QuestionAttempt.session_id == session_id
-        ).order_by(QuestionAttempt.created_at.desc()).first()
+        current_prompt = exam_session.current_prompt or "General topic"
         
-        if last_attempt and last_attempt.improved_response: # Using improved_response or similar to store prompt? 
-            # Actually, let's look at how current_prompt was being used.
-            # It was being set to exam_session.current_part which is "PART_1" etc.
-            # We need to store the actual question text.
-            pass 
-        
-        # If it's the very first attempt in the session, use a default for the part
-        if not last_attempt:
-            if current_part == "PART_1":
-                current_prompt = "Can you tell me about your hometown?"
-            elif current_part == "PART_2":
-                current_prompt = "Describe a place you like to visit."
-            else:
-                current_prompt = "Let's talk more about the topic from Part 2."
-        else:
-            # We should have stored the prompt in QuestionAttempt.question_text
-            current_prompt = last_attempt.question_text if last_attempt.question_text else "General topic"
-
         current_state = AgentState(
             session_id=session_id,
             stress_level=0.5,
             consecutive_failures=0,
             fluency_trend="stable",
-            history=[],
+            history=[], # We could load real history here if needed
             current_part=current_part
         )
     else:
@@ -84,6 +62,7 @@ def process_user_attempt(
     print(f"--- Processing Attempt (ExamMode={is_exam_mode}, Prompt='{current_prompt}') ---")
     try:
         transcript_data = transcribe_audio(file_path)
+        print(f"DEBUG: Transcript -> {transcript_data['text']}")
     except Exception as e:
         print(f"TRANSCRIPTION ERROR: {e}")
         transcript_data = {"text": "", "duration": 0.0, "language": "en"}
@@ -141,8 +120,10 @@ def process_user_attempt(
         if part_count >= 2:
             if current_part == "PART_1":
                 exam_session.current_part = "PART_2"
+                exam_session.current_prompt = "Describe a place you like to visit." # Default for Part 2 start
             elif current_part == "PART_2":
                 exam_session.current_part = "PART_3"
+                exam_session.current_prompt = intervention.next_task_prompt # Follow up on P2
             else:
                 exam_session.status = "COMPLETED"
                 exam_session.end_time = datetime.utcnow()
@@ -174,6 +155,9 @@ def process_user_attempt(
                         exam_session.grammatical_range_score + 
                         exam_session.pronunciation_score
                     ) / 5, 1) # Divided by 5 metrics now
+        else:
+            # Same part, update prompt for next question
+            exam_session.current_prompt = intervention.next_task_prompt
     else:
         outcome = 'FAIL' if intervention.action_id == 'FAIL' else 'PASS'
         new_state = update_state(current_state, attempt, signals, outcome, current_prompt)
@@ -184,9 +168,6 @@ def process_user_attempt(
         
         if intervention.next_task_prompt:
             db_session.current_prompt = intervention.next_task_prompt # Store the prompt for the next turn
-
-    db.commit()
-    return intervention
 
     db.commit()
     return intervention

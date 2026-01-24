@@ -12,9 +12,12 @@ def analyze_pronunciation(audio_path: str) -> Dict[str, float]:
         # Proactively check for .webm to avoid librosa warnings
         if audio_path.endswith(".webm"):
             try:
+                # Local import to avoid overhead if not used, but wrapped safely
                 from faster_whisper.audio import decode_audio
                 y = decode_audio(audio_path, sampling_rate=22050)
                 sr = 22050
+            except ImportError:
+                print("Faster-whisper not installed or audio module missing.")
             except Exception as e:
                 print(f"Faster-whisper decoder failed for webm: {e}")
 
@@ -24,12 +27,17 @@ def analyze_pronunciation(audio_path: str) -> Dict[str, float]:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 try:
-                    y, sr = librosa.load(audio_path)
+                    y, sr = librosa.load(audio_path, sr=22050)
                 except Exception as e:
-                    # Final fallback to faster-whisper if librosa fails on other formats
-                    from faster_whisper.audio import decode_audio
-                    y = decode_audio(audio_path, sampling_rate=22050)
-                    sr = 22050
+                    print(f"Librosa load failed: {e}")
+                    # Final fallback try
+                    try:
+                        from faster_whisper.audio import decode_audio
+                        y = decode_audio(audio_path, sampling_rate=22050)
+                        sr = 22050
+                    except Exception as e2:
+                        print(f"Final audio decode fallback failed: {e2}")
+                        return {"pronunciation_score": 0.0, "error": "Audio decode failed"}
         
         # 1. Zero Crossing Rate (Higher ZCR often correlates with cleaner fricatives/clarity)
         zcr = librosa.feature.zero_crossing_rate(y)
