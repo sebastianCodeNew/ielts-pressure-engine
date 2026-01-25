@@ -46,6 +46,10 @@ export default function TrainingCockpit() {
     mastery_level: number;
   }
   const [vocabList, setVocabList] = useState<VocabularyItem[]>([]);
+  
+  // Part 2 Protocol State
+  const [part2Phase, setPart2Phase] = useState<"IDLE" | "PREP" | "SPEAKING">("IDLE");
+  const [timer, setTimer] = useState(0); // General purpose timer for Prep (60s) and Speak (120s)
 
   // Hint State
   const [showHint, setShowHint] = useState(false);
@@ -116,6 +120,34 @@ export default function TrainingCockpit() {
       submit();
     }
   }, [audioBlob, sessionId, speak, setAudioBlob]);
+
+  // PART 2 PROTOCOL LOGIC
+  useEffect(() => {
+    // 1. Detect Entry into Part 2
+    if (examPart === "PART_2" && part2Phase === "IDLE") {
+        setPart2Phase("PREP");
+        setTimer(60); // 1 Minute Prep
+    }
+
+    // 2. Timer Countdown
+    let interval: NodeJS.Timeout;
+    if (part2Phase === "PREP" && timer > 0) {
+        interval = setInterval(() => setTimer(t => t - 1), 1000);
+    } else if (part2Phase === "PREP" && timer === 0) {
+        // Auto-Transition to Speaking
+        setPart2Phase("SPEAKING");
+        setTimer(120); // 2 Minutes Speaking
+        startRecording();
+    } else if (part2Phase === "SPEAKING" && timer > 0) {
+        interval = setInterval(() => setTimer(t => t - 1), 1000);
+    } else if (part2Phase === "SPEAKING" && timer === 0) {
+        // Time's up! Force stop.
+        stopRecording();
+        // The existing useEffect will handle the audioBlob submission
+    }
+
+    return () => clearInterval(interval);
+  }, [examPart, part2Phase, timer, startRecording, stopRecording]);
 
   // IDLE STATE
   if (examPart === "INTRO" || examPart === "FINISHED") {
@@ -323,13 +355,69 @@ export default function TrainingCockpit() {
                     )}
                 </div>
 
-                {/* PANIC BUTTON / HINT */}
-                <button 
-                    onClick={handleGetHint}
-                    className="absolute bottom-12 right-12 flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-full text-zinc-500 hover:text-white hover:border-zinc-700 transition-all text-xs font-bold uppercase tracking-widest"
-                >
-                    <HelpCircle size={16} /> Idea Generator
-                </button>
+                {/* CONDITIONAL UI: PART 2 vs STANDARD */}
+                {examPart === "PART_2" && part2Phase !== "IDLE" ? (
+                    <div className="w-full max-w-2xl bg-white text-black p-8 rounded-xl shadow-2xl relative overflow-hidden">
+                        {/* Status Bar */}
+                        <div className={`absolute top-0 left-0 w-full h-2 ${part2Phase === 'PREP' ? 'bg-blue-500' : 'bg-red-500'} transition-colors`} />
+                        
+                        <div className="flex justify-between items-start mb-6">
+                            <div>
+                                <h3 className="text-sm font-black uppercase tracking-widest text-zinc-500 mb-1">
+                                    {part2Phase === "PREP" ? "Preparation Time" : "Long Turn"}
+                                </h3>
+                                <div className="text-5xl font-black tabular-nums tracking-tighter">
+                                    {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
+                                </div>
+                            </div>
+                            {part2Phase === "PREP" && (
+                                <button 
+                                    onClick={() => setTimer(0)} // Skip prep
+                                    className="px-4 py-2 bg-black text-white text-xs font-bold uppercase rounded hover:bg-zinc-800"
+                                >
+                                    Start Speaking Now
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Topic Card */}
+                        <div className="bg-zinc-100 p-6 rounded-lg border-l-4 border-black mb-6">
+                            <p className="font-serif text-xl italic leading-relaxed text-zinc-800">
+                                {feedback?.next_task_prompt || "Describe a place you like to visit..."}
+                            </p>
+                            <ul className="mt-4 space-y-2 text-sm text-zinc-600 list-disc pl-5">
+                                <li>You should say:</li>
+                                <li>Where it is</li>
+                                <li>When you went there</li>
+                                <li>And explain why you liked it</li>
+                            </ul>
+                        </div>
+
+                        {/* Visual Pressure Hook */}
+                        {part2Phase === "SPEAKING" && (
+                            <div className="w-full h-4 bg-zinc-200 rounded-full overflow-hidden">
+                                <div 
+                                    className={`h-full transition-all duration-1000 ${timer < 20 ? 'bg-red-500' : timer < 60 ? 'bg-yellow-500' : 'bg-emerald-500'}`}
+                                    style={{ width: `${(timer / 120) * 100}%` }}
+                                />
+                            </div>
+                        )}
+                        
+                        {part2Phase === "PREP" && (
+                            <div className="text-xs text-zinc-400 font-medium mt-4">
+                                Use this time to take notes. Do not speak yet.
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    /* STANDARD UI PANIC BUTTON / HINT */
+                    <button 
+                        onClick={handleGetHint}
+                        className="absolute bottom-12 right-12 flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-full text-zinc-500 hover:text-white hover:border-zinc-700 transition-all text-xs font-bold uppercase tracking-widest"
+                    >
+                        <HelpCircle size={16} /> Idea Generator
+                    </button>
+                )}
 
                 {/* HINT CARD POPUP */}
                 {showHint && hintData && (
