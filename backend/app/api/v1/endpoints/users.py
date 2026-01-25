@@ -38,7 +38,9 @@ def get_user_stats(user_id: str = "default_user", db: Session = Depends(get_db))
             {"name": f"Attempt {i+1}", "score": s.overall_band_score} 
             for i, s in enumerate(sessions[-6:]) if s.overall_band_score
         ],
-        "skill_breakdown": skill_breakdown
+        "skill_breakdown": skill_breakdown,
+        "target_band": user.target_band,
+        "weakness": user.weakness
     }
 
 @router.get("/me/history")
@@ -53,3 +55,20 @@ def get_user_history(user_id: str = "default_user", db: Session = Depends(get_db
             "status": s.status
         } for s in sessions
     ]
+
+from pydantic import BaseModel
+
+class UserProfileUpdate(BaseModel):
+    target_band: str
+    weakness: str
+
+@router.put("/me")
+def update_user_profile(profile: UserProfileUpdate, user_id: str = "default_user", db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    user.target_band = profile.target_band
+    user.weakness = profile.weakness
+    db.commit()
+    return {"status": "updated", "target_band": user.target_band, "weakness": user.weakness}

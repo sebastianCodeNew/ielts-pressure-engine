@@ -32,31 +32,25 @@ def process_user_attempt(
         current_part = exam_session.current_part
         current_prompt = exam_session.current_prompt or "General topic"
         
+        # Load User Profile
+        user = db.query(User).filter(User.id == exam_session.user_id).first()
+        target_band = user.target_band if user else "7.5"
+        weakness = user.weakness if user else "General"
+
         current_state = AgentState(
             session_id=session_id,
             stress_level=0.5,
             consecutive_failures=0,
             fluency_trend="stable",
-            history=[], # We could load real history here if needed
-            current_part=current_part
+            history=[], 
+            current_part=current_part,
+            target_band=target_band,
+            weakness=weakness
         )
     else:
-        db_session = db.query(SessionModel).filter(SessionModel.session_id == session_id).first()
-        if not db_session:
-            db_session = SessionModel(
-                session_id=session_id,
-                current_prompt="Describe the room you are in right now."
-            )
-            db.add(db_session)
-            db.commit()
-        
-        current_state = AgentState(
-            session_id=db_session.session_id,
-            stress_level=db_session.stress_level,
-            consecutive_failures=db_session.consecutive_failures,
-            fluency_trend=db_session.fluency_trend,
-        )
-        current_prompt = db_session.current_prompt
+        # Legacy/Testing mode support
+        current_state = AgentState(session_id=session_id, stress_level=0.5, consecutive_failures=0, fluency_trend="stable")
+        current_prompt = "Describe the room you are in right now."
     
     # 2. TRANSCRIBE
     print(f"--- Processing Attempt (ExamMode={is_exam_mode}, Prompt='{current_prompt}') ---")
@@ -120,13 +114,24 @@ def process_user_attempt(
         if part_count >= 2:
             if current_part == "PART_1":
                 exam_session.current_part = "PART_2"
-                exam_session.current_prompt = "Describe a place you like to visit." # Default for Part 2 start
+                # FORCE UI Update: Override the agent's follow-up with the hardcoded start of Part 2
+                new_prompt = "Describe a place you like to visit."
+                exam_session.current_prompt = new_prompt
+                intervention.next_task_prompt = new_prompt 
+                intervention.action_id = "TRANSITION_PART_2"
+                
             elif current_part == "PART_2":
                 exam_session.current_part = "PART_3"
-                exam_session.current_prompt = intervention.next_task_prompt # Follow up on P2
+                # For Part 3, we use the Agent's follow up or a bridge, 
+                # but let's ensure it's explicitly set if null
+                if not intervention.next_task_prompt:
+                     intervention.next_task_prompt = "Let's discuss this topic further."
+                exam_session.current_prompt = intervention.next_task_prompt
             else:
                 exam_session.status = "COMPLETED"
                 exam_session.end_time = datetime.utcnow()
+                exam_session.current_prompt = "Exam Completed"
+                intervention.next_task_prompt = "Thank you, the exam is finished."
                 
                 # Calculate real summary scores from all attempts
                 all_attempts = db.query(QuestionAttempt).filter(QuestionAttempt.session_id == session_id).all()

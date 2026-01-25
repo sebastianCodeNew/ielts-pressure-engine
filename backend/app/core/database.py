@@ -26,6 +26,10 @@ class User(Base):
     # Stats
     total_exams_taken = Column(Integer, default=0)
     average_band_score = Column(Float, default=0.0)
+    
+    # Preferences
+    target_band = Column(String, default="6.5")
+    weakness = Column(String, default="General")
 
 class ExamSession(Base):
     __tablename__ = "exam_sessions"
@@ -39,12 +43,12 @@ class ExamSession(Base):
     
     exam_type = Column(String, default="FULL_MOCK") 
     current_part = Column(String, default="PART_1") 
-    current_prompt = Column(String, nullable=True) # NEW
+    current_prompt = Column(String, nullable=True) 
     
     # Overall Scores
     overall_band_score = Column(Float, nullable=True)
     fluency_score = Column(Float, nullable=True)
-    coherence_score = Column(Float, nullable=True) # NEW
+    coherence_score = Column(Float, nullable=True) 
     lexical_resource_score = Column(Float, nullable=True)
     grammatical_range_score = Column(Float, nullable=True)
     pronunciation_score = Column(Float, nullable=True)
@@ -128,6 +132,8 @@ def init_db():
             conn.execute(text("ALTER TABLE question_attempts ADD COLUMN grammar_complexity FLOAT"))
         if "pronunciation_score" not in cols_qa:
             conn.execute(text("ALTER TABLE question_attempts ADD COLUMN pronunciation_score FLOAT"))
+        if "improved_response" not in cols_qa:
+            conn.execute(text("ALTER TABLE question_attempts ADD COLUMN improved_response TEXT"))
         
         res = conn.execute(text("PRAGMA table_info(exam_sessions)"))
         cols_es = [row[1] for row in res]
@@ -135,6 +141,15 @@ def init_db():
             conn.execute(text("ALTER TABLE exam_sessions ADD COLUMN coherence_score FLOAT"))
         if "current_prompt" not in cols_es:
             conn.execute(text("ALTER TABLE exam_sessions ADD COLUMN current_prompt TEXT"))
+        
+        # User Migrations
+        res = conn.execute(text("PRAGMA table_info(users)"))
+        cols_u = [row[1] for row in res]
+        # Check carefully to avoid error if column exists
+        if "target_band" not in cols_u:
+            conn.execute(text("ALTER TABLE users ADD COLUMN target_band VARCHAR DEFAULT '6.5'"))
+        if "weakness" not in cols_u:
+            conn.execute(text("ALTER TABLE users ADD COLUMN weakness VARCHAR DEFAULT 'General'"))
             
         conn.commit()
     print("--- Database Schema Verified & Migrated ---")

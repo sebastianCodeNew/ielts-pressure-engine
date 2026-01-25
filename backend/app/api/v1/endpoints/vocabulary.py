@@ -12,6 +12,19 @@ def get_vocabulary(user_id: str = "default_user", db: Session = Depends(get_db))
 
 @router.post("/", response_model=VocabularyItemSchema)
 def add_vocabulary(item: VocabularyCreate, user_id: str = "default_user", db: Session = Depends(get_db)):
+    # Check for duplicate
+    existing = db.query(VocabularyItem).filter(
+        VocabularyItem.user_id == user_id, 
+        VocabularyItem.word == item.word
+    ).first()
+    
+    if existing:
+        # Update last_reviewed instead of duplicating (Idempotency)
+        existing.last_reviewed_at = datetime.utcnow()
+        db.commit()
+        db.refresh(existing)
+        return existing
+
     db_item = VocabularyItem(
         user_id=user_id,
         word=item.word,

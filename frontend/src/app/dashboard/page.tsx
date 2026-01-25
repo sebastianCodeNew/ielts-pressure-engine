@@ -14,7 +14,7 @@ import AchievementsList from "@/components/Achievements";
 
 interface ScoreData { name: string; score: number; }
 interface SkillData { subject: string; A: number; fullMark: number; }
-interface StatsData { average_score: number; total_exams: number; recent_scores: ScoreData[]; skill_breakdown: SkillData[]; }
+interface StatsData { average_score: number; total_exams: number; recent_scores: ScoreData[]; skill_breakdown: SkillData[]; target_band?: string; weakness?: string; }
 interface RecentExam { date: string; topic: string; duration: string; score: number; status: string; }
 interface StudyPlanItem { day: string; focus: string; tasks: string[]; }
 interface StudyPlan { plan: StudyPlanItem[]; }
@@ -69,7 +69,7 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h1 className="text-4xl font-black text-white tracking-tighter uppercase">Elite <span className="text-red-600">Dashboard</span></h1>
-          <p className="text-zinc-500 mt-2 font-medium">Targeting <span className="text-white font-bold">Band 8.5</span> • 12 days until exam</p>
+          <p className="text-zinc-500 mt-2 font-medium">Targeting <span className="text-white font-bold">Band {stats?.target_band || "7.5"}</span> • Focus: {stats?.weakness || "Everything"}</p>
         </div>
         <div className="flex gap-4 w-full md:w-auto">
            <button 
@@ -130,7 +130,7 @@ export default function Dashboard() {
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <StatBox icon={TrendingUp} label="Band Score" value={stats?.average_score?.toFixed(1) || "0.0"} trend="+0.5" color="text-red-500" />
-                <StatBox icon={Award} label="Mocks Done" value={stats?.total_exams || "0"} trend="+2" color="text-amber-500" />
+                <StatBox icon={Award} label="Mocks Done" value={stats?.total_exams?.toString() || "0"} trend="+2" color="text-amber-500" />
                 <StatBox icon={BookOpen} label="Vocab Gems" value="482" trend="+15" color="text-emerald-500" />
             </div>
 

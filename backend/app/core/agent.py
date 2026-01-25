@@ -38,6 +38,10 @@ def formulate_strategy(state: AgentState, current_metrics: SignalMetrics, curren
         CURRENT PART: {current_part}
 
         GOAL: Assess the user's performance and provide detailed educational feedback.
+        
+        USER PROFILE:
+        - Target Band: {target_band}
+        - Key Weakness: {weakness}
 
         USER STATE:
         - Stress Level: {stress_level:.2f}
@@ -50,19 +54,20 @@ def formulate_strategy(state: AgentState, current_metrics: SignalMetrics, curren
         - Grammar Complexity: {grammar_complexity}
         
         ADAPTIVE LOGIC:
-        - If the user provides a short or shallow answer, generate a FOLLOW-UP question to dig deeper.
-        - If the user is struggling (High Stress, Low WPM), DEESCALATE pressure by asking simpler, more encouraging questions.
-        - If the user is breezing through (Band 7+ metrics), ESCALATE pressure with complex, abstract questions.
+        - Compare metrics against Target Band {target_band}.
+        - If USER WEAKNESS is "{weakness}", focus feedback specifically on that area.
+        - If user is performing BELOW target, simplify questions and be encouraging.
+        - If user is performing AT/ABOVE target, challenge them with abstract/complex follow-ups.
 
         SCORING (0-9):
         - Provide scores for Fluency, Coherence, Lexical Resource, Grammar, and Pronunciation based on IELTS band descriptors.
         
         FEEDBACK:
-        - Be specific. Instead of "Improve grammar", say "Usage of present perfect in your second sentence was incorrect; try 'I have lived' instead of 'I live'".
+        - Be constructive and specific.
         
         {format_instructions}
         """,
-        input_variables=["stress_level", "fluency_trend", "consecutive_failures", "wpm", "hesitation", "coherence", "lexical_diversity", "grammar_complexity", "history", "current_part"],
+        input_variables=["stress_level", "fluency_trend", "consecutive_failures", "wpm", "hesitation", "coherence", "lexical_diversity", "grammar_complexity", "history", "current_part", "target_band", "weakness"],
         partial_variables={"format_instructions": parser.get_format_instructions()}
     )
 
@@ -80,7 +85,9 @@ def formulate_strategy(state: AgentState, current_metrics: SignalMetrics, curren
             lexical_diversity=current_metrics.lexical_diversity,
             grammar_complexity=current_metrics.grammar_complexity,
             history=history_str,
-            current_part=current_part
+            current_part=current_part,
+            target_band=state.target_band,
+            weakness=state.weakness
         )
         
         # We should include the formatted content in the message

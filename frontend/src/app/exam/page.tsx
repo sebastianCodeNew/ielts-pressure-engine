@@ -33,6 +33,39 @@ export default function ExamSimulator() {
   const [feedback, setFeedback] = useState<FeedbackData | null>(null);
   const [processing, setProcessing] = useState(false);
 
+  // Add Hint State
+  const [showHint, setShowHint] = useState(false);
+  const [hintData, setHintData] = useState<{ vocabulary: string[]; starter: string; grammar_tip: string } | null>(null);
+  const [isBeginner, setIsBeginner] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
+  useEffect(() => {
+    async function checkUserLevel() {
+        try {
+            const stats = await ApiClient.getStats();
+            if (stats.target_band && parseFloat(stats.target_band) < 6.5) {
+                setIsBeginner(true);
+            }
+        } catch(e) {
+            console.error("Profile check failed", e);
+        } finally {
+            setLoadingProfile(false);
+        }
+    }
+    checkUserLevel();
+  }, []);
+
+  const handleGetHint = async () => {
+    if (!sessionId) return;
+    try {
+      const data = await ApiClient.getHint(sessionId);
+      setHintData(data);
+      setShowHint(true);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const startExam = async () => {
     try {
       const session = await ApiClient.startExam("default_user", "FULL_MOCK");
@@ -48,6 +81,7 @@ export default function ExamSimulator() {
 
   const router = useRouter();
 
+  // ... (Submission Effect remains the same) ...
   useEffect(() => {
     if (audioBlob && sessionId) {
       const submit = async () => {
@@ -83,7 +117,11 @@ export default function ExamSimulator() {
     }
   }, [audioBlob, sessionId, speak, setAudioBlob, router]);
 
+
   if (examPart === "INTRO") {
+    // We can keep a small loading state if needed, or just render immediately
+    // if (loadingProfile) return ...
+
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-8 animate-in fade-in zoom-in duration-500">
         <div className="w-24 h-24 bg-red-600 rounded-3xl flex items-center justify-center rotate-3 shadow-2xl">
@@ -121,14 +159,24 @@ export default function ExamSimulator() {
           <PartIndicator active={examPart === "PART_2"} label="Part 2" />
           <PartIndicator active={examPart === "PART_3"} label="Part 3" />
         </div>
-        <div className="flex items-center gap-2 text-zinc-500 text-xs font-bold uppercase tracking-widest">
-          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          Live AI Session
+        <div className="flex items-center gap-2">
+          {/* Hint Button */}
+          <button 
+             onClick={handleGetHint}
+             className="text-xs font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition-colors"
+          >
+             Stuck? Get Help
+          </button>
+          <div className="w-px h-4 bg-zinc-800 mx-2"/>
+          <div className="flex items-center gap-2 text-zinc-500 text-xs font-bold uppercase tracking-widest">
+            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            Live AI Session
+          </div>
         </div>
       </div>
 
       {/* Examiner Prompt */}
-      <div className="bg-[#12121a] border border-zinc-800/50 p-10 rounded-[40px] shadow-2xl relative overflow-hidden group">
+      <div className="bg-[#12121a] border border-zinc-800/50 p-10 rounded-[40px] shadow-2xl relative overflow-visible group">
         <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
           <Wand2 size={120} />
         </div>
@@ -155,6 +203,11 @@ export default function ExamSimulator() {
             </div>
           )}
         </div>
+
+        {/* Hints Overlay */}
+        {showHint && hintData && (
+          <HintCard hint={hintData} onClose={() => setShowHint(false)} />
+        )}
       </div>
 
       {/* Waveform Visualization */}
@@ -229,6 +282,41 @@ function PartIndicator({ active, label }: { active: boolean; label: string }) {
       <span className="text-xs font-black uppercase tracking-widest">
         {label}
       </span>
+    </div>
+  );
+}
+
+function HintCard({ hint, onClose }: { hint: { vocabulary: string[]; starter: string; grammar_tip: string }; onClose: () => void }) {
+  return (
+    <div className="absolute inset-x-0 -bottom-4 translate-y-full bg-zinc-900 border border-zinc-800 p-6 rounded-3xl z-20 shadow-2xl animate-in slide-in-from-top-4">
+      <div className="flex justify-between items-start mb-4">
+        <h4 className="text-sm font-bold text-yellow-500 uppercase tracking-widest flex items-center gap-2">
+          <Wand2 size={16} /> Examiner's Tip
+        </h4>
+        <button onClick={onClose} className="text-zinc-500 hover:text-white">
+          <Square size={16} />
+        </button>
+      </div>
+      
+      <div className="space-y-4">
+        <div>
+          <p className="text-xs text-zinc-500 mb-1">Useful Vocabulary:</p>
+          <div className="flex flex-wrap gap-2">
+            {hint.vocabulary.map((w, i) => (
+              <span key={i} className="px-2 py-1 bg-zinc-800 text-zinc-300 rounded text-sm">{w}</span>
+            ))}
+          </div>
+        </div>
+        
+        <div>
+          <p className="text-xs text-zinc-500 mb-1">Sentence Starter:</p>
+          <p className="text-zinc-200 italic">"{hint.starter}"</p>
+        </div>
+        
+        <div className="pt-2 border-t border-zinc-800">
+          <p className="text-xs text-zinc-400">💡 {hint.grammar_tip}</p>
+        </div>
+      </div>
     </div>
   );
 }

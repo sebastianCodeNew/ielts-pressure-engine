@@ -6,6 +6,8 @@ import {
   Sparkles, ShieldCheck, Trophy
 } from "lucide-react";
 
+import { ApiClient } from "@/lib/api";
+
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -15,9 +17,27 @@ export default function OnboardingPage() {
   });
   const router = useRouter();
 
-  const nextStep = () => {
-    if (step < 3) setStep(step + 1);
-    else router.push("/dashboard");
+  const [saving, setSaving] = useState(false);
+  
+  const nextStep = async () => {
+    if (step < 3) {
+      setStep(step + 1);
+    } else {
+      setSaving(true);
+      try {
+        await ApiClient.updateProfile({
+            target_band: formData.targetBand,
+            weakness: formData.weakness
+        });
+        router.push("/dashboard");
+      } catch (e) {
+        console.error("Onboarding Save Failed", e);
+        // Fallback for demo navigation if API is down
+        router.push("/dashboard");
+      } finally {
+        setSaving(false);
+      }
+    }
   };
 
   return (
