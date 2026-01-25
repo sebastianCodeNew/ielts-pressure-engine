@@ -32,6 +32,7 @@ export default function TrainingCockpit() {
   const [processing, setProcessing] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [targetBand, setTargetBand] = useState("7.5");
+  const [finalScore, setFinalScore] = useState<number | null>(null);
 
   // Hint State
   const [showHint, setShowHint] = useState(false);
@@ -84,6 +85,7 @@ export default function TrainingCockpit() {
           
           if (session.status === "COMPLETED") {
             setExamPart("FINISHED");
+            if (session.overall_band_score) setFinalScore(session.overall_band_score);
             setShowStats(true); 
           } else {
              const validParts = ["PART_1", "PART_2", "PART_3"];
@@ -149,12 +151,16 @@ export default function TrainingCockpit() {
                         <h2 className="text-2xl font-bold text-white mb-4">Performance Monitor</h2>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="p-6 bg-zinc-900 rounded-2xl border border-zinc-800">
-                                <p className="text-zinc-500 text-xs uppercase font-bold">Current Estimate</p>
-                                <p className="text-4xl font-black text-white mt-2">6.5</p>
+                                <p className="text-zinc-500 text-xs uppercase font-bold">Latest Session</p>
+                                <p className="text-4xl font-black text-white mt-2">
+                                    {finalScore ? finalScore.toFixed(1) : "Incomplete"}
+                                </p>
                             </div>
                             <div className="p-6 bg-zinc-900 rounded-2xl border border-zinc-800">
                                 <p className="text-zinc-500 text-xs uppercase font-bold">Target Gap</p>
-                                <p className="text-4xl font-black text-red-500 mt-2">-1.0</p>
+                                <p className={`text-4xl font-black mt-2 ${finalScore && finalScore >= parseFloat(targetBand) ? 'text-emerald-500' : 'text-red-500'}`}>
+                                    {finalScore ? (finalScore - parseFloat(targetBand)).toFixed(1) : "..."} 
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -310,6 +316,12 @@ export default function TrainingCockpit() {
                             <p className="text-emerald-100 text-sm italic leading-relaxed relative z-10">
                                 "{feedback.ideal_response || "Excellent answer. Keep up the fluency."}"
                             </p>
+                            <button 
+                                onClick={() => speak(feedback.ideal_response || "Excellent answer.")}
+                                className="mt-4 flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-widest hover:text-white transition-colors"
+                            >
+                                <Play size={12} className="fill-current" /> Listen to Native Speaker
+                            </button>
                         </div>
                         <div className="flex gap-4 mt-8">
                             <button onClick={() => setFeedback(null)} className="flex-1 py-3 bg-zinc-800 text-zinc-400 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-zinc-700 transition-all">

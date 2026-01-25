@@ -21,7 +21,7 @@ def run_simulation():
     
     # 2. Simulate Attempt 1: Good Flow
     print("\n--- Try 1: Good Fluency ---")
-    metrics_1 = SignalMetrics(fluency_wpm=120, hesitation_ratio=0.1, grammar_error_count=0, coherence_score=0.9, is_complete=True)
+    metrics_1 = SignalMetrics(fluency_wpm=120, hesitation_ratio=0.1, grammar_error_count=0, coherence_score=0.9, lexical_diversity=0.8, grammar_complexity=0.7, pronunciation_score=0.8, is_complete=True)
     attempt_1 = UserAttempt(task_id="1", transcript="I went to the store.", audio_duration=10.0)
     
     # Decision
@@ -42,7 +42,7 @@ def run_simulation():
     
     # 3. Simulate Attempt 2: Stuttering (High Stress Input)
     print("\n--- Try 2: Low Fluency (Stuttering) ---")
-    metrics_2 = SignalMetrics(fluency_wpm=40, hesitation_ratio=0.6, grammar_error_count=0, coherence_score=0.8, is_complete=True)
+    metrics_2 = SignalMetrics(fluency_wpm=40, hesitation_ratio=0.6, grammar_error_count=0, coherence_score=0.8, lexical_diversity=0.3, grammar_complexity=0.3, pronunciation_score=0.4, is_complete=True)
     attempt_2 = UserAttempt(task_id="2", transcript="I... uh...", audio_duration=10.0)
 
     # Update State
@@ -51,7 +51,7 @@ def run_simulation():
     
     # 4. Simulate Failure
     print("\n--- Try 3: Total Failure ---")
-    metrics_3 = SignalMetrics(fluency_wpm=20, hesitation_ratio=0.8, grammar_error_count=5, coherence_score=0.2, is_complete=False)
+    metrics_3 = SignalMetrics(fluency_wpm=20, hesitation_ratio=0.8, grammar_error_count=5, coherence_score=0.2, lexical_diversity=0.1, grammar_complexity=0.1, pronunciation_score=0.1, is_complete=False)
     attempt_3 = UserAttempt(task_id="3", transcript="...", audio_duration=10.0)
     
     state = update_state(state, attempt_3, metrics_3, "FAIL", "Describe your day")

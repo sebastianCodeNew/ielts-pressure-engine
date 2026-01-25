@@ -138,7 +138,7 @@ def process_user_attempt(
                 if all_attempts:
                     def safe_avg(values):
                         nums = [v for v in values if v is not None]
-                        return sum(nums) / len(nums) if nums else 0.0
+                        return sum(nums) / len(nums) if nums and len(nums) > 0 else 1.0 # Default to 1.0 (lowest band) instead of 0 to avoid skewing logic
 
                     avg_wpm = safe_avg([a.wpm for a in all_attempts])
                     avg_coherence = safe_avg([a.coherence_score for a in all_attempts])
@@ -160,6 +160,23 @@ def process_user_attempt(
                         exam_session.grammatical_range_score + 
                         exam_session.pronunciation_score
                     ) / 5, 1) # Divided by 5 metrics now
+
+                    # UPDATE USER AGGREGATE STATS
+                    user = db.query(User).filter(User.id == exam_session.user_id).first()
+                    if user:
+                        # Fetch all completed session scores for this user
+                        all_scores = db.query(ExamSession.overall_band_score).filter(
+                            ExamSession.user_id == user.id,
+                            ExamSession.overall_band_score.isnot(None)
+                        ).all()
+                        
+                        # Add the current one (it might not be committed yet so query might miss it, add manually)
+                        score_list = [s[0] for s in all_scores]
+                        score_list.append(exam_session.overall_band_score)
+                        
+                        user.total_exams_taken = len(score_list)
+                        user.average_band_score = round(sum(score_list) / len(score_list), 1)
+
         else:
             # Same part, update prompt for next question
             exam_session.current_prompt = intervention.next_task_prompt
