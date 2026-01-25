@@ -33,6 +33,19 @@ export default function TrainingCockpit() {
   const [showStats, setShowStats] = useState(false);
   const [targetBand, setTargetBand] = useState("7.5");
   const [finalScore, setFinalScore] = useState<number | null>(null);
+  
+  // Vault State
+  const [showVault, setShowVault] = useState(false);
+  const [loadingVault, setLoadingVault] = useState(false);
+  
+  interface VocabularyItem {
+    id: number;
+    word: string;
+    definition: string;
+    context_sentence?: string;
+    mastery_level: number;
+  }
+  const [vocabList, setVocabList] = useState<VocabularyItem[]>([]);
 
   // Hint State
   const [showHint, setShowHint] = useState(false);
@@ -132,14 +145,77 @@ export default function TrainingCockpit() {
                 </div>
 
                 <div className="flex gap-4 justify-center">
-                    <button onClick={() => setShowStats(true)} className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-white hover:border-zinc-600 transition-all">
+                    <button onClick={() => setShowStats(true)} className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-white hover:border-zinc-600 transition-all group relative">
                         <BarChart3 size={24} />
+                        <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Stats</span>
                     </button>
-                    <button className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-white hover:border-zinc-600 transition-all">
+                    <button onClick={() => {
+                        setShowVault(true);
+                        setLoadingVault(true);
+                        ApiClient.getVocabulary()
+                            .then((data) => {
+                                setVocabList(data);
+                                setLoadingVault(false);
+                            })
+                            .catch((err) => {
+                                console.error(err);
+                                setLoadingVault(false);
+                            });
+                    }} className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-white hover:border-zinc-600 transition-all group relative">
+                        <Bookmark size={24} />
+                        <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">My Vault</span>
+                    </button>
+                    <button className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-white hover:border-zinc-600 transition-all group relative">
                         <Users size={24} />
+                         <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Community</span>
                     </button>
                 </div>
             </div>
+
+            {/* Vocabulary Vault Modal */}
+            {showVault && (
+                <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in">
+                    <div className="bg-[#18181b] w-full max-w-4xl h-[80vh] rounded-3xl border border-zinc-800 flex flex-col relative overflow-hidden">
+                        <div className="p-8 border-b border-zinc-800 flex justify-between items-center">
+                            <div>
+                                <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                                    <Bookmark className="fill-emerald-500 text-emerald-500"/> Word Vault
+                                </h2>
+                                <p className="text-zinc-500 text-sm mt-1">Your active collection of high-band vocabulary.</p>
+                            </div>
+                            <button onClick={() => setShowVault(false)} className="text-zinc-500 hover:text-white"><X size={24}/></button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 custom-scrollbar">
+                            {loadingVault ? (
+                                <div className="col-span-full flex flex-col items-center justify-center h-full">
+                                    <div className="w-8 h-8 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mb-4"/>
+                                    <p className="text-zinc-500 text-sm">Opening Vault...</p>
+                                </div>
+                            ) : vocabList.length === 0 ? (
+                                <div className="col-span-full flex flex-col items-center justify-center text-zinc-600 py-20">
+                                    <Bookmark size={48} className="mb-4 opacity-20"/>
+                                    <p>Your vault is empty.</p>
+                                    <p className="text-sm">Use the "Idea Generator" during exams to save words.</p>
+                                </div>
+                            ) : (
+                                vocabList.map((item, idx) => (
+                                    <div key={idx} className="bg-zinc-900/50 border border-zinc-800 p-6 rounded-xl hover:border-zinc-600 transition-all group">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h3 className="text-lg font-bold text-white">{item.word}</h3>
+                                            <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded uppercase">
+                                                Lvl {item.mastery_level || 1}
+                                            </span>
+                                        </div>
+                                        <p className="text-zinc-500 text-sm italic mb-4">"{item.context_sentence}"</p>
+                                        <p className="text-zinc-400 text-xs line-clamp-2">{item.definition}</p>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Stats Modal Overlay */}
             {showStats && (

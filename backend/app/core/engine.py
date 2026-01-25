@@ -5,7 +5,7 @@ from app.core.transcriber import transcribe_audio
 from app.core.evaluator import extract_signals
 from app.core.agent import formulate_strategy
 from app.core.state import AgentState, update_state
-from app.core.database import SessionModel, ExamSession, QuestionAttempt
+from app.core.database import SessionModel, ExamSession, QuestionAttempt, User
 from app.core.pronunciation import analyze_pronunciation
 
 def process_user_attempt(
