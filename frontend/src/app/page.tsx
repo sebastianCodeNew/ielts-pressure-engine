@@ -73,6 +73,7 @@ export default function TrainingCockpit() {
       setSessionId(session.id);
       setExamPart("PART_1");
       setPart2Phase("IDLE"); // Reset protocol state
+      setShadowingMode(false); // Reset shadowing
       
       // Use Dynamic Prompt from Backend
       const initialPrompt = session.current_prompt || "Welcome to the IELTS Speaking Mock Exam. Let's begin with Part 1. Can you tell me about your hometown?";
