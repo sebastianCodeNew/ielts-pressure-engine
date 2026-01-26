@@ -40,6 +40,7 @@ class Intervention(BaseModel):
     ideal_response: Optional[str] = None
     feedback_markdown: Optional[str] = None
     keywords: Optional[List[str]] = None
+    target_keywords: Optional[List[str]] = Field(default_factory=list, description="Target Band 8+ words for the user to use in the NEXT turn")
     
     # Specific feedback fields
     grammar_advice: Optional[str] = None

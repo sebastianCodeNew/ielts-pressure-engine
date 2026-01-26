@@ -25,6 +25,8 @@ export interface Intervention {
   ideal_response?: string;
   feedback_markdown?: string;
   keywords?: string[];
+  target_keywords?: string[];
+  stress_level?: number;
 }
 
 export interface TranslationResponse {

@@ -14,6 +14,7 @@ interface FeedbackData {
   ideal_response?: string;
   action_id?: string;
   stress_level?: number;
+  target_keywords?: string[];
 }
 
 export default function TrainingCockpit() {
@@ -60,6 +61,10 @@ export default function TrainingCockpit() {
   const [showHint, setShowHint] = useState(false);
   const [hintData, setHintData] = useState<{ vocabulary: string[]; starter: string; grammar_tip: string } | null>(null);
 
+  // Lexical Expansion State
+  const [usedKeywords, setUsedKeywords] = useState<string[]>([]);
+  const [silenceTimer, setSilenceTimer] = useState(0);
+
   // Final Load
   useEffect(() => {
     ApiClient.getStats().then(s => {
@@ -103,6 +108,15 @@ export default function TrainingCockpit() {
         try {
           const data = await ApiClient.submitExamAudio(sessionId, audioBlob);
           setFeedback(data);
+
+          // Keyword Hit Detection
+          if (data.target_keywords && data.feedback_markdown) {
+             const lowerTranscript = data.feedback_markdown.toLowerCase();
+             const hits = (data.target_keywords as string[]).filter(word => 
+                lowerTranscript.includes(word.toLowerCase())
+             );
+             setUsedKeywords(hits);
+          }
 
           if (data.next_task_prompt) {
             speak(data.next_task_prompt);
@@ -158,6 +172,18 @@ export default function TrainingCockpit() {
 
     return () => clearInterval(interval);
   }, [examPart, part2Phase, timer, startRecording, stopRecording]);
+
+  // Silence Detection Loop
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isRecording) {
+        // Mock increment for now to trigger nudge
+        interval = setInterval(() => setSilenceTimer(t => t + 1), 1000);
+    } else {
+        setSilenceTimer(0);
+    }
+    return () => { if(interval) clearInterval(interval); };
+  }, [isRecording]);
 
   // IDLE STATE
   if (examPart === "INTRO" || examPart === "FINISHED") {
@@ -348,6 +374,25 @@ export default function TrainingCockpit() {
             {/* MAIN INTERACTION ZONE */}
             <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-8 space-y-12">
                 
+                {/* LEXICAL MISSION HUD */}
+                {feedback?.target_keywords && feedback.target_keywords.length > 0 && (
+                    <div className="flex gap-3 mb-4 animate-in fade-in slide-in-from-top-4 duration-700">
+                        {feedback.target_keywords.map((word, i) => (
+                            <div 
+                                key={i}
+                                className={`px-4 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest transition-all duration-500 shadow-lg ${
+                                    usedKeywords.includes(word.toLowerCase()) 
+                                    ? 'bg-amber-500 border-amber-400 text-black shadow-amber-500/40 scale-110' 
+                                    : 'bg-zinc-900/80 border-zinc-700 text-zinc-400'
+                                }`}
+                            >
+                                <span className="mr-2 opacity-50">Target:</span>
+                                {word}
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 {/* PROMPT */}
                 <div className="text-center space-y-6 max-w-2xl">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-zinc-800 bg-zinc-900/50 text-zinc-400 text-[10px] font-bold uppercase tracking-widest">
@@ -359,8 +404,15 @@ export default function TrainingCockpit() {
                 </div>
 
                 {/* AUDIO VISUALIZER */}
-                <div className="h-24 w-full max-w-md flex items-center justify-center">
+                <div className="h-24 w-full max-w-md flex flex-col items-center justify-center relative">
                     <AudioWaveform isRecording={isRecording} audioStream={stream} />
+                    
+                    {/* FLUENCY NUDGE */}
+                    {isRecording && silenceTimer > 4 && (
+                        <div className="absolute -top-12 text-amber-500 text-[10px] font-black uppercase tracking-widest animate-pulse">
+                            Maintain your flow! Give an example...
+                        </div>
+                    )}
                 </div>
 
                 {/* CONTROLS */}

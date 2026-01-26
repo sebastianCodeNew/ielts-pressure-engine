@@ -65,6 +65,10 @@ def formulate_strategy(state: AgentState, current_metrics: SignalMetrics, curren
         FEEDBACK:
         - Be constructive and specific.
         
+        LEXICAL MISSION:
+        - Identify 3 advanced (Band 8+) vocabulary items or idioms relevant to the *next question* you are about to ask.
+        - List them in the `target_keywords` field.
+        
         {format_instructions}
         """,
         input_variables=["stress_level", "fluency_trend", "consecutive_failures", "wpm", "hesitation", "coherence", "lexical_diversity", "grammar_complexity", "history", "current_part", "target_band", "weakness"],
@@ -107,5 +111,6 @@ def formulate_strategy(state: AgentState, current_metrics: SignalMetrics, curren
             constraints={"timer": 45},
             ideal_response="I enjoy eating pasta because it is versatile and delicious.",
             feedback_markdown="- Speak more confidently.\n- Avoid pauses.",
-            keywords=["Delicious", "Versatile", "Cuisine", "Texture", "Flavor"]
+            keywords=["Delicious", "Versatile", "Cuisine", "Texture", "Flavor"],
+            target_keywords=["culinary", "delectable", "gastronomy"]
         )
