@@ -1,6 +1,7 @@
 import uuid
 import shutil
 import os
+import random
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -9,6 +10,16 @@ from app.schemas import ExamStartRequest, ExamSessionSchema, Intervention
 from app.core.engine import process_user_attempt 
 
 router = APIRouter()
+
+PART_1_TOPICS = [
+    "Tell me about your hometown.",
+    "Tell me about your job or studies.",
+    "Do you prefer living in a house or an apartment?",
+    "How do you usually spend your weekends?",
+    "Tell me about your family.",
+    "Do you like traveling?",
+    "What kind of music do you like?"
+]
 
 @router.post("/start", response_model=ExamSessionSchema)
 def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
@@ -20,13 +31,18 @@ def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
         db.commit()
 
     session_id = str(uuid.uuid4())
+    
+    # Randomize Topic
+    initial_prompt = random.choice(PART_1_TOPICS)
+
     new_session = ExamSession(
         id=session_id,
         user_id=request.user_id,
         exam_type=request.exam_type,
         current_part="PART_1",
-        current_prompt="Can you tell me about your hometown?", # Start with this
-        status="IN_PROGRESS"
+        current_prompt=initial_prompt,
+        status="IN_PROGRESS",
+        start_time=datetime.utcnow()
     )
     db.add(new_session)
     db.commit()

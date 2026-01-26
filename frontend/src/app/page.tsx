@@ -67,7 +67,11 @@ export default function TrainingCockpit() {
       const session = await ApiClient.startExam("default_user", "FULL_MOCK");
       setSessionId(session.id);
       setExamPart("PART_1");
-      const initialPrompt = "Welcome to the IELTS Speaking Mock Exam. Let's begin with Part 1. Can you tell me about your hometown?";
+      setPart2Phase("IDLE"); // Reset protocol state
+      
+      // Use Dynamic Prompt from Backend
+      const initialPrompt = session.current_prompt || "Welcome to the IELTS Speaking Mock Exam. Let's begin with Part 1. Can you tell me about your hometown?";
+      
       setFeedback({ next_task_prompt: initialPrompt });
       speak(initialPrompt);
     } catch (e) {

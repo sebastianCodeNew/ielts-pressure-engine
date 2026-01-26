@@ -111,27 +111,28 @@ def process_user_attempt(
             QuestionAttempt.part == current_part
         ).count() + 1
         
-        if part_count >= 2:
-            if current_part == "PART_1":
-                exam_session.current_part = "PART_2"
-                # FORCE UI Update: Override the agent's follow-up with the hardcoded start of Part 2
-                new_prompt = "Describe a place you like to visit."
-                exam_session.current_prompt = new_prompt
-                intervention.next_task_prompt = new_prompt 
-                intervention.action_id = "TRANSITION_PART_2"
-                
-            elif current_part == "PART_2":
-                exam_session.current_part = "PART_3"
-                # For Part 3, we use the Agent's follow up or a bridge, 
-                # but let's ensure it's explicitly set if null
-                if not intervention.next_task_prompt:
-                     intervention.next_task_prompt = "Let's discuss this topic further."
-                exam_session.current_prompt = intervention.next_task_prompt
-            else:
-                exam_session.status = "COMPLETED"
-                exam_session.end_time = datetime.utcnow()
-                exam_session.current_prompt = "Exam Completed"
-                intervention.next_task_prompt = "Thank you, the exam is finished."
+        if part_count >= 3 and current_part == "PART_1":
+             # End of Part 1 (Intro + 2 Follow-ups) -> Transition to Part 2
+             exam_session.current_part = "PART_2"
+             # FORCE UI Update: Override the agent's follow-up with the hardcoded start of Part 2
+             new_prompt = "Describe a place you like to visit."
+             exam_session.current_prompt = new_prompt
+             intervention.next_task_prompt = new_prompt 
+             intervention.action_id = "TRANSITION_PART_2"
+             
+        elif part_count >= 1 and current_part == "PART_2":
+             # End of Part 2 (1 Long Turn) -> Transition to Part 3
+             exam_session.current_part = "PART_3"
+             if not intervention.next_task_prompt:
+                  intervention.next_task_prompt = "Let's discuss this topic further."
+             exam_session.current_prompt = intervention.next_task_prompt
+             
+        elif part_count >= 4 and current_part == "PART_3":
+             # End of Part 3 (Deep Dive - 4 Questions) -> Finish
+             exam_session.status = "COMPLETED"
+             exam_session.end_time = datetime.utcnow()
+             exam_session.current_prompt = "Exam Completed"
+             intervention.next_task_prompt = "Thank you, the exam is finished."
                 
                 # Calculate real summary scores from all attempts
                 all_attempts = db.query(QuestionAttempt).filter(QuestionAttempt.session_id == session_id).all()
