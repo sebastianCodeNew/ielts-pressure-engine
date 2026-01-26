@@ -45,6 +45,9 @@ class Intervention(BaseModel):
     grammar_advice: Optional[str] = None
     vocabulary_advice: Optional[str] = None
     pronunciation_advice: Optional[str] = None
+    
+    # Real-time Engine State
+    stress_level: float = 0.0
 
 # --- EXAM FLOW ---
 class ExamStartRequest(BaseModel):

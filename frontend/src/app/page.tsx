@@ -13,6 +13,7 @@ interface FeedbackData {
   feedback_markdown?: string;
   ideal_response?: string;
   action_id?: string;
+  stress_level?: number;
 }
 
 export default function TrainingCockpit() {
@@ -51,11 +52,15 @@ export default function TrainingCockpit() {
   const [part2Phase, setPart2Phase] = useState<"IDLE" | "PREP" | "SPEAKING">("IDLE");
   const [timer, setTimer] = useState(0); // General purpose timer for Prep (60s) and Speak (120s)
 
+  // Shadowing State
+  const [shadowingMode, setShadowingMode] = useState(false);
+  const getSentences = (text: string) => text.split(/[.!?]+/).filter(s => s.trim().length > 0).map(s => s.trim() + ".");
+
   // Hint State
   const [showHint, setShowHint] = useState(false);
   const [hintData, setHintData] = useState<{ vocabulary: string[]; starter: string; grammar_tip: string } | null>(null);
 
-  // Initial Load
+  // Final Load
   useEffect(() => {
     ApiClient.getStats().then(s => {
         if(s.target_band) setTargetBand(s.target_band);
@@ -288,9 +293,27 @@ export default function TrainingCockpit() {
         
         {/* TOP HUD */}
         <div className="w-full h-16 border-b border-zinc-900 flex justify-between items-center px-6 bg-[#0d0d12]/80 backdrop-blur-md z-20">
-            <div className="flex items-center gap-4">
-                <span className="text-xs font-black text-red-600 uppercase tracking-widest px-2 py-1 bg-red-600/10 rounded">Live Session</span>
-                <span className="text-zinc-500 text-sm font-medium">Target: Band {targetBand}</span>
+            <div className="flex items-center gap-6">
+                <div className="flex items-center gap-4">
+                    <span className="text-xs font-black text-red-600 uppercase tracking-widest px-2 py-1 bg-red-600/10 rounded">Live Session</span>
+                    <span className="text-zinc-500 text-sm font-medium">Target: Band {targetBand}</span>
+                </div>
+                
+                {/* PRESSURE GAUGE */}
+                <div className="flex items-center gap-3 bg-zinc-900/50 px-4 py-1.5 rounded-full border border-zinc-800">
+                    <div className="flex flex-col items-center">
+                         <span className="text-[8px] font-black text-zinc-500 uppercase leading-none">Pressure</span>
+                         <span className={`text-[10px] font-bold leading-none mt-1 ${(feedback?.stress_level || 0) > 0.7 ? 'text-red-500 animate-pulse' : 'text-emerald-500'}`}>
+                            {Math.round((feedback?.stress_level || 0) * 100)}%
+                         </span>
+                    </div>
+                    <div className="w-24 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                        <div 
+                            className={`h-full transition-all duration-1000 ${(feedback?.stress_level || 0) > 0.7 ? 'bg-red-600' : (feedback?.stress_level || 0) > 0.4 ? 'bg-yellow-500' : 'bg-emerald-500'}`}
+                            style={{ width: `${(feedback?.stress_level || 0) * 100}%` }}
+                        />
+                    </div>
+                </div>
             </div>
             <div className="flex gap-2">
                 <PartBadge part="PART_1" current={examPart} label="Interview" />
@@ -434,7 +457,7 @@ export default function TrainingCockpit() {
                             <div>
                                 <p className="text-[10px] text-zinc-500 uppercase font-black mb-2">Key Vocabulary</p>
                                 <div className="flex flex-wrap gap-2">
-                                    {hintData.vocabulary.map((w,i) => (
+                                    {(hintData.vocabulary as string[]).map((w: string, i: number) => (
                                         <button 
                                             key={i} 
                                             onClick={(e) => {
@@ -476,28 +499,63 @@ export default function TrainingCockpit() {
 
                     {/* RIGHT: The Band 9 Mirror */}
                     <div className="space-y-4 border-l border-zinc-800 pl-12">
-                        <h4 className="text-xs font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2">
-                            <Users size={14}/> Band 9 Rewrite (The Mirror)
-                        </h4>
-                        <div className="p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl relative">
-                            <div className="absolute top-4 right-4 text-emerald-500/20"><Users size={48} /></div>
-                            <p className="text-emerald-100 text-sm italic leading-relaxed relative z-10">
-                                "{feedback.ideal_response || "Excellent answer. Keep up the fluency."}"
-                            </p>
+                        <div className="flex justify-between items-center">
+                            <h4 className="text-xs font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2">
+                                <Users size={14}/> Band 9 Rewrite (The Mirror)
+                            </h4>
                             <button 
-                                onClick={() => speak(feedback.ideal_response || "Excellent answer.")}
-                                className="mt-4 flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-widest hover:text-white transition-colors"
+                                onClick={() => setShadowingMode(!shadowingMode)}
+                                className={`px-3 py-1 rounded-full text-[10px] font-bold border transition-all ${shadowingMode ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-transparent border-zinc-700 text-zinc-500 hover:text-white hover:border-zinc-500'}`}
                             >
-                                <Play size={12} className="fill-current" /> Listen to Native Speaker
+                                {shadowingMode ? "Exit Shadowing" : "Shadowing Lab"}
                             </button>
                         </div>
+
+                        {!shadowingMode ? (
+                            <div className="p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl relative">
+                                <div className="absolute top-4 right-4 text-emerald-500/20"><Users size={48} /></div>
+                                <p className="text-emerald-100 text-sm italic leading-relaxed relative z-10">
+                                    "{feedback.ideal_response || "Excellent answer. Keep up the fluency."}"
+                                </p>
+                                <button 
+                                    onClick={() => speak(feedback.ideal_response || "Excellent answer.")}
+                                    className="mt-4 flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-widest hover:text-white transition-colors"
+                                >
+                                    <Play size={12} className="fill-current" /> Listen to Native Speaker
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                                {getSentences(feedback.ideal_response || "").map((s, i) => (
+                                    <div key={i} className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl flex justify-between items-center group hover:border-emerald-500/50 transition-all">
+                                        <p className="text-xs text-zinc-300 leading-relaxed max-w-[80%]">{s}</p>
+                                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button 
+                                                onClick={() => speak(s)}
+                                                className="p-2 bg-emerald-600/20 text-emerald-500 rounded-lg hover:bg-emerald-600/40"
+                                            >
+                                                <Play size={12} fill="currentColor"/>
+                                            </button>
+                                            <button 
+                                                className="p-2 bg-zinc-800 text-zinc-400 rounded-lg hover:text-white"
+                                                onClick={() => alert("Recording per sentence feature coming soon!")}
+                                            >
+                                                <Mic2 size={12}/>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         <div className="flex gap-4 mt-8">
-                            <button onClick={() => setFeedback(null)} className="flex-1 py-3 bg-zinc-800 text-zinc-400 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-zinc-700 transition-all">
+                            <button onClick={() => { setFeedback(null); setShadowingMode(false); }} className="flex-1 py-3 bg-zinc-800 text-zinc-400 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-zinc-700 transition-all">
                                 Next Question <ArrowRight size={14} className="inline ml-2"/>
                             </button>
                             <button 
                                 onClick={() => {
                                     setFeedback(null);
+                                    setShadowingMode(false);
                                     speak(feedback.next_task_prompt || "Try again.");
                                 }} 
                                 className="flex-1 py-3 bg-emerald-600 text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-emerald-500 transition-all shadow-lg flex items-center justify-center gap-2"
