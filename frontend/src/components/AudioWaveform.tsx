@@ -4,9 +4,10 @@ import { useEffect, useRef } from "react";
 interface AudioWaveformProps {
   isRecording: boolean;
   audioStream: MediaStream | null;
+  pulsing?: boolean;
 }
 
-export default function AudioWaveform({ isRecording, audioStream }: AudioWaveformProps) {
+export default function AudioWaveform({ isRecording, audioStream, pulsing }: AudioWaveformProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
   const analyzerRef = useRef<AnalyserNode | null>(null);
@@ -63,7 +64,7 @@ export default function AudioWaveform({ isRecording, audioStream }: AudioWavefor
   }, [isRecording, audioStream]);
 
   return (
-    <div className="w-full h-24 bg-zinc-900/20 backdrop-blur-sm rounded-2xl overflow-hidden flex items-center justify-center">
+    <div className={`w-full h-24 bg-zinc-900/20 backdrop-blur-sm rounded-2xl overflow-hidden flex items-center justify-center transition-all duration-500 ${pulsing ? 'border border-red-500/50 shadow-[0_0_20px_rgba(239,68,68,0.2)]' : 'border border-transparent'}`}>
       <canvas 
         ref={canvasRef} 
         width={400} 

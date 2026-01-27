@@ -62,10 +62,23 @@ export default function TrainingCockpit() {
   const [hintData, setHintData] = useState<{ vocabulary: string[]; starter: string; grammar_tip: string } | null>(null);
 
   // Lexical Expansion State
+  const [activeMission, setActiveMission] = useState<string[]>([]);
   const [usedKeywords, setUsedKeywords] = useState<string[]>([]);
   const [silenceTimer, setSilenceTimer] = useState(0);
 
   // Final Load
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isRecording) {
+      interval = setInterval(() => {
+        setSilenceTimer(s => s + 1);
+      }, 1000);
+    } else {
+      setSilenceTimer(0);
+    }
+    return () => clearInterval(interval);
+  }, [isRecording]);
+
   useEffect(() => {
     ApiClient.getStats().then(s => {
         if(s.target_band) setTargetBand(s.target_band);
@@ -82,6 +95,10 @@ export default function TrainingCockpit() {
       
       // Use Dynamic Prompt from Backend
       const initialPrompt = session.current_prompt || "Welcome to the IELTS Speaking Mock Exam. Let's begin with Part 1. Can you tell me about your hometown?";
+      
+      if (session.initial_keywords) {
+        setActiveMission(session.initial_keywords);
+      }
       
       setFeedback({ next_task_prompt: initialPrompt });
       speak(initialPrompt);
@@ -107,15 +124,22 @@ export default function TrainingCockpit() {
         setProcessing(true);
         try {
           const data = await ApiClient.submitExamAudio(sessionId, audioBlob);
-          setFeedback(data);
-
-          // Keyword Hit Detection
-          if (data.target_keywords && data.feedback_markdown) {
+          
+          // Keyword Hit Detection (Against mission that was active during recording)
+          if (activeMission.length > 0 && data.feedback_markdown) {
              const lowerTranscript = data.feedback_markdown.toLowerCase();
-             const hits = (data.target_keywords as string[]).filter(word => 
-                lowerTranscript.includes(word.toLowerCase())
-             );
+             const hits = activeMission.filter(word => {
+                const regex = new RegExp(`\\b${word.toLowerCase()}\\b`, 'i');
+                return regex.test(lowerTranscript);
+             });
              setUsedKeywords(hits);
+          }
+
+          setFeedback(data);
+          
+          // Update Active Mission for the NEXT turn
+          if (data.target_keywords) {
+            setActiveMission(data.target_keywords);
           }
 
           if (data.next_task_prompt) {
@@ -375,21 +399,25 @@ export default function TrainingCockpit() {
             <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-8 space-y-12">
                 
                 {/* LEXICAL MISSION HUD */}
-                {feedback?.target_keywords && feedback.target_keywords.length > 0 && (
-                    <div className="flex gap-3 mb-4 animate-in fade-in slide-in-from-top-4 duration-700">
-                        {feedback.target_keywords.map((word, i) => (
-                            <div 
-                                key={i}
-                                className={`px-4 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest transition-all duration-500 shadow-lg ${
-                                    usedKeywords.includes(word.toLowerCase()) 
-                                    ? 'bg-amber-500 border-amber-400 text-black shadow-amber-500/40 scale-110' 
-                                    : 'bg-zinc-900/80 border-zinc-700 text-zinc-400'
-                                }`}
-                            >
-                                <span className="mr-2 opacity-50">Target:</span>
-                                {word}
-                            </div>
-                        ))}
+                {activeMission.length > 0 && (
+                    <div className="flex flex-col items-center gap-3 mb-4 animate-in fade-in slide-in-from-top-4 duration-700">
+                        <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest bg-zinc-900/50 px-3 py-1 rounded-full border border-zinc-800/50 mb-1">
+                            Current Mission: Active Lexis
+                        </div>
+                        <div className="flex gap-3">
+                            {activeMission.map((word, i) => (
+                                <div 
+                                    key={i}
+                                    className={`px-4 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest transition-all duration-500 shadow-lg ${
+                                        usedKeywords.some(u => u.toLowerCase() === word.toLowerCase()) 
+                                        ? 'bg-amber-500 border-amber-400 text-black shadow-amber-500/40 scale-110' 
+                                        : 'bg-zinc-900/80 border-zinc-700 text-zinc-400'
+                                    }`}
+                                >
+                                    {word}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
 
@@ -405,7 +433,7 @@ export default function TrainingCockpit() {
 
                 {/* AUDIO VISUALIZER */}
                 <div className="h-24 w-full max-w-md flex flex-col items-center justify-center relative">
-                    <AudioWaveform isRecording={isRecording} audioStream={stream} />
+                    <AudioWaveform isRecording={isRecording} audioStream={stream} pulsing={isRecording && silenceTimer > 4} />
                     
                     {/* FLUENCY NUDGE */}
                     {isRecording && silenceTimer > 4 && (

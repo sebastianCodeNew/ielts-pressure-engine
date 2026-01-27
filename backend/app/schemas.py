@@ -61,6 +61,8 @@ class ExamSessionSchema(BaseModel):
     current_part: str
     status: str
     start_time: datetime
+    current_prompt: Optional[str] = None
+    initial_keywords: Optional[List[str]] = None
     overall_band_score: Optional[float] = None
 
 class ExamSummary(BaseModel):

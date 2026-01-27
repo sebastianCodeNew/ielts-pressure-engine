@@ -34,6 +34,18 @@ def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
     
     # Randomize Topic
     initial_prompt = random.choice(PART_1_TOPICS)
+    
+    # Map topics to initial Band 8+ keywords
+    TOPIC_KEYWORDS = {
+        "Tell me about your hometown.": ["picturesque", "bustling", "quaint"],
+        "Tell me about your job or studies.": ["meticulous", "demanding", "rewarding"],
+        "Do you prefer living in a house or an apartment?": ["contemporary", "spacious", "minimalist"],
+        "How do you usually spend your weekends?": ["leisurely", "rejuvenating", "unwind"],
+        "Tell me about your family.": ["tight-knit", "resemblance", "upbringing"],
+        "Do you like traveling?": ["wanderlust", "exotic", "itinerary"],
+        "What kind of music do you like?": ["melodic", "rhythmic", "eclectic"]
+    }
+    initial_keywords = TOPIC_KEYWORDS.get(initial_prompt, ["interesting", "significant", "diverse"])
 
     new_session = ExamSession(
         id=session_id,
@@ -41,6 +53,7 @@ def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
         exam_type=request.exam_type,
         current_part="PART_1",
         current_prompt=initial_prompt,
+        initial_keywords=initial_keywords,
         status="IN_PROGRESS",
         start_time=datetime.utcnow()
     )

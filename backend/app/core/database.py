@@ -44,6 +44,7 @@ class ExamSession(Base):
     exam_type = Column(String, default="FULL_MOCK") 
     current_part = Column(String, default="PART_1") 
     current_prompt = Column(String, nullable=True) 
+    initial_keywords = Column(JSON, nullable=True) 
     
     # Overall Scores
     overall_band_score = Column(Float, nullable=True)
@@ -141,6 +142,8 @@ def init_db():
             conn.execute(text("ALTER TABLE exam_sessions ADD COLUMN coherence_score FLOAT"))
         if "current_prompt" not in cols_es:
             conn.execute(text("ALTER TABLE exam_sessions ADD COLUMN current_prompt TEXT"))
+        if "initial_keywords" not in cols_es:
+            conn.execute(text("ALTER TABLE exam_sessions ADD COLUMN initial_keywords JSON"))
         
         # User Migrations
         res = conn.execute(text("PRAGMA table_info(users)"))
