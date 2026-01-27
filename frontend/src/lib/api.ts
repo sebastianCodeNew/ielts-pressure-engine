@@ -188,4 +188,18 @@ export class ApiClient {
     if (!res.ok) throw new Error("Failed to save vocabulary");
     return res.json();
   }
+
+  static async analyzeShadowing(targetText: string, blob: Blob): Promise<any> {
+    const formData = new FormData();
+    formData.append("file", blob, "shadow.webm");
+    
+    // We pass target_text as a query param or part of form data? 
+    // In my backend I used it as a param.
+    const res = await this.fetchWithRetry(`${API_BASE_URL}/v1/exams/analyze-shadowing?target_text=${encodeURIComponent(targetText)}`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok) throw new Error("Shadowing analysis failed");
+    return res.json();
+  }
 }

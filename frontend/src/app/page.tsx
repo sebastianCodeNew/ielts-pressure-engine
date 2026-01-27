@@ -60,11 +60,17 @@ export default function TrainingCockpit() {
   // Hint State
   const [showHint, setShowHint] = useState(false);
   const [hintData, setHintData] = useState<{ vocabulary: string[]; starter: string; grammar_tip: string } | null>(null);
+  const [isMasteryMode, setIsMasteryMode] = useState(false);
 
   // Lexical Expansion State
   const [activeMission, setActiveMission] = useState<string[]>([]);
   const [usedKeywords, setUsedKeywords] = useState<string[]>([]);
   const [silenceTimer, setSilenceTimer] = useState(0);
+
+  // Advanced Learning: Shadowing Mastery
+  const [shadowingIndex, setShadowingIndex] = useState<number | null>(null);
+  const [shadowResults, setShadowResults] = useState<Record<number, any>>({});
+  const [shadowProcessing, setShadowProcessing] = useState(false);
 
   // Final Load
   useEffect(() => {
@@ -120,54 +126,81 @@ export default function TrainingCockpit() {
 
   useEffect(() => {
     if (audioBlob && sessionId) {
-      const submit = async () => {
-        setProcessing(true);
-        try {
-          const data = await ApiClient.submitExamAudio(sessionId, audioBlob);
-          
-          // Keyword Hit Detection (Against mission that was active during recording)
-          if (activeMission.length > 0 && data.feedback_markdown) {
-             const lowerTranscript = data.feedback_markdown.toLowerCase();
-             const hits = activeMission.filter(word => {
-                const regex = new RegExp(`\\b${word.toLowerCase()}\\b`, 'i');
-                return regex.test(lowerTranscript);
-             });
-             setUsedKeywords(hits);
+      if (shadowingIndex !== null) {
+        // Handle Shadowing Submission
+        const sentences = getSentences(feedback?.ideal_response || "");
+        const targetText = sentences[shadowingIndex];
+        
+        const submitShadow = async () => {
+          setShadowProcessing(true);
+          try {
+            const result = await ApiClient.analyzeShadowing(targetText, audioBlob);
+            setShadowResults(prev => ({ ...prev, [shadowingIndex]: result }));
+          } catch (e) {
+            console.error(e);
+          } finally {
+            setShadowProcessing(false);
+            setShadowingIndex(null);
+            setAudioBlob(null);
           }
+        };
+        submitShadow();
+      } else {
+        // Handle standard Exam Submission
+        const submit = async () => {
+          setProcessing(true);
+          try {
+            const data = await ApiClient.submitExamAudio(sessionId, audioBlob);
+            
+            // Keyword Hit Detection (Against mission that was active during recording)
+            if (activeMission.length > 0 && data.feedback_markdown) {
+               const lowerTranscript = data.feedback_markdown.toLowerCase();
+               const hits = activeMission.filter(word => {
+                  const regex = new RegExp(`\\b${word.toLowerCase()}\\b`, 'i');
+                  return regex.test(lowerTranscript);
+               });
+               setUsedKeywords(hits);
+            }
 
-          setFeedback(data);
-          
-          // Update Active Mission for the NEXT turn
-          if (data.target_keywords) {
-            setActiveMission(data.target_keywords);
-          }
+            setFeedback(data);
+            
+            // If we were in Mastery Mode and passed, exit it
+            if (isMasteryMode && data.target_keywords) {
+               setIsMasteryMode(false);
+            }
 
-          if (data.next_task_prompt) {
-            speak(data.next_task_prompt);
-          }
+            // Update Active Mission for the NEXT turn
+            if (data.target_keywords) {
+              setActiveMission(data.target_keywords);
+            }
 
-          const session = await ApiClient.getExamStatus(sessionId);
-          
-          if (session.status === "COMPLETED") {
-            setExamPart("FINISHED");
-            if (session.overall_band_score) setFinalScore(session.overall_band_score);
-            setShowStats(true); 
-          } else {
-             const validParts = ["PART_1", "PART_2", "PART_3"];
-             if (validParts.includes(session.current_part)) {
-               setExamPart(session.current_part as any);
-             }
+            if (data.next_task_prompt) {
+              speak(data.next_task_prompt);
+            }
+
+            const session = await ApiClient.getExamStatus(sessionId);
+            
+            if (session.status === "COMPLETED") {
+              setExamPart("FINISHED");
+              if (session.overall_band_score) setFinalScore(session.overall_band_score);
+              setShowStats(true); 
+            } else {
+               const validParts = ["PART_1", "PART_2", "PART_3"];
+               if (validParts.includes(session.current_part)) {
+                 setExamPart(session.current_part as any);
+               }
+            }
+          } catch (e) {
+            console.error(e);
+          } finally {
+            setProcessing(false);
+            setAudioBlob(null);
           }
-        } catch (e) {
-          console.error(e);
-        } finally {
-          setProcessing(false);
-          setAudioBlob(null);
-        }
-      };
-      submit();
+        };
+        submit();
+      }
     }
-  }, [audioBlob, sessionId, speak, setAudioBlob]);
+  }, [audioBlob, sessionId, speak, setAudioBlob, shadowingIndex, activeMission, feedback]);
 
   // PART 2 PROTOCOL LOGIC
   useEffect(() => {
@@ -401,8 +434,9 @@ export default function TrainingCockpit() {
                 {/* LEXICAL MISSION HUD */}
                 {activeMission.length > 0 && (
                     <div className="flex flex-col items-center gap-3 mb-4 animate-in fade-in slide-in-from-top-4 duration-700">
-                        <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest bg-zinc-900/50 px-3 py-1 rounded-full border border-zinc-800/50 mb-1">
-                            Current Mission: Active Lexis
+                        <div className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border mb-1 flex items-center gap-2 ${isMasteryMode ? 'bg-amber-500/20 border-amber-500 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]' : 'bg-zinc-900/50 border-zinc-800/50 text-zinc-500'}`}>
+                            {isMasteryMode && <Wand2 size={10} className="animate-pulse" />}
+                            {isMasteryMode ? 'Mastery Mode: Use These Now' : 'Current Mission: Active Lexis'}
                         </div>
                         <div className="flex gap-3">
                             {activeMission.map((word, i) => (
@@ -501,9 +535,30 @@ export default function TrainingCockpit() {
                             </ul>
                         </div>
 
+                        {/* Story Scaffolding Arc */}
+                        {part2Phase === "SPEAKING" && (
+                            <div className="mt-8 pt-8 border-t border-zinc-200">
+                                <p className="text-[10px] font-black uppercase text-zinc-400 mb-6 tracking-widest text-center">Mastery Scaffold: Story Arc</p>
+                                <div className="flex justify-between relative px-4">
+                                    <div className="absolute top-1/2 left-0 w-full h-0.5 bg-zinc-200 -translate-y-1/2 -z-10" />
+                                    {[
+                                        { label: "Intro", time: 120 },
+                                        { label: "Core Story", time: 90 },
+                                        { label: "Description", time: 60 },
+                                        { label: "Feelings", time: 30 }
+                                    ].map((m, i) => (
+                                        <div key={i} className="flex flex-col items-center gap-2 bg-zinc-100 px-2 rounded-lg">
+                                            <div className={`w-4 h-4 rounded-full border-2 transition-all duration-500 ${timer <= m.time ? 'bg-emerald-500 border-emerald-500 scale-125 shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 'bg-white border-zinc-300'}`} />
+                                            <span className={`text-[9px] font-bold uppercase transition-colors ${timer <= m.time ? 'text-emerald-600' : 'text-zinc-400'}`}>{m.label}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Visual Pressure Hook */}
                         {part2Phase === "SPEAKING" && (
-                            <div className="w-full h-4 bg-zinc-200 rounded-full overflow-hidden">
+                            <div className="mt-8 w-full h-1 bg-zinc-200 rounded-full overflow-hidden">
                                 <div 
                                     className={`h-full transition-all duration-1000 ${timer < 20 ? 'bg-red-500' : timer < 60 ? 'bg-yellow-500' : 'bg-emerald-500'}`}
                                     style={{ width: `${(timer / 120) * 100}%` }}
@@ -608,9 +663,24 @@ export default function TrainingCockpit() {
                         ) : (
                             <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
                                 {getSentences(feedback.ideal_response || "").map((s, i) => (
-                                    <div key={i} className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl flex justify-between items-center group hover:border-emerald-500/50 transition-all">
-                                        <p className="text-xs text-zinc-300 leading-relaxed max-w-[80%]">{s}</p>
-                                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div key={i} className={`p-4 bg-zinc-900 border rounded-xl flex justify-between items-center group transition-all ${shadowingIndex === i ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)] bg-red-500/5' : 'border-zinc-800 hover:border-emerald-500/50'}`}>
+                                        <div className="max-w-[80%] space-y-2">
+                                            <p className="text-xs text-zinc-300 leading-relaxed">{s}</p>
+                                            {shadowResults[i] && (
+                                                <div className="flex items-center gap-3">
+                                                    <span className={`text-[10px] font-black uppercase ${shadowResults[i].is_passed ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                                        Mastery: {Math.round(shadowResults[i].mastery_score * 100)}%
+                                                    </span>
+                                                    <div className="h-1 w-24 bg-zinc-800 rounded-full overflow-hidden">
+                                                        <div 
+                                                            className={`h-full transition-all duration-1000 ${shadowResults[i].is_passed ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                                                            style={{ width: `${shadowResults[i].mastery_score * 100}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                             <button 
                                                 onClick={() => speak(s)}
                                                 className="p-2 bg-emerald-600/20 text-emerald-500 rounded-lg hover:bg-emerald-600/40"
@@ -618,10 +688,22 @@ export default function TrainingCockpit() {
                                                 <Play size={12} fill="currentColor"/>
                                             </button>
                                             <button 
-                                                className="p-2 bg-zinc-800 text-zinc-400 rounded-lg hover:text-white"
-                                                onClick={() => alert("Recording per sentence feature coming soon!")}
+                                                disabled={shadowProcessing}
+                                                onClick={() => {
+                                                    if (shadowingIndex === i) {
+                                                        stopRecording();
+                                                    } else {
+                                                        setShadowingIndex(i);
+                                                        startRecording();
+                                                    }
+                                                }}
+                                                className={`p-2 rounded-lg transition-all ${shadowingIndex === i ? 'bg-red-600 text-white animate-pulse' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
                                             >
-                                                <Mic2 size={12}/>
+                                                {shadowProcessing && shadowingIndex === i ? (
+                                                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
+                                                ) : (
+                                                    <Mic2 size={12}/>
+                                                )}
                                             </button>
                                         </div>
                                     </div>
@@ -637,11 +719,12 @@ export default function TrainingCockpit() {
                                 onClick={() => {
                                     setFeedback(null);
                                     setShadowingMode(false);
+                                    setIsMasteryMode(true); // Enter Mastery Mode
                                     speak(feedback.next_task_prompt || "Try again.");
                                 }} 
                                 className="flex-1 py-3 bg-emerald-600 text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-emerald-500 transition-all shadow-lg flex items-center justify-center gap-2"
                             >
-                                <Play size={14} /> Retry Immediately
+                                <Wand2 size={14} /> Mastery Retake
                             </button>
                         </div>
                     </div>

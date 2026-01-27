@@ -65,6 +65,11 @@ def formulate_strategy(state: AgentState, current_metrics: SignalMetrics, curren
         FEEDBACK:
         - Be constructive and specific.
         
+        SEMANTIC GAP ANALYSIS:
+        - Contrast the user's response with what a Band 9 "Ideal Response" would cover.
+        - Identify at least one "Semantic Gap": a specific concept, detail, or idea the user missed that would have added depth.
+        - Include this in a section titled "Semantic Gap" in the `feedback_markdown`.
+        
         LEXICAL MISSION:
         - Identify 3 advanced (Band 8+) vocabulary items or idioms relevant to the *next question* you are about to ask.
         - List them in the `target_keywords` field.

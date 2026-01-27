@@ -120,6 +120,56 @@ def get_exam_summary(session_id: str, db: Session = Depends(get_db)):
         "recommendations": ["Practice complex sentences", "Review vocabulary in the Lab"]
     }
 
+@router.post("/analyze-shadowing")
+def analyze_shadowing(
+    target_text: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Analyzes a specific sentence shadow attempt.
+    """
+    temp_filename = f"shadow_{uuid.uuid4()}.webm"
+    with open(temp_filename, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    try:
+        # 1. Transcribe the shadow attempt
+        from app.core.transcriber import transcribe_audio
+        result = transcribe_audio(temp_filename)
+        transcript = result.get("text", "").lower()
+        
+        # 2. Analyze Pronunciation
+        from app.core.pronunciation import analyze_pronunciation
+        metrics = analyze_pronunciation(temp_filename)
+        
+        # 3. Calculate Similarity Score (Simple word-level overlap for now)
+        target_words = set(re.findall(r'\b\w+\b', target_text.lower()))
+        shadow_words = set(re.findall(r'\b\w+\b', transcript))
+        
+        if not target_words:
+            similarity = 1.0
+        else:
+            overlap = len(target_words.intersection(shadow_words))
+            similarity = overlap / len(target_words)
+            
+        # 4. Combine into a "Mastery Score"
+        # 50% Similarity, 50% Pronunciation Clarity
+        clarity = metrics.get("pronunciation_score", 0.0)
+        mastery_score = (similarity * 0.5 + clarity * 0.5)
+        
+        return {
+            "transcript": transcript,
+            "mastery_score": round(mastery_score, 2),
+            "similarity": round(similarity, 2),
+            "clarity": clarity,
+            "is_passed": mastery_score > 0.7
+        }
+        
+    finally:
+        if os.path.exists(temp_filename):
+            os.remove(temp_filename)
+
 @router.get("/{session_id}/status")
 def get_exam_status(session_id: str, db: Session = Depends(get_db)):
     session = db.query(ExamSession).filter(ExamSession.id == session_id).first()
