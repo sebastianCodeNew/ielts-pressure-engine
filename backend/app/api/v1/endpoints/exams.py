@@ -1,6 +1,7 @@
 import uuid
 import shutil
 import os
+import re
 import random
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
@@ -143,14 +144,18 @@ def analyze_shadowing(
         from app.core.pronunciation import analyze_pronunciation
         metrics = analyze_pronunciation(temp_filename)
         
-        # 3. Calculate Similarity Score (Simple word-level overlap for now)
-        target_words = set(re.findall(r'\b\w+\b', target_text.lower()))
-        shadow_words = set(re.findall(r'\b\w+\b', transcript))
+        # 3. Calculate Similarity Score (Robust word-level overlap)
+        # Using [^\w\s] to strip punctuation from target_text as well
+        clean_target = re.sub(r'[^\w\s]', '', target_text.lower())
+        target_words = [w for w in clean_target.split() if w]
+        
+        clean_shadow = re.sub(r'[^\w\s]', '', transcript.lower())
+        shadow_words = set(clean_shadow.split())
         
         if not target_words:
             similarity = 1.0
         else:
-            overlap = len(target_words.intersection(shadow_words))
+            overlap = sum(1 for w in target_words if w in shadow_words)
             similarity = overlap / len(target_words)
             
         # 4. Combine into a "Mastery Score"

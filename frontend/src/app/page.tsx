@@ -230,17 +230,7 @@ export default function TrainingCockpit() {
     return () => clearInterval(interval);
   }, [examPart, part2Phase, timer, startRecording, stopRecording]);
 
-  // Silence Detection Loop
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    if (isRecording) {
-        // Mock increment for now to trigger nudge
-        interval = setInterval(() => setSilenceTimer(t => t + 1), 1000);
-    } else {
-        setSilenceTimer(0);
-    }
-    return () => { if(interval) clearInterval(interval); };
-  }, [isRecording]);
+
 
   // IDLE STATE
   if (examPart === "INTRO" || examPart === "FINISHED") {

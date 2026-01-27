@@ -99,11 +99,17 @@ def formulate_strategy(state: AgentState, current_metrics: SignalMetrics, curren
             weakness=state.weakness
         )
         
-        # We should include the formatted content in the message
         response = llm.invoke(formatted_prompt)
+        content = response.content.strip()
+
+        # 4. Robust JSON Extraction
+        # Look for the first '{' and the last '}'
+        match = re.search(r"\{.*\}", content, re.DOTALL)
+        if match:
+            content = match.group(0)
         
-        # 4. Parse Output
-        intervention = parser.parse(response.content)
+        # 5. Parse Output
+        intervention = parser.parse(content)
         return intervention
         
     except Exception as e:
