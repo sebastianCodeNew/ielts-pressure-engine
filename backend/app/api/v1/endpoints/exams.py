@@ -46,7 +46,18 @@ def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
         "Do you like traveling?": ["wanderlust", "exotic", "itinerary"],
         "What kind of music do you like?": ["melodic", "rhythmic", "eclectic"]
     }
-    initial_keywords = TOPIC_KEYWORDS.get(initial_prompt, ["interesting", "significant", "diverse"])
+    # 3. Seed Retention Words from Vault
+    from app.core.database import VocabularyItem
+    retention_words = db.query(VocabularyItem).filter(
+        VocabularyItem.user_id == request.user_id,
+        VocabularyItem.mastery_level < 80
+    ).order_by(VocabularyItem.last_reviewed_at.asc()).limit(2).all()
+    
+    final_keywords = initial_keywords
+    if retention_words:
+        # Mix in retention words, ensuring no duplicates
+        vault_words = [r.word for r in retention_words]
+        final_keywords = list(set(initial_keywords + vault_words))[:5] # Max 5 for hud space
 
     new_session = ExamSession(
         id=session_id,
@@ -54,7 +65,7 @@ def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
         exam_type=request.exam_type,
         current_part="PART_1",
         current_prompt=initial_prompt,
-        initial_keywords=initial_keywords,
+        initial_keywords=final_keywords,
         status="IN_PROGRESS",
         start_time=datetime.utcnow()
     )

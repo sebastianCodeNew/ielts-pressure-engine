@@ -72,6 +72,9 @@ export default function TrainingCockpit() {
   const [shadowResults, setShadowResults] = useState<Record<number, any>>({});
   const [shadowProcessing, setShadowProcessing] = useState(false);
 
+  // AI Notepad State
+  const [notes, setNotes] = useState("");
+
   // Final Load
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -108,6 +111,7 @@ export default function TrainingCockpit() {
       
       setFeedback({ next_task_prompt: initialPrompt });
       speak(initialPrompt);
+      setNotes(""); // Clear notes for new exam
     } catch (e) {
       console.error(e);
     }
@@ -546,6 +550,22 @@ export default function TrainingCockpit() {
                             </div>
                         )}
 
+                        {/* AI Notepad */}
+                        <div className="mt-6 flex flex-col gap-2">
+                            <div className="flex justify-between items-center bg-zinc-100 p-3 rounded-lg border border-zinc-200">
+                                <span className="text-[10px] font-black uppercase text-zinc-400">AI Notepad (1-Minute Prep)</span>
+                                {part2Phase === "SPEAKING" && (
+                                    <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded font-bold animate-pulse">Notes Locked</span>
+                                )}
+                            </div>
+                            <textarea
+                                value={notes}
+                                onChange={(e) => part2Phase === "PREP" && setNotes(e.target.value)}
+                                placeholder="Type your notes here... (e.g., specific dates, names, or key adjectives)"
+                                className={`w-full h-32 p-4 text-sm font-medium border-0 focus:ring-2 focus:ring-blue-500 transition-all rounded-lg resize-none ${part2Phase === "SPEAKING" ? 'bg-zinc-50/50 text-zinc-400 cursor-not-allowed opacity-60' : 'bg-zinc-50 text-zinc-800 shadow-inner'}`}
+                            />
+                        </div>
+
                         {/* Visual Pressure Hook */}
                         {part2Phase === "SPEAKING" && (
                             <div className="mt-8 w-full h-1 bg-zinc-200 rounded-full overflow-hidden">
@@ -667,6 +687,20 @@ export default function TrainingCockpit() {
                                                             style={{ width: `${shadowResults[i].mastery_score * 100}%` }}
                                                         />
                                                     </div>
+                                                </div>
+                                            )}
+                                            {shadowResults[i] && shadowResults[i].mastery_score > 0 && (
+                                                <div className="flex gap-1 mt-1">
+                                                    {[...Array(20)].map((_, idx) => (
+                                                        <div 
+                                                            key={idx}
+                                                            className={`h-2 w-1 rounded-full transition-all duration-700 delay-[${idx * 50}ms] ${
+                                                                shadowResults[i].mastery_score > (idx / 20) 
+                                                                ? (shadowResults[i].is_passed ? 'bg-emerald-500' : 'bg-amber-500') 
+                                                                : 'bg-zinc-800'
+                                                            }`}
+                                                        />
+                                                    ))}
                                                 </div>
                                             )}
                                         </div>

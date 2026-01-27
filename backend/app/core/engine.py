@@ -116,8 +116,23 @@ def process_user_attempt(
         elif part_count >= 1 and current_part == "PART_2":
             # End of Part 2 -> Transition to Part 3
             exam_session.current_part = "PART_3"
-            if not intervention.next_task_prompt:
-                intervention.next_task_prompt = "Let's discuss this topic further."
+            
+            # Socratic Bridge: Pull the Part 2 content to seed Part 3
+            part2_attempt = db.query(QuestionAttempt).filter(
+                QuestionAttempt.session_id == session_id,
+                QuestionAttempt.part == "PART_2"
+            ).first()
+            
+            p2_context = part2_attempt.transcript if part2_attempt else ""
+            
+            # Re-run strategy with Part 3 context
+            intervention = formulate_strategy(
+                current_state, 
+                signals, 
+                current_part="PART_3",
+                context_override=f"TRANSITION_FROM_PART_2: {p2_context}"
+            )
+            
             exam_session.current_prompt = intervention.next_task_prompt
         elif part_count >= 4 and current_part == "PART_3":
             # End of Part 3 -> Finish

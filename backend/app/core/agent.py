@@ -20,7 +20,12 @@ from langchain_core.prompts import PromptTemplate
 # Configure Output Parser
 parser = PydanticOutputParser(pydantic_object=Intervention)
 
-def formulate_strategy(state: AgentState, current_metrics: SignalMetrics, current_part: str = "PART_1") -> Intervention:
+def formulate_strategy(
+    state: AgentState, 
+    current_metrics: SignalMetrics, 
+    current_part: str = "PART_1",
+    context_override: str = None
+) -> Intervention:
     """
     Decides the next intervention based on the full User Session State.
     """
@@ -47,6 +52,9 @@ def formulate_strategy(state: AgentState, current_metrics: SignalMetrics, curren
         - Stress Level: {stress_level:.2f}
         - Fluency Trend: {fluency_trend}
         
+        EXTRA CONTEXT:
+        {context_override}
+
         CURRENT ATTEMPT METRICS:
         - WPM: {wpm}
         - Coherence: {coherence}
@@ -76,7 +84,7 @@ def formulate_strategy(state: AgentState, current_metrics: SignalMetrics, curren
         
         {format_instructions}
         """,
-        input_variables=["stress_level", "fluency_trend", "consecutive_failures", "wpm", "hesitation", "coherence", "lexical_diversity", "grammar_complexity", "history", "current_part", "target_band", "weakness"],
+        input_variables=["stress_level", "fluency_trend", "consecutive_failures", "wpm", "hesitation", "coherence", "lexical_diversity", "grammar_complexity", "history", "current_part", "target_band", "weakness", "context_override"],
         partial_variables={"format_instructions": parser.get_format_instructions()}
     )
 
@@ -96,7 +104,8 @@ def formulate_strategy(state: AgentState, current_metrics: SignalMetrics, curren
             history=history_str,
             current_part=current_part,
             target_band=state.target_band,
-            weakness=state.weakness
+            weakness=state.weakness,
+            context_override=context_override or "None provided."
         )
         
         response = llm.invoke(formatted_prompt)
