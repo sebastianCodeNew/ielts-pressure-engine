@@ -109,6 +109,7 @@ def process_user_attempt(
         current_part=current_part if is_exam_mode else None,
         user_transcript=attempt.transcript
     )
+    intervention.user_transcript = attempt.transcript
     
     # 6. UPDATE STATE & PERSIST
     if is_exam_mode:
@@ -163,6 +164,7 @@ def process_user_attempt(
                 context_override=f"TRANSITION_FROM_PART_2: {p2_context}",
                 user_transcript=attempt.transcript
             )
+            intervention.user_transcript = attempt.transcript
             
             exam_session.current_prompt = intervention.next_task_prompt
         elif part_count >= 4 and current_part == "PART_3":

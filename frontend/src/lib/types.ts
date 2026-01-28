@@ -24,6 +24,8 @@ export interface Intervention {
   // Educational Fields
   ideal_response?: string;
   feedback_markdown?: string;
+  correction_drill?: string;
+  user_transcript?: string;
   keywords?: string[];
   target_keywords?: string[];
   stress_level?: number;

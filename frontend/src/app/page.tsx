@@ -13,6 +13,7 @@ interface FeedbackData {
   feedback_markdown?: string;
   correction_drill?: string;
   ideal_response?: string;
+  user_transcript?: string;
   action_id?: string;
   stress_level?: number;
   target_keywords?: string[];
@@ -158,8 +159,9 @@ export default function TrainingCockpit() {
             const data = await ApiClient.submitExamAudio(sessionId, audioBlob);
             
             // Keyword Hit Detection (Against mission that was active during recording)
-            if (activeMission.length > 0 && data.feedback_markdown) {
-               const lowerTranscript = data.feedback_markdown.toLowerCase();
+            const checkText = data.user_transcript || data.feedback_markdown || "";
+            if (activeMission.length > 0 && checkText) {
+               const lowerTranscript = checkText.toLowerCase();
                const hits = activeMission.filter(word => {
                   const regex = new RegExp(`\\b${word.toLowerCase()}\\b`, 'i');
                   return regex.test(lowerTranscript);
