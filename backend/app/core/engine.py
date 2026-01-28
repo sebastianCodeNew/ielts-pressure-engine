@@ -56,7 +56,8 @@ def process_user_attempt(
                     filler_count=0,
                     coherence_score=p.coherence_score or 0.0,
                     lexical_diversity=p.lexical_diversity or 0.0,
-                    grammar_complexity=p.grammar_complexity or 0.0
+                    grammar_complexity=p.grammar_complexity or 0.0,
+                    pronunciation_score=p.pronunciation_score or 0.0
                 ),
                 outcome='PASS'
             ))
