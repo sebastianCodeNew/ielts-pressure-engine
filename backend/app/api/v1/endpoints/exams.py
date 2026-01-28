@@ -46,6 +46,8 @@ def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
         "Do you like traveling?": ["wanderlust", "exotic", "itinerary"],
         "What kind of music do you like?": ["melodic", "rhythmic", "eclectic"]
     }
+    initial_keywords = TOPIC_KEYWORDS.get(initial_prompt, ["interesting", "significant", "diverse"])
+    
     # 3. Seed Retention Words from Vault
     from app.core.database import VocabularyItem
     retention_words = db.query(VocabularyItem).filter(

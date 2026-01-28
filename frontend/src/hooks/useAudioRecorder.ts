@@ -6,6 +6,7 @@ export function useAudioRecorder() {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const stopTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const startRecording = useCallback(async () => {
     try {
@@ -40,18 +41,22 @@ export function useAudioRecorder() {
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
-      setTimeout(() => {
+      stopTimeoutRef.current = setTimeout(() => {
         mediaRecorderRef.current?.stop();
         setIsRecording(false);
+        stopTimeoutRef.current = null;
       }, 500);
     }
   }, [isRecording]);
 
-  // CLEANUP: Ensure mic is released on unmount
+  // CLEANUP: Ensure mic and timers are released on unmount
   useEffect(() => {
     return () => {
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
+      }
+      if (stopTimeoutRef.current) {
+        clearTimeout(stopTimeoutRef.current);
       }
     };
   }, [stream]);

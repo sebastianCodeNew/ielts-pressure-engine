@@ -694,11 +694,12 @@ export default function TrainingCockpit() {
                                                     {[...Array(20)].map((_, idx) => (
                                                         <div 
                                                             key={idx}
-                                                            className={`h-2 w-1 rounded-full transition-all duration-700 delay-[${idx * 50}ms] ${
+                                                            className={`h-2 w-1 rounded-full transition-all duration-700 ${
                                                                 shadowResults[i].mastery_score > (idx / 20) 
                                                                 ? (shadowResults[i].is_passed ? 'bg-emerald-500' : 'bg-amber-500') 
                                                                 : 'bg-zinc-800'
                                                             }`}
+                                                            style={{ transitionDelay: `${idx * 50}ms` }}
                                                         />
                                                     ))}
                                                 </div>

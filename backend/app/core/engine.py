@@ -37,12 +37,36 @@ def process_user_attempt(
         target_band = user.target_band if user else "7.5"
         weakness = user.weakness if user else "General"
 
+        # Load History for Adaptation
+        from app.core.state import AttemptResult
+        past_attempts = db.query(QuestionAttempt).filter(
+            QuestionAttempt.session_id == session_id
+        ).order_by(QuestionAttempt.id.asc()).all()
+        
+        history = []
+        for p in past_attempts:
+            history.append(AttemptResult(
+                attempt_id=str(p.id),
+                prompt=p.question_text,
+                transcript=p.transcript or "",
+                metrics=SignalMetrics(
+                    fluency_wpm=p.wpm or 0.0,
+                    hesitation_ratio=p.hesitation_ratio or 0.0,
+                    grammar_error_count=0,
+                    filler_count=0,
+                    coherence_score=p.coherence_score or 0.0,
+                    lexical_diversity=p.lexical_diversity or 0.0,
+                    grammar_complexity=p.grammar_complexity or 0.0
+                ),
+                outcome='PASS'
+            ))
+
         current_state = AgentState(
             session_id=session_id,
             stress_level=0.5,
             consecutive_failures=0,
             fluency_trend="stable",
-            history=[], 
+            history=history, 
             current_part=current_part,
             target_band=target_band,
             weakness=weakness
