@@ -11,6 +11,7 @@ import { ApiClient } from "@/lib/api";
 interface FeedbackData {
   next_task_prompt?: string;
   feedback_markdown?: string;
+  correction_drill?: string;
   ideal_response?: string;
   action_id?: string;
   stress_level?: number;
@@ -449,6 +450,21 @@ export default function TrainingCockpit() {
                     </div>
                 )}
 
+                {/* CORRECTION CHALLENGE (The Mastery Drill) */}
+                {feedback?.correction_drill && !isRecording && (
+                    <div className="max-w-md w-full bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl animate-in zoom-in-95 duration-500 flex items-start gap-4">
+                        <div className="p-2 bg-amber-500 rounded-lg text-black">
+                            <Wand2 size={20} />
+                        </div>
+                        <div className="flex-1">
+                            <h4 className="text-amber-500 text-[10px] font-black uppercase tracking-widest mb-1">Correction Challenge</h4>
+                            <p className="text-zinc-300 text-xs font-medium leading-relaxed italic">
+                                "{feedback.correction_drill}"
+                            </p>
+                        </div>
+                    </div>
+                )}
+
                 {/* PROMPT */}
                 <div className="text-center space-y-6 max-w-2xl">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-zinc-800 bg-zinc-900/50 text-zinc-400 text-[10px] font-bold uppercase tracking-widest">
@@ -471,20 +487,31 @@ export default function TrainingCockpit() {
                     )}
                 </div>
 
-                {/* CONTROLS */}
-                <div className="flex items-center gap-8">
+                {/* CONTROLS & PACING RING */}
+                <div className="flex items-center gap-8 relative">
+                    {isRecording && (
+                        <div 
+                            className={`absolute inset-0 -m-4 border-4 rounded-full transition-all duration-700 ${
+                                silenceTimer > 4 ? 'border-amber-500/50 scale-110 shadow-[0_0_30px_rgba(245,158,11,0.3)]' : 'border-red-600/30 scale-100'
+                            }`}
+                            style={{ 
+                                animation: silenceTimer > 4 ? 'none' : 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite' 
+                            }}
+                        />
+                    )}
+                    
                     {!isRecording ? (
                         <button 
                             disabled={isSpeaking || processing}
                             onClick={startRecording}
-                            className="w-24 h-24 bg-red-600 hover:bg-red-500 text-white rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(220,38,38,0.4)] transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="relative z-10 w-24 h-24 bg-red-600 hover:bg-red-500 text-white rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(220,38,38,0.4)] transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {processing ? <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin"/> : <Mic2 size={32} />}
                         </button>
                     ) : (
                         <button 
                             onClick={stopRecording}
-                            className="w-24 h-24 bg-zinc-100 hover:bg-white text-black rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-105 active:scale-95"
+                            className="relative z-10 w-24 h-24 bg-zinc-100 hover:bg-white text-black rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-105 active:scale-95"
                         >
                             <Square size={32} fill="currentColor" />
                         </button>
@@ -558,12 +585,30 @@ export default function TrainingCockpit() {
                                     <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded font-bold animate-pulse">Notes Locked</span>
                                 )}
                             </div>
-                            <textarea
-                                value={notes}
-                                onChange={(e) => part2Phase === "PREP" && setNotes(e.target.value)}
-                                placeholder="Type your notes here... (e.g., specific dates, names, or key adjectives)"
-                                className={`w-full h-32 p-4 text-sm font-medium border-0 focus:ring-2 focus:ring-blue-500 transition-all rounded-lg resize-none ${part2Phase === "SPEAKING" ? 'bg-zinc-50/50 text-zinc-400 cursor-not-allowed opacity-60' : 'bg-zinc-50 text-zinc-800 shadow-inner'}`}
-                            />
+                            <div className="grid grid-cols-2 gap-4">
+                                <textarea
+                                    value={notes}
+                                    onChange={(e) => part2Phase === "PREP" && setNotes(e.target.value)}
+                                    placeholder="Type your notes here..."
+                                    className={`w-full h-40 p-4 text-sm font-medium border-0 focus:ring-2 focus:ring-blue-500 transition-all rounded-lg resize-none ${part2Phase === "SPEAKING" ? 'bg-zinc-50/50 text-zinc-400 cursor-not-allowed opacity-60' : 'bg-zinc-50 text-zinc-800 shadow-inner'}`}
+                                />
+                                <div className="bg-blue-50/50 rounded-lg p-4 flex flex-col gap-3">
+                                    <span className="text-[10px] font-black uppercase text-blue-400">Coach: Think of...</span>
+                                    <ul className="space-y-2">
+                                        {[
+                                            "5 Senses (Smell, Sound, etc.)",
+                                            "A specific conflict or challenge",
+                                            "How did it change you?",
+                                            "Emotional peak (Excitement/Loss)"
+                                        ].map((item, id) => (
+                                            <li key={id} className="flex items-center gap-2 text-[11px] font-bold text-blue-700/70">
+                                                <div className="w-1 h-1 bg-blue-400 rounded-full" />
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Visual Pressure Hook */}

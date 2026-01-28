@@ -39,6 +39,7 @@ class Intervention(BaseModel):
     
     ideal_response: Optional[str] = None
     feedback_markdown: Optional[str] = None
+    correction_drill: Optional[str] = Field(None, description="A single, specific corrective micro-task based on the turn's biggest error")
     keywords: Optional[List[str]] = None
     target_keywords: Optional[List[str]] = Field(default_factory=list, description="Target Band 8+ words for the user to use in the NEXT turn")
     

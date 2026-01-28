@@ -24,7 +24,8 @@ def formulate_strategy(
     state: AgentState, 
     current_metrics: SignalMetrics, 
     current_part: str = "PART_1",
-    context_override: str = None
+    context_override: str = None,
+    user_transcript: str = ""
 ) -> Intervention:
     """
     Decides the next intervention based on the full User Session State.
@@ -55,6 +56,9 @@ def formulate_strategy(
         EXTRA CONTEXT:
         {context_override}
 
+        USER TRANSCRIPT:
+        {user_transcript}
+
         CURRENT ATTEMPT METRICS:
         - WPM: {wpm}
         - Coherence: {coherence}
@@ -73,10 +77,21 @@ def formulate_strategy(
         FEEDBACK:
         - Be constructive and specific.
         
+        IDEAL RESPONSE (The Refined Version):
+        - Do NOT provide a generic response.
+        - REWRITE the `USER TRANSCRIPT` into a Band 9 version.
+        - Maintain the user's original ideas, but upgrade the grammar to be complex and the vocabulary to be sophisticated (Band 8+).
+        - Put this refined version in the `ideal_response` field.
+
         SEMANTIC GAP ANALYSIS:
-        - Contrast the user's response with what a Band 9 "Ideal Response" would cover.
+        - Contrast the refined response with what the user actually said.
         - Identify at least one "Semantic Gap": a specific concept, detail, or idea the user missed that would have added depth.
         - Include this in a section titled "Semantic Gap" in the `feedback_markdown`.
+        
+        CORRECTION DRILL:
+        - Identify the ONE biggest grammatical or lexical mistake in the `USER TRANSCRIPT`.
+        - Create a very short "Correction Drill" in the `correction_drill` field.
+        - Example: "Try re-stating your point about hometowns, but use the present perfect continuous tense."
         
         LEXICAL MISSION:
         - Identify 3 advanced (Band 8+) vocabulary items or idioms relevant to the *next question* you are about to ask.
@@ -84,7 +99,7 @@ def formulate_strategy(
         
         {format_instructions}
         """,
-        input_variables=["stress_level", "fluency_trend", "consecutive_failures", "wpm", "hesitation", "coherence", "lexical_diversity", "grammar_complexity", "history", "current_part", "target_band", "weakness", "context_override"],
+        input_variables=["stress_level", "fluency_trend", "consecutive_failures", "wpm", "hesitation", "coherence", "lexical_diversity", "grammar_complexity", "history", "current_part", "target_band", "weakness", "context_override", "user_transcript"],
         partial_variables={"format_instructions": parser.get_format_instructions()}
     )
 
@@ -105,7 +120,8 @@ def formulate_strategy(
             current_part=current_part,
             target_band=state.target_band,
             weakness=state.weakness,
-            context_override=context_override or "None provided."
+            context_override=context_override or "None provided.",
+            user_transcript=user_transcript or "No transcript available."
         )
         
         response = llm.invoke(formatted_prompt)
