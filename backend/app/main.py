@@ -72,7 +72,12 @@ def health_check():
     return {"status": "system_active", "mode": "performance_optimized"}
 
 @app.post("/api/submit-audio")
-def process_audio_attempt(file: UploadFile = File(...), task_id: str = "default", db: Session = Depends(get_db)):
+def process_audio_attempt(
+    file: UploadFile = File(...), 
+    task_id: str = "default", 
+    is_retry: bool = False,
+    db: Session = Depends(get_db)
+):
     # Use UUID to prevent collision if multiple users (or sessions) upload simultaneously
     ext = os.path.splitext(file.filename)[1] or ".webm"
     temp_filename = f"temp_{uuid.uuid4()}{ext}"
@@ -85,7 +90,8 @@ def process_audio_attempt(file: UploadFile = File(...), task_id: str = "default"
             file_path=temp_filename,
             task_id=task_id,
             db=db,
-            session_id="default_user"
+            session_id="default_user",
+            is_retry=is_retry
         )
         return intervention
     finally:

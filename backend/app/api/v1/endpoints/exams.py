@@ -81,6 +81,7 @@ def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
 def submit_exam_audio(
     session_id: str, 
     file: UploadFile = File(...), 
+    is_retry: bool = False,
     db: Session = Depends(get_db)
 ):
     session = db.query(ExamSession).filter(ExamSession.id == session_id).first()
@@ -101,7 +102,8 @@ def submit_exam_audio(
             task_id=session.current_part,
             db=db,
             session_id=session_id,
-            is_exam_mode=True
+            is_exam_mode=True,
+            is_retry=is_retry
         )
         return intervention
     except Exception as e:

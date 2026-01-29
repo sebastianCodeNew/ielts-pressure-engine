@@ -81,6 +81,7 @@ export default function TrainingCockpit() {
   // Pattern Spotlight State
   const [recurringErrors, setRecurringErrors] = useState<string[]>([]);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [isRetry, setIsRetry] = useState(false);
 
   const hasNudgedRef = useRef(false);
 
@@ -180,7 +181,8 @@ export default function TrainingCockpit() {
         const submit = async () => {
           setProcessing(true);
           try {
-            const data = await ApiClient.submitExamAudio(sessionId, audioBlob);
+            const data = await ApiClient.submitExamAudio(sessionId, audioBlob, isRetry);
+            setIsRetry(false); // Reset after use
             
             // Keyword Hit Detection (Against mission that was active during recording)
             const checkText = data.user_transcript || data.feedback_markdown || "";
@@ -884,7 +886,8 @@ export default function TrainingCockpit() {
                                 onClick={() => {
                                     setFeedback(null);
                                     setShadowingMode(false);
-                                    setIsMasteryMode(true); // Enter Mastery Mode
+                                    setIsMasteryMode(true); 
+                                    setIsRetry(true); // Flag this as a retry to backend
                                     speak(feedback.next_task_prompt || "Try again.");
                                 }} 
                                 className="flex-1 py-3 bg-emerald-600 text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-emerald-500 transition-all shadow-lg flex items-center justify-center gap-2"
@@ -893,10 +896,8 @@ export default function TrainingCockpit() {
                             </button>
                             <button 
                                 onClick={() => {
-                                    const currentPrompt = feedback.next_task_prompt; // Hack: we want to stay on the JUST ANSWERED question
-                                    // In a real state machine, we'd roll back the session part, 
-                                    // but for "Instant Scaffolding" we just clear feedback and let them talk.
                                     setFeedback(null);
+                                    setIsRetry(true); // Flag this as a retry to backend
                                     // We'll use the prompt they just answered
                                     setFeedback({ next_task_prompt: "Alright, let's try that again. Focus on the refinement!" });
                                     speak("Alright, let's try that again. Focus on the refinement!");

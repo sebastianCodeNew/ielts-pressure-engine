@@ -13,7 +13,8 @@ def process_user_attempt(
     task_id: str, 
     db: Session, 
     session_id: str = "default_user",
-    is_exam_mode: bool = False
+    is_exam_mode: bool = False,
+    is_retry: bool = False
 ) -> Intervention:
     """
     Orchestrates the full loop: 
@@ -113,25 +114,40 @@ def process_user_attempt(
     
     # 6. UPDATE STATE & PERSIST
     if is_exam_mode:
-        # Save to attempts log
-        new_qa = QuestionAttempt(
-            session_id=session_id,
-            part=current_part,
-            question_text=current_prompt, # This is the question the user JUST answered
-            transcript=attempt.transcript,
-            duration_seconds=attempt.audio_duration,
-            wpm=signals.fluency_wpm,
-            coherence_score=signals.coherence_score,
-            hesitation_ratio=signals.hesitation_ratio,
-            lexical_diversity=signals.lexical_diversity,
-            grammar_complexity=signals.grammar_complexity,
-            pronunciation_score=signals.pronunciation_score,
-            feedback_markdown=intervention.feedback_markdown,
-            improved_response=intervention.ideal_response
-        )
-        db.add(new_qa)
+        # Load or create new attempt
+        new_qa = None
+        if is_retry:
+            new_qa = db.query(QuestionAttempt).filter(
+                QuestionAttempt.session_id == session_id,
+                QuestionAttempt.part == current_part
+            ).order_by(QuestionAttempt.id.desc()).first()
+            
+        if not new_qa:
+            new_qa = QuestionAttempt(session_id=session_id, part=current_part)
+            db.add(new_qa)
+
+        # Update metadata
+        new_qa.question_text = current_prompt
+        new_qa.transcript = attempt.transcript
+        new_qa.duration_seconds = attempt.audio_duration
+        new_qa.wpm = signals.fluency_wpm
+        new_qa.coherence_score = signals.coherence_score
+        new_qa.hesitation_ratio = signals.hesitation_ratio
+        new_qa.lexical_diversity = signals.lexical_diversity
+        new_qa.grammar_complexity = signals.grammar_complexity
+        new_qa.pronunciation_score = signals.pronunciation_score
+        new_qa.feedback_markdown = intervention.feedback_markdown
+        new_qa.improved_response = intervention.ideal_response
         
-        # Transition Logic
+        # Transition Logic (Skip if RETRY)
+        if is_retry:
+            # If retry, we maintain the same prompt and status
+            exam_session.current_prompt = current_prompt
+            intervention.next_task_prompt = current_prompt # Repeat the prompt
+            db.commit()
+            intervention.stress_level = current_state.stress_level
+            return intervention
+
         part_count = db.query(QuestionAttempt).filter(
             QuestionAttempt.session_id == session_id,
             QuestionAttempt.part == current_part
