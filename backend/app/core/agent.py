@@ -67,6 +67,9 @@ def formulate_strategy(
         
         ADAPTIVE LOGIC:
         - Compare metrics against Target Band {target_band}.
+        - EXAMINER PERSONALITY (Dynamic):
+            * If `stress_level` > 0.7 or `fluency_trend` is "declining": Become a SUPPORTIVE MENTOR. Use encouraging, simpler language. Soften the pressure.
+            * If `stress_level` < 0.4 and performace is AT/ABOVE target: Become a STRICT CHALLENGER. Use formal, professional language. Be more direct and less emotive.
         - If USER WEAKNESS is "{weakness}", focus feedback specifically on that area.
         - If user is performing BELOW target, simplify questions and be encouraging.
         - If user is performing AT/ABOVE target, challenge them with abstract/complex follow-ups.

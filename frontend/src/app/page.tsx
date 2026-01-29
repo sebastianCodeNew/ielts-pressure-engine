@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { useTTS } from "@/hooks/useTTS";
-import { Mic2, Square, Wand2, Play, Users, BarChart3, HelpCircle, X, ArrowRight, Bookmark } from "lucide-react";
+import { Mic2, Square, Wand2, Play, Users, BarChart3, HelpCircle, X, ArrowRight, Bookmark, Volume2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import AudioWaveform from "@/components/AudioWaveform";
 import { ApiClient } from "@/lib/api";
@@ -82,13 +82,27 @@ export default function TrainingCockpit() {
     let interval: NodeJS.Timeout;
     if (isRecording) {
       interval = setInterval(() => {
-        setSilenceTimer(s => s + 1);
+        setSilenceTimer(s => {
+          const next = s + 1;
+          // AUTO-VOCAL NUDGE: At 8 seconds of silence, offer a supportive prompt
+          if (next === 8 && !isSpeaking) {
+             const nudges = [
+               "And how did that make you feel?",
+               "Tell me more about that.",
+               "What happened next?",
+               "Can you give me an example?"
+             ];
+             const randomNudge = nudges[Math.floor(Math.random() * nudges.length)];
+             speak(randomNudge);
+          }
+          return next;
+        });
       }, 1000);
     } else {
       setSilenceTimer(0);
     }
     return () => clearInterval(interval);
-  }, [isRecording]);
+  }, [isRecording, isSpeaking, speak]);
 
   useEffect(() => {
     ApiClient.getStats().then(s => {
@@ -570,7 +584,7 @@ export default function TrainingCockpit() {
                                         { label: "Description", time: 60 },
                                         { label: "Feelings", time: 30 }
                                     ].map((m, i) => (
-                                        <div key={i} className="flex flex-col items-center gap-2 bg-zinc-100 px-2 rounded-lg">
+                                        <div key={i} className={`flex flex-col items-center gap-2 bg-zinc-100 px-2 rounded-lg transition-all duration-700 ${silenceTimer > 4 && timer <= m.time ? 'animate-pulse' : ''}`}>
                                             <div className={`w-4 h-4 rounded-full border-2 transition-all duration-500 ${timer <= m.time ? 'bg-emerald-500 border-emerald-500 scale-125 shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 'bg-white border-zinc-300'}`} />
                                             <span className={`text-[9px] font-bold uppercase transition-colors ${timer <= m.time ? 'text-emerald-600' : 'text-zinc-400'}`}>{m.label}</span>
                                         </div>
@@ -594,8 +608,8 @@ export default function TrainingCockpit() {
                                     placeholder="Type your notes here..."
                                     className={`w-full h-40 p-4 text-sm font-medium border-0 focus:ring-2 focus:ring-blue-500 transition-all rounded-lg resize-none ${part2Phase === "SPEAKING" ? 'bg-zinc-50/50 text-zinc-400 cursor-not-allowed opacity-60' : 'bg-zinc-50 text-zinc-800 shadow-inner'}`}
                                 />
-                                <div className="bg-blue-50/50 rounded-lg p-4 flex flex-col gap-3">
-                                    <span className="text-[10px] font-black uppercase text-blue-400">Coach: Think of...</span>
+                                <div className={`bg-blue-50/50 rounded-lg p-4 flex flex-col gap-3 transition-all duration-700 ${silenceTimer > 4 ? 'ring-2 ring-blue-400 ring-offset-2 animate-pulse shadow-lg bg-blue-100' : ''}`}>
+                                    <span className={`text-[10px] font-black uppercase ${silenceTimer > 4 ? 'text-blue-600' : 'text-blue-400'}`}>Coach: Think of...</span>
                                     <ul className="space-y-2">
                                         {[
                                             "5 Senses (Smell, Sound, etc.)",
@@ -603,8 +617,8 @@ export default function TrainingCockpit() {
                                             "How did it change you?",
                                             "Emotional peak (Excitement/Loss)"
                                         ].map((item, id) => (
-                                            <li key={id} className="flex items-center gap-2 text-[11px] font-bold text-blue-700/70">
-                                                <div className="w-1 h-1 bg-blue-400 rounded-full" />
+                                            <li key={id} className={`flex items-center gap-2 text-[11px] font-bold transition-colors ${silenceTimer > 4 ? 'text-blue-800' : 'text-blue-700/70'}`}>
+                                                <div className={`w-1 h-1 rounded-full transition-all ${silenceTimer > 4 ? 'bg-blue-600 scale-150' : 'bg-blue-400'}`} />
                                                 {item}
                                             </li>
                                         ))}
@@ -705,16 +719,18 @@ export default function TrainingCockpit() {
                         </div>
 
                         {!shadowingMode ? (
-                            <div className="p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl relative">
-                                <div className="absolute top-4 right-4 text-emerald-500/20"><Users size={48} /></div>
-                                <p className="text-emerald-100 text-sm italic leading-relaxed relative z-10">
-                                    "{feedback.ideal_response || "Excellent answer. Keep up the fluency."}"
+                            <div className="p-6 bg-red-600/5 border border-red-600/20 rounded-2xl relative group overflow-hidden">
+                                <div className="absolute top-4 right-4 text-red-600/20"><Volume2 size={48} /></div>
+                                <div className="absolute inset-0 bg-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <h4 className="text-[10px] font-black uppercase text-red-500 tracking-widest mb-3">Your Potential (Band 9 Refined)</h4>
+                                <p className="text-white text-sm italic leading-relaxed relative z-10 font-medium">
+                                    "{feedback.ideal_response || "Excellent answer. Focus on expanding your Part 3 responses."}"
                                 </p>
                                 <button 
-                                    onClick={() => speak(feedback.ideal_response || "Excellent answer.")}
-                                    className="mt-4 flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-widest hover:text-white transition-colors"
+                                    onClick={() => speak(feedback.ideal_response || "")}
+                                    className="mt-6 flex items-center justify-center gap-3 w-full py-4 bg-red-600 hover:bg-red-500 text-white rounded-xl font-black uppercase tracking-widest transition-all shadow-xl hover:scale-[1.02] active:scale-[0.98]"
                                 >
-                                    <Play size={12} className="fill-current" /> Listen to Native Speaker
+                                    <Volume2 size={20} className="animate-pulse" /> Play My Potential
                                 </button>
                             </div>
                         ) : (
