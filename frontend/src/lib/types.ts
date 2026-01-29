@@ -26,6 +26,7 @@ export interface Intervention {
   feedback_markdown?: string;
   correction_drill?: string;
   user_transcript?: string;
+  reasoning?: string;
   keywords?: string[];
   target_keywords?: string[];
   stress_level?: number;

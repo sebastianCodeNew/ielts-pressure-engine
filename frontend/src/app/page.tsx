@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { useTTS } from "@/hooks/useTTS";
-import { Mic2, Square, Wand2, Play, Users, BarChart3, HelpCircle, X, ArrowRight, Bookmark, Volume2 } from "lucide-react";
+import { Mic2, Square, Wand2, Play, Users, BarChart3, HelpCircle, X, ArrowRight, Bookmark, Volume2, Zap } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import AudioWaveform from "@/components/AudioWaveform";
 import { ApiClient } from "@/lib/api";
@@ -17,6 +17,7 @@ interface FeedbackData {
   action_id?: string;
   stress_level?: number;
   target_keywords?: string[];
+  reasoning?: string;
 }
 
 export default function TrainingCockpit() {
@@ -76,6 +77,10 @@ export default function TrainingCockpit() {
 
   // AI Notepad State
   const [notes, setNotes] = useState("");
+  
+  // Pattern Spotlight State
+  const [recurringErrors, setRecurringErrors] = useState<string[]>([]);
+  const [lastError, setLastError] = useState<string | null>(null);
 
   const hasNudgedRef = useRef(false);
 
@@ -189,6 +194,14 @@ export default function TrainingCockpit() {
             }
 
             setFeedback(data);
+
+            // PATTERN SPOTLIGHT LOGIC
+            if (data.correction_drill) {
+               if (lastError && data.correction_drill.toLowerCase().includes(lastError.toLowerCase().split(' ')[0])) {
+                   setRecurringErrors(prev => [...prev, data.correction_drill || ""]);
+               }
+               setLastError(data.correction_drill.split(' ')[0]);
+            }
             
             // If we were in Mastery Mode and passed, exit it
             if (isMasteryMode && data.target_keywords) {
@@ -391,6 +404,23 @@ export default function TrainingCockpit() {
   return (
     <div className="min-h-screen bg-[#0d0d12] flex flex-col relative overflow-hidden">
         
+        {/* PATTERN SPOTLIGHT HUD */}
+        {recurringErrors.length > 0 && (
+            <div className="fixed top-20 left-6 z-50 animate-in slide-in-from-left-12 duration-1000">
+                <div className="bg-amber-500/10 border border-amber-500/20 p-5 rounded-3xl backdrop-blur-xl max-w-[220px] shadow-2xl shadow-amber-500/10">
+                    <div className="flex items-center gap-2 mb-3">
+                        <div className="w-6 h-6 bg-amber-500 rounded-lg flex items-center justify-center shadow-lg shadow-amber-500/40">
+                            <Zap size={14} className="text-black fill-current" />
+                        </div>
+                        <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Skill Warning</span>
+                    </div>
+                    <p className="text-zinc-400 text-[10px] leading-relaxed font-medium">
+                        Recurring issue detected. Focus on your <strong>{lastError}</strong> usage this turn.
+                    </p>
+                </div>
+            </div>
+        )}
+        
         {/* TOP HUD */}
         <div className="w-full h-16 border-b border-zinc-900 flex justify-between items-center px-6 bg-[#0d0d12]/80 backdrop-blur-md z-20">
             <div className="flex items-center gap-6">
@@ -425,11 +455,30 @@ export default function TrainingCockpit() {
         {/* MAIN COCKPIT AREA */}
         <div className="flex-1 flex flex-col relative">
             
-            {/* BACKGROUND EXAMINER VISUAL */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-30">
-                 <div className={`w-96 h-96 border border-zinc-800 rounded-full flex items-center justify-center transition-all duration-500 ${isSpeaking ? 'scale-110 border-red-500/50' : 'scale-100'}`}>
-                    <div className={`w-64 h-64 bg-zinc-900 rounded-full flex items-center justify-center transition-all duration-300 ${isSpeaking ? 'bg-red-900/20' : ''}`}>
-                        <Wand2 size={64} className="text-zinc-700" />
+            {/* BACKGROUND EXAMINER VISUAL (Presence Sphere) */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                 <div className={`w-[500px] h-[500px] border border-zinc-800/20 rounded-full flex items-center justify-center transition-all duration-1000 ${isRecording ? 'scale-110' : 'scale-100'}`}>
+                    <div className={`relative w-64 h-64 rounded-full flex items-center justify-center transition-all duration-700 overflow-hidden ${
+                        isSpeaking ? 'bg-red-500/10' : 
+                        silenceTimer > 4 ? 'bg-amber-500/10' :
+                        feedback?.correction_drill ? 'bg-emerald-500/5' : 'bg-zinc-900/50'
+                    }`}>
+                        {/* THE SPHERE CORE */}
+                        <div className={`absolute inset-0 bg-gradient-to-tr transition-all duration-1000 blur-2xl opacity-40 ${
+                            isRecording ? 'from-red-600 via-transparent to-red-600 animate-pulse' :
+                            isSpeaking ? 'from-zinc-400 to-zinc-600' :
+                            'from-zinc-800 to-zinc-900'
+                        }`} />
+                        
+                        <div className={`relative z-10 w-32 h-32 rounded-full border-2 transition-all duration-500 ${
+                            isRecording ? 'border-red-500/50 scale-110 shadow-[0_0_50px_rgba(239,68,68,0.2)]' :
+                            silenceTimer > 4 ? 'border-amber-500/50 scale-95 shadow-[0_0_30px_rgba(245,158,11,0.2)]' :
+                            'border-zinc-800 scale-100'
+                        }`}>
+                            <div className="absolute inset-0 flex items-center justify-center opacity-20">
+                                <Wand2 size={48} className="text-white" />
+                            </div>
+                        </div>
                     </div>
                  </div>
             </div>
@@ -482,6 +531,11 @@ export default function TrainingCockpit() {
                             <p className="text-zinc-300 text-xs font-medium leading-relaxed italic">
                                 "{feedback.correction_drill}"
                             </p>
+                            {feedback.reasoning && (
+                                <p className="mt-2 text-[9px] text-amber-500/70 font-bold uppercase tracking-tight">
+                                    💡 {feedback.reasoning}
+                                </p>
+                            )}
                         </div>
                     </div>
                 )}
@@ -707,6 +761,23 @@ export default function TrainingCockpit() {
                         <div className="prose prose-invert prose-sm max-w-none prose-p:text-zinc-400 prose-strong:text-white h-48 overflow-y-auto pr-2 custom-scrollbar">
                             <ReactMarkdown>{feedback.feedback_markdown}</ReactMarkdown>
                         </div>
+
+                        {/* CORRECTION CHALLENGE (Integrated reasoning) */}
+                        {feedback.correction_drill && (
+                            <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl mt-6 animate-in fade-in duration-1000">
+                                <h4 className="text-[10px] font-black uppercase text-amber-500 tracking-widest mb-1 flex items-center gap-2">
+                                    <Zap size={12} className="fill-current"/> Immediate Skill Fix
+                                </h4>
+                                <p className="text-zinc-300 text-xs italic font-medium leading-relaxed">
+                                    "{feedback.correction_drill}"
+                                </p>
+                                {feedback.reasoning && (
+                                    <p className="mt-2 text-[9px] text-zinc-500 font-bold uppercase tracking-tight flex items-center gap-1">
+                                        💡 {feedback.reasoning}
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* RIGHT: The Band 9 Mirror */}
@@ -819,6 +890,21 @@ export default function TrainingCockpit() {
                                 className="flex-1 py-3 bg-emerald-600 text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-emerald-500 transition-all shadow-lg flex items-center justify-center gap-2"
                             >
                                 <Wand2 size={14} /> Mastery Retake
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    const currentPrompt = feedback.next_task_prompt; // Hack: we want to stay on the JUST ANSWERED question
+                                    // In a real state machine, we'd roll back the session part, 
+                                    // but for "Instant Scaffolding" we just clear feedback and let them talk.
+                                    setFeedback(null);
+                                    // We'll use the prompt they just answered
+                                    setFeedback({ next_task_prompt: "Alright, let's try that again. Focus on the refinement!" });
+                                    speak("Alright, let's try that again. Focus on the refinement!");
+                                }} 
+                                className="p-3 bg-zinc-800 text-white rounded-xl hover:bg-zinc-700 transition-all group relative"
+                            >
+                                <ArrowRight size={18} className="rotate-180" />
+                                <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Instant Retake</span>
                             </button>
                         </div>
                     </div>

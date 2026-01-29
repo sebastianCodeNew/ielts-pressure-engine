@@ -94,7 +94,9 @@ def formulate_strategy(
         CORRECTION DRILL:
         - Identify the ONE biggest grammatical or lexical mistake in the `USER TRANSCRIPT`.
         - Create a very short "Correction Drill" in the `correction_drill` field.
-        - Example: "Try re-stating your point about hometowns, but use the present perfect continuous tense."
+        
+        REASONING:
+        - In the `reasoning` field, explain in ONE sentence WHY this specific correction or lexical mission matters for the IELTS Band 7+ criteria (e.g., "Using complex connectors like 'nevertheless' helps you achieve Band 7+ in Coherence and Cohesion.").
         
         LEXICAL MISSION:
         - Identify 3 advanced (Band 8+) vocabulary items or idioms relevant to the *next question* you are about to ask.

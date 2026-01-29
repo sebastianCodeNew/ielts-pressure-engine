@@ -43,6 +43,7 @@ class Intervention(BaseModel):
     keywords: Optional[List[str]] = None
     target_keywords: Optional[List[str]] = Field(default_factory=list, description="Target Band 8+ words for the user to use in the NEXT turn")
     user_transcript: Optional[str] = None
+    reasoning: Optional[str] = Field(None, description="Explains WHY the correction matters for hitting higher bands")
     
     # Specific feedback fields
     grammar_advice: Optional[str] = None
