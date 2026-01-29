@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { useTTS } from "@/hooks/useTTS";
@@ -77,15 +77,19 @@ export default function TrainingCockpit() {
   // AI Notepad State
   const [notes, setNotes] = useState("");
 
-  // Final Load
+  const hasNudgedRef = useRef(false);
+
+  // Auto-Vocal Nudge Logic
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isRecording) {
       interval = setInterval(() => {
         setSilenceTimer(s => {
           const next = s + 1;
-          // AUTO-VOCAL NUDGE: At 8 seconds of silence, offer a supportive prompt
-          if (next === 8 && !isSpeaking) {
+          // AUTO-VOCAL NUDGE: At 10 seconds of silence, offer a supportive prompt
+          // Ref check ensures we only nudge ONCE per recording turn
+          if (next === 10 && !isSpeaking && !hasNudgedRef.current) {
+             hasNudgedRef.current = true;
              const nudges = [
                "And how did that make you feel?",
                "Tell me more about that.",
@@ -100,6 +104,7 @@ export default function TrainingCockpit() {
       }, 1000);
     } else {
       setSilenceTimer(0);
+      hasNudgedRef.current = false; // Reset for next turn
     }
     return () => clearInterval(interval);
   }, [isRecording, isSpeaking, speak]);
@@ -727,10 +732,11 @@ export default function TrainingCockpit() {
                                     "{feedback.ideal_response || "Excellent answer. Focus on expanding your Part 3 responses."}"
                                 </p>
                                 <button 
+                                    disabled={isSpeaking || processing}
                                     onClick={() => speak(feedback.ideal_response || "")}
-                                    className="mt-6 flex items-center justify-center gap-3 w-full py-4 bg-red-600 hover:bg-red-500 text-white rounded-xl font-black uppercase tracking-widest transition-all shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+                                    className="mt-6 flex items-center justify-center gap-3 w-full py-4 bg-red-600 hover:bg-red-500 text-white rounded-xl font-black uppercase tracking-widest transition-all shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
                                 >
-                                    <Volume2 size={20} className="animate-pulse" /> Play My Potential
+                                    <Volume2 size={20} className={isSpeaking ? "" : "animate-pulse"} /> {isSpeaking ? "Coaching..." : "Play My Potential"}
                                 </button>
                             </div>
                         ) : (
