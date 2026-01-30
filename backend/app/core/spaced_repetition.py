@@ -21,6 +21,12 @@ def calculate_next_review(item: VocabularyItem, quality: int) -> VocabularyItem:
     Returns:
         The updated VocabularyItem.
     """
+    # Ensure defaults for potentially null values
+    if item.ease_factor is None:
+        item.ease_factor = 2.5
+    if item.interval_days is None:
+        item.interval_days = 1
+    
     if quality < 3:
         # Failed recall - reset
         item.interval_days = 1
@@ -61,6 +67,7 @@ def get_due_vocabulary(db: Session, user_id: str, limit: int = 3) -> list[Vocabu
     now = datetime.utcnow()
     due_items = db.query(VocabularyItem).filter(
         VocabularyItem.user_id == user_id,
+        VocabularyItem.next_review_at != None,  # Null safety
         VocabularyItem.next_review_at <= now
     ).order_by(VocabularyItem.next_review_at.asc()).limit(limit).all()
     

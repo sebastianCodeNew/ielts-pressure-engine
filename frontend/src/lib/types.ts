@@ -30,6 +30,9 @@ export interface Intervention {
   keywords?: string[];
   target_keywords?: string[];
   stress_level?: number;
+  
+  // Audio Mirror
+  user_audio_url?: string;
 }
 
 export interface TranslationResponse {

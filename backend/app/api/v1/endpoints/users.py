@@ -85,6 +85,17 @@ def get_weakness_report(user_id: str = "default_user", db: Session = Depends(get
     
     # Get all attempts for this user
     sessions = db.query(ExamSession).filter(ExamSession.user_id == user_id).all()
+    
+    # Early return if no sessions (prevents empty IN clause error)
+    if not sessions:
+        return {
+            "skill_averages": {"Fluency": 5, "Coherence": 5, "Lexical": 5, "Grammar": 5, "Pronunciation": 5},
+            "lowest_area": "General",
+            "trend_data": [],
+            "recurring_errors": [],
+            "total_attempts": 0
+        }
+    
     session_ids = [s.id for s in sessions]
     
     all_attempts = db.query(QuestionAttempt).filter(
