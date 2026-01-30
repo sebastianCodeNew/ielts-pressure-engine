@@ -33,6 +33,9 @@ export interface Intervention {
   
   // Audio Mirror
   user_audio_url?: string;
+  
+  // Celebration
+  keywords_hit?: string[];
 }
 
 export interface TranslationResponse {

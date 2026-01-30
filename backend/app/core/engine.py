@@ -139,6 +139,33 @@ def process_user_attempt(
         new_qa.feedback_markdown = intervention.feedback_markdown
         new_qa.improved_response = intervention.ideal_response
         
+        # Keyword Hit Detection
+        last_qa = db.query(QuestionAttempt).filter(
+            QuestionAttempt.session_id == session_id,
+            QuestionAttempt.id < new_qa.id
+        ).order_by(QuestionAttempt.id.desc()).first()
+        
+        if last_qa and last_qa.target_keywords and attempt.transcript:
+            lower_ts = attempt.transcript.lower()
+            hits = []
+            for kw in last_qa.target_keywords:
+                if re.search(rf"\b{re.escape(kw.lower())}\b", lower_ts):
+                    hits.append(kw)
+            intervention.keywords_hit = hits
+        elif not last_qa and exam_session.initial_keywords and attempt.transcript:
+            # Check against initial keywords for first turn
+            lower_ts = attempt.transcript.lower()
+            hits = []
+            for kw in exam_session.initial_keywords:
+                if re.search(rf"\b{re.escape(kw.lower())}\b", lower_ts):
+                    hits.append(kw)
+            intervention.keywords_hit = hits
+        else:
+            intervention.keywords_hit = []
+
+        # Save current keywords for the NEXT turn
+        new_qa.target_keywords = intervention.target_keywords
+        
         # Micro-Skill Error Tracking
         from app.core.error_taxonomy import classify_errors
         from app.core.database import ErrorLog

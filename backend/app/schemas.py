@@ -44,6 +44,7 @@ class Intervention(BaseModel):
     target_keywords: Optional[List[str]] = Field(default_factory=list, description="Target Band 8+ words for the user to use in the NEXT turn")
     user_transcript: Optional[str] = None
     reasoning: Optional[str] = Field(None, description="Explains WHY the correction matters for hitting higher bands")
+    keywords_hit: List[str] = Field(default_factory=list, description="Keywords from the current mission that were successfully used")
     
     # Specific feedback fields
     grammar_advice: Optional[str] = None

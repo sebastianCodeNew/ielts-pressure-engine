@@ -203,4 +203,12 @@ export class ApiClient {
     if (!res.ok) throw new Error("Shadowing analysis failed");
     return res.json();
   }
+
+  static async getWarmUpVocabulary(userId: string = "default_user"): Promise<any[]> {
+    const res = await this.fetchWithRetry(`${API_BASE_URL}/v1/exams/warmup?user_id=${userId}`, {
+      method: "GET",
+    });
+    if (!res.ok) throw new Error("Failed to fetch warmup vocabulary");
+    return res.json();
+  }
 }

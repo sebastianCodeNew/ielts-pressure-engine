@@ -7,6 +7,7 @@ import { Mic2, Square, Wand2, Play, Users, BarChart3, HelpCircle, X, ArrowRight,
 import ReactMarkdown from "react-markdown";
 import AudioWaveform from "@/components/AudioWaveform";
 import { ApiClient } from "@/lib/api";
+import { WarmUp } from "@/components/WarmUp";
 
 interface FeedbackData {
   next_task_prompt?: string;
@@ -19,6 +20,7 @@ interface FeedbackData {
   target_keywords?: string[];
   reasoning?: string;
   user_audio_url?: string;
+  keywords_hit?: string[];
 }
 
 export default function TrainingCockpit() {
@@ -84,6 +86,13 @@ export default function TrainingCockpit() {
   const [lastError, setLastError] = useState<string | null>(null);
   const [isRetry, setIsRetry] = useState(false);
 
+  const [showWarmUp, setShowWarmUp] = useState(false);
+  const [warmUpWords, setWarmUpWords] = useState<{ word: string; definition: string }[]>([]);
+
+  // Celebration State
+  const [celebrationKeywords, setCelebrationKeywords] = useState<string[]>([]);
+  const [showCelebration, setShowCelebration] = useState(false);
+
   const hasNudgedRef = useRef(false);
 
   // Auto-Vocal Nudge Logic
@@ -145,6 +154,17 @@ export default function TrainingCockpit() {
     }
   };
 
+  const handleStartMock = async () => {
+    try {
+      const words = await ApiClient.getWarmUpVocabulary("default_user");
+      setWarmUpWords(words);
+      setShowWarmUp(true);
+    } catch (e) {
+      console.error("Warmup failed, starting exam directly", e);
+      startExam();
+    }
+  };
+
   const handleGetHint = async () => {
     if (!sessionId) return;
     try {
@@ -185,18 +205,31 @@ export default function TrainingCockpit() {
             const data = await ApiClient.submitExamAudio(sessionId, audioBlob, isRetry);
             setIsRetry(false); // Reset after use
             
-            // Keyword Hit Detection (Against mission that was active during recording)
-            const checkText = data.user_transcript || data.feedback_markdown || "";
-            if (activeMission.length > 0 && checkText) {
-               const lowerTranscript = checkText.toLowerCase();
-               const hits = activeMission.filter(word => {
-                  const regex = new RegExp(`\\b${word.toLowerCase()}\\b`, 'i');
-                  return regex.test(lowerTranscript);
-               });
-               setUsedKeywords(hits);
-            }
-
             setFeedback(data);
+
+            // Trigger Celebration
+            if (data.keywords_hit && data.keywords_hit.length > 0) {
+                setCelebrationKeywords(data.keywords_hit);
+                setUsedKeywords(prev => [...new Set([...prev, ...data.keywords_hit!])]);
+                setShowCelebration(true);
+                setTimeout(() => setShowCelebration(false), 4000);
+            } else {
+                // Fallback / legacy frontend detection for safety
+                const checkText = data.user_transcript || data.feedback_markdown || "";
+                if (activeMission.length > 0 && checkText) {
+                   const lowerTranscript = checkText.toLowerCase();
+                   const hits = activeMission.filter(word => {
+                      const regex = new RegExp(`\\b${word.toLowerCase()}\\b`, 'i');
+                      return regex.test(lowerTranscript);
+                   });
+                   if (hits.length > 0) {
+                       setCelebrationKeywords(hits);
+                       setUsedKeywords(prev => [...new Set([...prev, ...hits])]);
+                       setShowCelebration(true);
+                       setTimeout(() => setShowCelebration(false), 4000);
+                   }
+                }
+            }
 
             // PATTERN SPOTLIGHT LOGIC
             if (data.correction_drill) {
@@ -293,11 +326,11 @@ export default function TrainingCockpit() {
                 <div className="group relative w-48 h-48 mx-auto">
                     <div className="absolute inset-0 bg-red-600/20 rounded-full blur-xl group-hover:bg-red-600/30 transition-all duration-500" />
                     <button 
-                        onClick={startExam}
-                        className="relative w-full h-full bg-[#12121a] border-2 border-red-600 rounded-full flex flex-col items-center justify-center hover:scale-105 transition-all cursor-pointer shadow-[0_0_40px_rgba(220,38,38,0.2)]"
+                        onClick={handleStartMock}
+                        className="relative z-10 w-full h-full bg-red-600 text-white rounded-full flex flex-col items-center justify-center shadow-2xl transition-all group-hover:scale-105 active:scale-95"
                     >
-                        <Play size={48} className="text-white fill-white ml-2" />
-                        <span className="text-xs font-black text-red-500 uppercase tracking-widest mt-4">Start Mock</span>
+                        <Play size={48} fill="currentColor" className="mb-2" />
+                        <span className="text-xs font-black uppercase tracking-widest">Start Mock Exam</span>
                     </button>
                 </div>
 
@@ -927,6 +960,39 @@ export default function TrainingCockpit() {
                     </div>
 
                 </div>
+            </div>
+        )}
+
+        {/* Support Components */}
+        <WarmUp 
+            isOpen={showWarmUp} 
+            onClose={() => setShowWarmUp(false)} 
+            onComplete={() => {
+                setShowWarmUp(false);
+                startExam();
+            }}
+            dueWords={warmUpWords}
+        />
+
+        {/* Celebration Overlay */}
+        {showCelebration && (
+            <div className="fixed inset-0 z-[100] pointer-events-none flex flex-col items-center justify-center animate-in fade-in zoom-in duration-500">
+                <div className="bg-emerald-500/20 border border-emerald-500/50 backdrop-blur-xl px-12 py-8 rounded-[40px] flex flex-col items-center gap-4 shadow-[0_0_100px_rgba(16,185,129,0.3)]">
+                    <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/50">
+                        <Zap size={40} className="text-black fill-current" />
+                    </div>
+                    <div className="text-center">
+                        <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-1">Lexical Target Hit!</h2>
+                        <div className="flex gap-2 justify-center">
+                            {celebrationKeywords.map((w, i) => (
+                                <span key={i} className="text-emerald-400 font-black uppercase text-sm tracking-widest">{w}</span>
+                            ))}
+                        </div>
+                    </div>
+                    <p className="text-emerald-500/80 text-xs font-bold uppercase tracking-widest">+10 Mastery Points</p>
+                </div>
+                {/* Visual Confetti (Simplified) */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(16,185,129,0.05)_100%)]" />
             </div>
         )}
 

@@ -79,6 +79,7 @@ class QuestionAttempt(Base):
     
     feedback_markdown = Column(String, nullable=True)
     improved_response = Column(String, nullable=True)
+    target_keywords = Column(JSON, nullable=True) # The keywords suggested for the NEXT turn
     
     created_at = Column(DateTime, default=datetime.utcnow)
     session = relationship("ExamSession", back_populates="attempts")
@@ -151,6 +152,8 @@ def init_db():
             conn.execute(text("ALTER TABLE question_attempts ADD COLUMN pronunciation_score FLOAT"))
         if "improved_response" not in cols_qa:
             conn.execute(text("ALTER TABLE question_attempts ADD COLUMN improved_response TEXT"))
+        if "target_keywords" not in cols_qa:
+            conn.execute(text("ALTER TABLE question_attempts ADD COLUMN target_keywords JSON"))
         
         res = conn.execute(text("PRAGMA table_info(exam_sessions)"))
         cols_es = [row[1] for row in res]

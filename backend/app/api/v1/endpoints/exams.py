@@ -22,6 +22,19 @@ PART_1_TOPICS = [
     "What kind of music do you like?"
 ]
 
+@router.get("/warmup")
+def get_exam_warmup(user_id: str = "default_user", db: Session = Depends(get_db)):
+    """Fetches due vocabulary for the pre-flight warm-up."""
+    from app.core.spaced_repetition import get_due_vocabulary
+    due_words = get_due_vocabulary(db, user_id, limit=3)
+    
+    return [
+        {
+            "word": w.word,
+            "definition": w.definition or "No definition available."
+        } for w in due_words
+    ]
+
 @router.post("/start", response_model=ExamSessionSchema)
 def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
     # Ensure user exists (hack for MVP)
