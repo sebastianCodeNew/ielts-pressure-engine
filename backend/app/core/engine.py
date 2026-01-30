@@ -139,6 +139,26 @@ def process_user_attempt(
         new_qa.feedback_markdown = intervention.feedback_markdown
         new_qa.improved_response = intervention.ideal_response
         
+        # Micro-Skill Error Tracking
+        from app.core.error_taxonomy import classify_errors
+        from app.core.database import ErrorLog
+        if intervention.feedback_markdown:
+            detected_errors = classify_errors(intervention.feedback_markdown)
+            for error_type in detected_errors:
+                existing = db.query(ErrorLog).filter(
+                    ErrorLog.user_id == exam_session.user_id,
+                    ErrorLog.error_type == error_type.value
+                ).first()
+                if existing:
+                    existing.count += 1
+                    existing.last_seen = datetime.utcnow()
+                else:
+                    db.add(ErrorLog(
+                        user_id=exam_session.user_id,
+                        error_type=error_type.value,
+                        session_id=session_id
+                    ))
+        
         # Transition Logic (Skip if RETRY)
         if is_retry:
             # If retry, we maintain the same prompt and status

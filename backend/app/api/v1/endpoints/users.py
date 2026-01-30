@@ -142,7 +142,13 @@ def get_weakness_report(user_id: str = "default_user", db: Session = Depends(get
             if "hesitation" in fb or "filler" in fb or "pause" in fb:
                 error_keywords.append("Fluency Gaps")
     
-    recurring_errors = [{"error": k, "count": v} for k, v in Counter(error_keywords).most_common(3)]
+    # Now use micro-skill ErrorLog for granular breakdown
+    from app.core.database import ErrorLog
+    error_logs = db.query(ErrorLog).filter(
+        ErrorLog.user_id == user_id
+    ).order_by(ErrorLog.count.desc()).limit(5).all()
+    
+    micro_skill_errors = [{"error": e.error_type, "count": e.count} for e in error_logs]
     
     # Trend data (last 10 sessions)
     completed = [s for s in sessions if s.status == "COMPLETED"][-10:]
@@ -155,6 +161,6 @@ def get_weakness_report(user_id: str = "default_user", db: Session = Depends(get
         "skill_averages": skill_averages,
         "lowest_area": lowest_area,
         "trend_data": trend_data,
-        "recurring_errors": recurring_errors,
+        "recurring_errors": micro_skill_errors,  # Now uses micro-skill tracking
         "total_attempts": len(all_attempts)
     }

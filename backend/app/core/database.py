@@ -114,6 +114,17 @@ class UserAchievement(Base):
     
     user = relationship("User", back_populates="achievements")
 
+class ErrorLog(Base):
+    """Tracks specific micro-skill errors for targeted learning."""
+    __tablename__ = "error_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("users.id"), index=True)
+    error_type = Column(String, index=True)  # e.g., "Subject-Verb Agreement"
+    count = Column(Integer, default=1)
+    last_seen = Column(DateTime, default=datetime.utcnow)
+    session_id = Column(String, nullable=True)  # Optional: track which session
+
 class SessionModel(Base):
     __tablename__ = "sessions_legacy" 
     session_id = Column(String, primary_key=True, index=True)
