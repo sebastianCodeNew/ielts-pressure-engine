@@ -48,18 +48,15 @@ def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
     }
     initial_keywords = TOPIC_KEYWORDS.get(initial_prompt, ["interesting", "significant", "diverse"])
     
-    # 3. Seed Retention Words from Vault
-    from app.core.database import VocabularyItem
-    retention_words = db.query(VocabularyItem).filter(
-        VocabularyItem.user_id == request.user_id,
-        VocabularyItem.mastery_level < 80
-    ).order_by(VocabularyItem.last_reviewed_at.asc()).limit(2).all()
+    # 3. Seed Due Words from Spaced Repetition Engine
+    from app.core.spaced_repetition import get_due_vocabulary
+    due_words = get_due_vocabulary(db, request.user_id, limit=2)
     
     final_keywords = initial_keywords
-    if retention_words:
-        # Mix in retention words, ensuring no duplicates
-        vault_words = [r.word for r in retention_words]
-        final_keywords = list(set(initial_keywords + vault_words))[:5] # Max 5 for hud space
+    if due_words:
+        # Mix in due words, ensuring no duplicates
+        vault_words = [w.word for w in due_words]
+        final_keywords = list(set(initial_keywords + vault_words))[:5] # Max 5 for HUD space
 
     new_session = ExamSession(
         id=session_id,
@@ -89,13 +86,21 @@ def submit_exam_audio(
         raise HTTPException(status_code=404, detail="Session not found")
 
     # Use unique UUID for temp file
-    # Use unique UUID for temp file
     ext = os.path.splitext(file.filename)[1] or ".webm"
     temp_filename = f"temp_exam_{session_id}_{uuid.uuid4()}{ext}"
+    
+    # Persistent audio storage path
+    AUDIO_DIR = "audio_storage"
+    os.makedirs(AUDIO_DIR, exist_ok=True)
+    attempt_count = db.query(QuestionAttempt).filter(QuestionAttempt.session_id == session_id).count()
+    persistent_filename = f"{AUDIO_DIR}/{session_id}_{attempt_count}{ext}"
     
     try:
         with open(temp_filename, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
+        
+        # Copy to persistent storage for Audio Mirror
+        shutil.copy(temp_filename, persistent_filename)
 
         intervention = process_user_attempt(
             file_path=temp_filename,
@@ -105,6 +110,10 @@ def submit_exam_audio(
             is_exam_mode=True,
             is_retry=is_retry
         )
+        
+        # Attach audio URL for Audio Mirror feature
+        intervention.user_audio_url = f"/audio/{session_id}_{attempt_count}{ext}"
+        
         return intervention
     except Exception as e:
         print(f"Error processing exam audio: {e}")

@@ -18,6 +18,7 @@ interface FeedbackData {
   stress_level?: number;
   target_keywords?: string[];
   reasoning?: string;
+  user_audio_url?: string;
 }
 
 export default function TrainingCockpit() {
@@ -804,13 +805,28 @@ export default function TrainingCockpit() {
                                 <p className="text-white text-sm italic leading-relaxed relative z-10 font-medium">
                                     "{feedback.ideal_response || "Excellent answer. Focus on expanding your Part 3 responses."}"
                                 </p>
-                                <button 
-                                    disabled={isSpeaking || processing}
-                                    onClick={() => speak(feedback.ideal_response || "")}
-                                    className="mt-6 flex items-center justify-center gap-3 w-full py-4 bg-red-600 hover:bg-red-500 text-white rounded-xl font-black uppercase tracking-widest transition-all shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
-                                >
-                                    <Volume2 size={20} className={isSpeaking ? "" : "animate-pulse"} /> {isSpeaking ? "Coaching..." : "Play My Potential"}
-                                </button>
+                                
+                                {/* AUDIO MIRROR: Side-by-Side Playback */}
+                                <div className="flex gap-3 mt-6">
+                                    {feedback.user_audio_url && (
+                                        <button 
+                                            onClick={() => {
+                                                const audio = new Audio(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${feedback.user_audio_url}`);
+                                                audio.play();
+                                            }}
+                                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl font-bold text-xs uppercase tracking-widest transition-all"
+                                        >
+                                            <Mic2 size={16} /> My Response
+                                        </button>
+                                    )}
+                                    <button 
+                                        disabled={isSpeaking || processing}
+                                        onClick={() => speak(feedback.ideal_response || "")}
+                                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
+                                    >
+                                        <Volume2 size={16} className={isSpeaking ? "" : "animate-pulse"} /> {isSpeaking ? "Coaching..." : "Band 9 Version"}
+                                    </button>
+                                </div>
                             </div>
                         ) : (
                             <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">

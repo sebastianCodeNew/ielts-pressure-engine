@@ -50,6 +50,9 @@ class Intervention(BaseModel):
     vocabulary_advice: Optional[str] = None
     pronunciation_advice: Optional[str] = None
     
+    # Audio Mirror
+    user_audio_url: Optional[str] = Field(None, description="URL to the user's original audio recording")
+    
     # Real-time Engine State
     stress_level: float = 0.0
 

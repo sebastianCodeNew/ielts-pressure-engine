@@ -72,3 +72,78 @@ def update_user_profile(profile: UserProfileUpdate, user_id: str = "default_user
     user.weakness = profile.weakness
     db.commit()
     return {"status": "updated", "target_band": user.target_band, "weakness": user.weakness}
+
+@router.get("/me/weakness-report")
+def get_weakness_report(user_id: str = "default_user", db: Session = Depends(get_db)):
+    """Comprehensive weakness analysis across all sessions."""
+    from app.core.database import QuestionAttempt
+    from collections import Counter
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get all attempts for this user
+    sessions = db.query(ExamSession).filter(ExamSession.user_id == user_id).all()
+    session_ids = [s.id for s in sessions]
+    
+    all_attempts = db.query(QuestionAttempt).filter(
+        QuestionAttempt.session_id.in_(session_ids)
+    ).all()
+    
+    if not all_attempts:
+        return {
+            "skill_averages": {"Fluency": 5, "Coherence": 5, "Lexical": 5, "Grammar": 5, "Pronunciation": 5},
+            "lowest_area": "General",
+            "trend_data": [],
+            "recurring_errors": [],
+            "total_attempts": 0
+        }
+    
+    # Calculate averages (normalized to 0-9 scale)
+    avg_fluency = sum((a.wpm or 0) / 15 for a in all_attempts) / len(all_attempts)
+    avg_coherence = sum((a.coherence_score or 0) * 9 for a in all_attempts) / len(all_attempts)
+    avg_lexical = sum((a.lexical_diversity or 0) * 15 for a in all_attempts) / len(all_attempts)
+    avg_grammar = sum((a.grammar_complexity or 0) * 40 for a in all_attempts) / len(all_attempts)
+    avg_pronunciation = sum((a.pronunciation_score or 0) * 9 for a in all_attempts) / len(all_attempts)
+    
+    skill_averages = {
+        "Fluency": min(9, avg_fluency),
+        "Coherence": min(9, avg_coherence),
+        "Lexical": min(9, avg_lexical),
+        "Grammar": min(9, avg_grammar),
+        "Pronunciation": min(9, avg_pronunciation)
+    }
+    
+    lowest_area = min(skill_averages, key=skill_averages.get)
+    
+    # Extract recurring error patterns from feedback
+    error_keywords = []
+    for a in all_attempts:
+        if a.feedback_markdown:
+            fb = a.feedback_markdown.lower()
+            if "grammar" in fb or "tense" in fb or "agreement" in fb:
+                error_keywords.append("Grammar Errors")
+            if "vocabulary" in fb or "lexical" in fb or "word choice" in fb:
+                error_keywords.append("Vocabulary Range")
+            if "coherence" in fb or "linking" in fb or "connector" in fb:
+                error_keywords.append("Coherence Issues")
+            if "hesitation" in fb or "filler" in fb or "pause" in fb:
+                error_keywords.append("Fluency Gaps")
+    
+    recurring_errors = [{"error": k, "count": v} for k, v in Counter(error_keywords).most_common(3)]
+    
+    # Trend data (last 10 sessions)
+    completed = [s for s in sessions if s.status == "COMPLETED"][-10:]
+    trend_data = [
+        {"session": i+1, "score": s.overall_band_score or 0} 
+        for i, s in enumerate(completed)
+    ]
+    
+    return {
+        "skill_averages": skill_averages,
+        "lowest_area": lowest_area,
+        "trend_data": trend_data,
+        "recurring_errors": recurring_errors,
+        "total_attempts": len(all_attempts)
+    }

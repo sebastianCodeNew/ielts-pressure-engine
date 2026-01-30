@@ -48,6 +48,18 @@ def formulate_strategy(
         USER PROFILE:
         - Target Band: {target_band}
         - Key Weakness: {weakness}
+        
+        USER WEAKNESS PROFILE (Historical Averages):
+        - Avg Fluency: {avg_fluency:.1f} | Avg Coherence: {avg_coherence:.1f}
+        - Avg Lexical: {avg_lexical:.1f} | Avg Grammar: {avg_grammar:.1f}
+        - LOWEST SCORE AREA: {lowest_area}
+        
+        ADAPTIVE QUESTIONING MANDATE:
+        - Your NEXT QUESTION must specifically target the user's LOWEST SCORE AREA ({lowest_area}).
+        - If {lowest_area} is "Coherence": Ask "compare and contrast" or "cause and effect" questions.
+        - If {lowest_area} is "Lexical": Ask about topics requiring specialized vocabulary.
+        - If {lowest_area} is "Grammar": Ask hypothetical or conditional questions.
+        - If {lowest_area} is "Fluency": Ask simpler, faster-paced questions.
 
         USER STATE:
         - Stress Level: {stress_level:.2f}
@@ -69,7 +81,7 @@ def formulate_strategy(
         - Compare metrics against Target Band {target_band}.
         - EXAMINER PERSONALITY (Dynamic):
             * If `stress_level` > 0.7 or `fluency_trend` is "declining": Become a SUPPORTIVE MENTOR. Use encouraging, simpler language. Soften the pressure.
-            * If `stress_level` < 0.4 and performace is AT/ABOVE target: Become a STRICT CHALLENGER. Use formal, professional language. Be more direct and less emotive.
+            * If `stress_level` < 0.4 and performance is AT/ABOVE target: Become a STRICT CHALLENGER. Use formal, professional language. Be more direct and less emotive.
         - If USER WEAKNESS is "{weakness}", focus feedback specifically on that area.
         - If user is performing BELOW target, simplify questions and be encouraging.
         - If user is performing AT/ABOVE target, challenge them with abstract/complex follow-ups.
@@ -104,9 +116,26 @@ def formulate_strategy(
         
         {format_instructions}
         """,
-        input_variables=["stress_level", "fluency_trend", "consecutive_failures", "wpm", "hesitation", "coherence", "lexical_diversity", "grammar_complexity", "history", "current_part", "target_band", "weakness", "context_override", "user_transcript"],
+        input_variables=["stress_level", "fluency_trend", "consecutive_failures", "wpm", "hesitation", "coherence", "lexical_diversity", "grammar_complexity", "history", "current_part", "target_band", "weakness", "context_override", "user_transcript", "avg_fluency", "avg_coherence", "avg_lexical", "avg_grammar", "lowest_area"],
         partial_variables={"format_instructions": parser.get_format_instructions()}
     )
+    
+    # Calculate historical weakness profile
+    avg_fluency, avg_coherence, avg_lexical, avg_grammar = 5.0, 5.0, 5.0, 5.0
+    if state.history:
+        fluency_scores = [h.metrics.fluency_wpm / 15 for h in state.history if h.metrics.fluency_wpm]
+        coherence_scores = [h.metrics.coherence_score * 9 for h in state.history if h.metrics.coherence_score]
+        lexical_scores = [h.metrics.lexical_diversity * 15 for h in state.history if h.metrics.lexical_diversity]
+        grammar_scores = [h.metrics.grammar_complexity * 40 for h in state.history if h.metrics.grammar_complexity]
+        
+        if fluency_scores: avg_fluency = min(9, sum(fluency_scores) / len(fluency_scores))
+        if coherence_scores: avg_coherence = min(9, sum(coherence_scores) / len(coherence_scores))
+        if lexical_scores: avg_lexical = min(9, sum(lexical_scores) / len(lexical_scores))
+        if grammar_scores: avg_grammar = min(9, sum(grammar_scores) / len(grammar_scores))
+    
+    # Determine lowest scoring area
+    scores = {"Fluency": avg_fluency, "Coherence": avg_coherence, "Lexical": avg_lexical, "Grammar": avg_grammar}
+    lowest_area = min(scores, key=scores.get)
 
     print(f"--- AGENT: Analyzing State (Part: {current_part}) ---")
     
@@ -126,7 +155,12 @@ def formulate_strategy(
             target_band=state.target_band,
             weakness=state.weakness,
             context_override=context_override or "None provided.",
-            user_transcript=user_transcript or "No transcript available."
+            user_transcript=user_transcript or "No transcript available.",
+            avg_fluency=avg_fluency,
+            avg_coherence=avg_coherence,
+            avg_lexical=avg_lexical,
+            avg_grammar=avg_grammar,
+            lowest_area=lowest_area
         )
         
         response = llm.invoke(formatted_prompt)

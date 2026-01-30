@@ -96,6 +96,11 @@ class VocabularyItem(Base):
     mastery_level = Column(Integer, default=0) 
     last_reviewed_at = Column(DateTime, default=datetime.utcnow)
     
+    # Spaced Repetition (SM-2)
+    next_review_at = Column(DateTime, default=datetime.utcnow)
+    interval_days = Column(Integer, default=1)
+    ease_factor = Column(Float, default=2.5)
+    
     user = relationship("User", back_populates="vocabulary")
 
 class UserAchievement(Base):
@@ -153,6 +158,16 @@ def init_db():
             conn.execute(text("ALTER TABLE users ADD COLUMN target_band VARCHAR DEFAULT '6.5'"))
         if "weakness" not in cols_u:
             conn.execute(text("ALTER TABLE users ADD COLUMN weakness VARCHAR DEFAULT 'General'"))
+        
+        # Vocabulary Migrations (Spaced Repetition)
+        res = conn.execute(text("PRAGMA table_info(vocabulary_items)"))
+        cols_v = [row[1] for row in res]
+        if "next_review_at" not in cols_v:
+            conn.execute(text("ALTER TABLE vocabulary_items ADD COLUMN next_review_at DATETIME"))
+        if "interval_days" not in cols_v:
+            conn.execute(text("ALTER TABLE vocabulary_items ADD COLUMN interval_days INTEGER DEFAULT 1"))
+        if "ease_factor" not in cols_v:
+            conn.execute(text("ALTER TABLE vocabulary_items ADD COLUMN ease_factor FLOAT DEFAULT 2.5"))
             
         conn.commit()
     print("--- Database Schema Verified & Migrated ---")

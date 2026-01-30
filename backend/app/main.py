@@ -67,6 +67,13 @@ async def rate_limiting_middleware(request: Request, call_next):
 # Register API v1
 app.include_router(api_router, prefix="/api/v1")
 
+# Serve audio files for Audio Mirror feature
+from fastapi.staticfiles import StaticFiles
+import os
+AUDIO_DIR = "audio_storage"
+os.makedirs(AUDIO_DIR, exist_ok=True)
+app.mount("/audio", StaticFiles(directory=AUDIO_DIR), name="audio")
+
 @app.get("/")
 def health_check():
     return {"status": "system_active", "mode": "performance_optimized"}
