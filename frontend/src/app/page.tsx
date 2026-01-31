@@ -21,6 +21,7 @@ import ReactMarkdown from "react-markdown";
 import AudioWaveform from "@/components/AudioWaveform";
 import { ApiClient } from "@/lib/api";
 import { WarmUp } from "@/components/WarmUp";
+import { SmartDiff } from "@/components/SmartDiff";
 
 interface FeedbackData {
   next_task_prompt?: string;
@@ -120,6 +121,11 @@ export default function TrainingCockpit() {
   const [celebrationKeywords, setCelebrationKeywords] = useState<string[]>([]);
   const [showCelebration, setShowCelebration] = useState(false);
 
+  // Correction Gate State
+  const [isGateLocked, setIsGateLocked] = useState(false);
+  const [gateDrill, setGateDrill] = useState<string | null>(null);
+  const [isVerifyingGate, setIsVerifyingGate] = useState(false);
+
   const hasNudgedRef = useRef(false);
 
   // Auto-Vocal Nudge Logic
@@ -210,30 +216,51 @@ export default function TrainingCockpit() {
 
   useEffect(() => {
     if (audioBlob && sessionId) {
-      if (shadowingIndex !== null) {
-        // Handle Shadowing Submission
-        const sentences = getSentences(feedback?.ideal_response || "");
-        const targetText = sentences[shadowingIndex];
-
-        const submitShadow = async () => {
-          setShadowProcessing(true);
-          try {
-            const result = await ApiClient.analyzeShadowing(
-              targetText,
-              audioBlob,
-            );
-            setShadowResults((prev) => ({ ...prev, [shadowingIndex]: result }));
-          } catch (e) {
-            console.error(e);
-          } finally {
-            setShadowProcessing(false);
-            setShadowingIndex(null);
-            setAudioBlob(null);
-          }
-        };
-        submitShadow();
-      } else {
-        // Handle standard Exam Submission
+        if (shadowingIndex !== null) {
+            // ... shadowing logic ...
+            const sentences = getSentences(feedback?.ideal_response || "");
+            const targetText = sentences[shadowingIndex];
+        
+            const submitShadow = async () => {
+              setShadowProcessing(true);
+              try {
+                const result = await ApiClient.analyzeShadowing(
+                  targetText,
+                  audioBlob,
+                );
+                setShadowResults((prev) => ({ ...prev, [shadowingIndex]: result }));
+              } catch (e) {
+                console.error(e);
+              } finally {
+                setShadowProcessing(false);
+                setShadowingIndex(null);
+                setAudioBlob(null);
+              }
+            };
+            submitShadow();
+        } else if (isVerifyingGate && gateDrill) {
+             // HANDLE CORRECTION GATE VERIFICATION
+             const verifyGate = async () => {
+                 try {
+                     const result = await ApiClient.analyzeShadowing(gateDrill, audioBlob);
+                     if (result.is_passed) {
+                         setIsGateLocked(false);
+                         setIsVerifyingGate(false);
+                         speak("Excellent correction. Unlocked.");
+                     } else {
+                         setIsVerifyingGate(false);
+                         speak("Not quite. Listen and try again.");
+                     }
+                 } catch (e) {
+                     console.error(e);
+                     setIsVerifyingGate(false);
+                 } finally {
+                     setAudioBlob(null);
+                 }
+             };
+             verifyGate();
+        } else {
+          // Handle standard Exam Submission
         const submit = async () => {
           setProcessing(true);
           try {
@@ -245,6 +272,16 @@ export default function TrainingCockpit() {
             setIsRetry(false); // Reset after use
 
             setFeedback(data);
+
+            // CORRECTION GATE LOGIC
+            // If correction drill is present, LOCK the gate.
+            if (data.correction_drill) {
+                setIsGateLocked(true);
+                setGateDrill(data.correction_drill);
+            } else {
+                setIsGateLocked(false);
+                setGateDrill(null);
+            }
 
             // Trigger Celebration
             if (data.keywords_hit && data.keywords_hit.length > 0) {
@@ -858,7 +895,27 @@ export default function TrainingCockpit() {
                 </div>
               )}
 
-              {/* AI Notepad */}
+            {/* STRATEGY CARDS (Panic Management) */}
+            {silenceTimer > 6 && part2Phase !== "PREP" && (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 animate-in zoom-in slide-in-from-bottom-5 duration-500">
+                    <div className="bg-blue-600 text-white p-6 rounded-3xl shadow-2xl shadow-blue-900/50 max-w-sm border-4 border-blue-400/30">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center animate-bounce">
+                                <Zap size={18} fill="currentColor" />
+                            </div>
+                            <h4 className="font-black uppercase tracking-widest text-xs">Strategy: Buy Time</h4>
+                        </div>
+                        <p className="text-xl font-bold leading-tight mb-4 text-center">
+                            "That's a fascinating question, I've never thought about it deeply, but..."
+                        </p>
+                        <div className="flex justify-center">
+                            <span className="text-[10px] bg-black/20 px-3 py-1 rounded-full font-medium">Say this to reset your brain</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+             {/* AI Notepad */}
               <div className="mt-6 flex flex-col gap-2">
                 <div className="flex justify-between items-center bg-zinc-100 p-3 rounded-lg border border-zinc-200">
                   <span className="text-[10px] font-black uppercase text-zinc-400">
@@ -1002,17 +1059,33 @@ export default function TrainingCockpit() {
                 <ReactMarkdown>{feedback.feedback_markdown}</ReactMarkdown>
               </div>
 
-              {/* CORRECTION CHALLENGE (Integrated reasoning) */}
+              {/* CORRECTION CHALLENGE (The Mastery Drill) */}
               {feedback.correction_drill && (
-                <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl mt-6 animate-in fade-in duration-1000">
-                  <h4 className="text-[10px] font-black uppercase text-amber-500 tracking-widest mb-1 flex items-center gap-2">
-                    <Zap size={12} className="fill-current" /> Immediate Skill
-                    Fix
+                <div className={`p-4 rounded-xl mt-6 animate-in fade-in duration-1000 transition-all ${isGateLocked ? 'bg-red-950/30 border border-red-500/50 shadow-[0_0_30px_rgba(220,38,38,0.2)]' : 'bg-amber-500/5 border border-amber-500/20'}`}>
+                  <h4 className={`text-[10px] font-black uppercase tracking-widest mb-2 flex items-center gap-2 ${isGateLocked ? 'text-red-500' : 'text-amber-500'}`}>
+                    {isGateLocked ? <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/> LOCK: CORE ERROR DETECTED</div> : <><Zap size={12} className="fill-current" /> Immediate Skill Fix</>}
                   </h4>
-                  <p className="text-zinc-300 text-xs italic font-medium leading-relaxed">
+                  <p className="text-zinc-300 text-xs italic font-medium leading-relaxed mb-3">
                     "{feedback.correction_drill}"
                   </p>
-                  {feedback.reasoning && (
+                  
+                  {isGateLocked && (
+                        <div className="flex gap-2">
+                             <button
+                               disabled={isVerifyingGate}
+                               onClick={() => {
+                                   setIsVerifyingGate(true);
+                                   startRecording();
+                               }}
+                               className="w-full py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-red-900/50"
+                             >
+                               {isVerifyingGate ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"/> : <Mic2 size={14} />}
+                               {isVerifyingGate ? "Recording... Say it correctly!" : "Record Fit to Unlock"}
+                             </button>
+                        </div>
+                  )}
+
+                  {feedback.reasoning && !isGateLocked && (
                     <p className="mt-2 text-[9px] text-zinc-500 font-bold uppercase tracking-tight flex items-center gap-1">
                       💡 {feedback.reasoning}
                     </p>
@@ -1044,12 +1117,19 @@ export default function TrainingCockpit() {
                   <h4 className="text-[10px] font-black uppercase text-red-500 tracking-widest mb-3">
                     Your Potential (Band 9 Refined)
                   </h4>
-                  <p className="text-white text-sm italic leading-relaxed relative z-10 font-medium">
-                    "
-                    {feedback.ideal_response ||
-                      "Excellent answer. Focus on expanding your Part 3 responses."}
-                    "
-                  </p>
+                  {/* Smart Diff Visualization */}
+                    {feedback.ideal_response && feedback.user_transcript ? (
+                        <div className="relative z-10">
+                            <SmartDiff original={feedback.user_transcript} improved={feedback.ideal_response} />
+                        </div>
+                    ) : (
+                      <p className="text-white text-sm italic leading-relaxed relative z-10 font-medium">
+                        "
+                        {feedback.ideal_response ||
+                          "Excellent answer. Focus on expanding your Part 3 responses."}
+                        "
+                      </p>
+                    )}
 
                   {/* AUDIO MIRROR: Side-by-Side Playback */}
                   <div className="flex gap-3 mt-6">
@@ -1160,14 +1240,24 @@ export default function TrainingCockpit() {
               )}
 
               <div className="flex gap-4 mt-8">
-                <button
-                  onClick={() => {
-                    setFeedback(null);
-                    setShadowingMode(false);
-                  }}
-                  className="flex-1 py-3 bg-zinc-800 text-zinc-400 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-zinc-700 transition-all"
+                <button 
+                    disabled={isGateLocked}
+                    onClick={() => { setFeedback(null); setShadowingMode(false); }} 
+                    className={`flex-1 py-3 font-bold text-xs uppercase tracking-widest rounded-xl transition-all relative overflow-hidden group ${
+                        isGateLocked 
+                        ? 'bg-zinc-900 text-zinc-600 cursor-not-allowed border border-zinc-800' 
+                        : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                    }`}
                 >
-                  Next Question <ArrowRight size={14} className="inline ml-2" />
+                    {isGateLocked && (
+                        <div className="absolute inset-0 bg-zinc-950/80 flex items-center justify-center gap-2 text-red-500 font-bold z-10 w-full h-full">
+                            <div className="w-4 h-4 rounded-full border-2 border-red-500 flex items-center justify-center">
+                                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                            </div>
+                            LOCKED: FIX ERROR
+                        </div>
+                    )}
+                    Next Question <ArrowRight size={14} className="inline ml-2"/>
                 </button>
                 <button
                   onClick={() => {
