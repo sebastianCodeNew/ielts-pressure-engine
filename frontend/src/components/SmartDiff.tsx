@@ -11,8 +11,8 @@ export function SmartDiff({ original, improved }: SmartDiffProps) {
   // Simple diff logic for MVP: Word-level comparison
   // A robust diff-match-patch library is better for production, but we keep it dep-free here.
   
-  const origWords = original.split(/\s+/);
-  const impWords = improved.split(/\s+/);
+  const origWords = (original || "").split(/\s+/);
+  const impWords = (improved || "").split(/\s+/);
   
   // This is a very naive diff visualization for demonstration.
   // In a real app, use 'diff' package.

@@ -897,7 +897,7 @@ export default function TrainingCockpit() {
 
             {/* STRATEGY CARDS (Panic Management) */}
             {silenceTimer > 6 && part2Phase !== "PREP" && (
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 animate-in zoom-in slide-in-from-bottom-5 duration-500">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] animate-in zoom-in slide-in-from-bottom-5 duration-500">
                     <div className="bg-blue-600 text-white p-6 rounded-3xl shadow-2xl shadow-blue-900/50 max-w-sm border-4 border-blue-400/30">
                         <div className="flex items-center gap-3 mb-3">
                             <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center animate-bounce">
