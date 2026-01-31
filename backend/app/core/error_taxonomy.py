@@ -37,8 +37,8 @@ ERROR_PATTERNS = {
     ErrorType.SUBJECT_VERB_AGREEMENT: [
         r"subject.{0,20}verb.{0,10}agree",
         r"singular.{0,10}plural",
-        r"he do|she do|it do",
-        r"they does|he have|she have"
+        r"\bhe do\b|\bshe do\b|\bit do\b",
+        r"\bthey does\b|\bhe have\b|\bshe have\b"
     ],
     ErrorType.ARTICLE_USAGE: [
         r"article",

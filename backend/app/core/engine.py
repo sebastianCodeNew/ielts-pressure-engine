@@ -140,10 +140,20 @@ def process_user_attempt(
         new_qa.improved_response = intervention.ideal_response
         
         # Keyword Hit Detection
-        last_qa = db.query(QuestionAttempt).filter(
-            QuestionAttempt.session_id == session_id,
-            QuestionAttempt.id < new_qa.id
-        ).order_by(QuestionAttempt.id.desc()).first()
+        # Keyword Hit Detection
+        # Safe retrieval of previous attempt to find target keywords
+        last_qa = None
+        if is_retry and new_qa.id:
+             # If retrying, we want the attempt BEFORE the current one (which we just overwrote)
+             last_qa = db.query(QuestionAttempt).filter(
+                QuestionAttempt.session_id == session_id,
+                QuestionAttempt.id < new_qa.id
+            ).order_by(QuestionAttempt.id.desc()).first()
+        else:
+             # If new attempt (not flushed yet), the latest in DB is the previous turn
+             last_qa = db.query(QuestionAttempt).filter(
+                QuestionAttempt.session_id == session_id
+            ).order_by(QuestionAttempt.id.desc()).first()
         
         if last_qa and last_qa.target_keywords and attempt.transcript:
             lower_ts = attempt.transcript.lower()
