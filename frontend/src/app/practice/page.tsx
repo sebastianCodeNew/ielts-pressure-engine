@@ -3,8 +3,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ApiClient } from "@/lib/api";
 import { 
-  Library, Search, Play, Star, ChevronRight, Lock 
+  Library, Search, Play, Star, ChevronRight, Lock, Dumbbell, BrainCircuit, Activity
 } from "lucide-react";
+import { SmartDrill } from "@/components/SmartDrill";
+import { IdeaMatrix } from "@/components/IdeaMatrix";
 
 export default function TopicBankPage() {
   const router = useRouter();
@@ -27,6 +29,31 @@ export default function TopicBankPage() {
   }, []);
 
   const filteredTopics = topics.filter(t => filter === "ALL" || t.part === filter);
+
+  // Gym State
+  const [activeDrill, setActiveDrill] = useState<string | null>(null); // 'GRAMMAR' | 'IDEA' | null
+  const [gymMode, setGymMode] = useState(false); // If true, show FULL SCREEN drill
+
+  if (gymMode) {
+      if (activeDrill === 'GRAMMAR') {
+          return (
+              <div className="min-h-screen bg-[#0d0d12] flex items-center justify-center p-4">
+                  <SmartDrill 
+                    errorType="Subject-Verb Agreement" // Hardcoded for demo, normally dynamic
+                    onComplete={() => setGymMode(false)}
+                    onExit={() => setGymMode(false)}
+                  />
+              </div>
+          );
+      }
+      if (activeDrill === 'IDEA') {
+          return (
+            <div className="min-h-screen bg-[#0d0d12] flex items-center justify-center p-4">
+                <IdeaMatrix onExit={() => setGymMode(false)} />
+            </div>
+          );
+      }
+  }
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen bg-[#0d0d12]">
@@ -54,6 +81,69 @@ export default function TopicBankPage() {
              <FilterBtn active={filter === "PART_3"} onClick={() => setFilter("PART_3")} label="Part 3" />
           </div>
         </div>
+
+        {/* COGNITIVE GYM DASHBOARD (New Phase 9) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> 
+           {/* 1. Prescription Card */}
+           <div className="bg-gradient-to-br from-indigo-900/20 to-zinc-900 border border-indigo-500/20 p-6 rounded-3xl relative overflow-hidden group">
+               <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />
+               <div className="flex justify-between items-start mb-4">
+                   <div>
+                       <h3 className="text-indigo-400 font-black uppercase tracking-widest text-xs mb-1 flex items-center gap-2">
+                           <Activity size={14} /> Diagnostic Rx
+                       </h3>
+                       <p className="text-2xl font-bold text-white">Targeted Repair</p>
+                   </div>
+                   <div className="px-3 py-1 bg-indigo-500/10 text-indigo-400 rounded-full text-[10px] font-bold uppercase border border-indigo-500/20">
+                       3 Drills Due
+                   </div>
+               </div>
+               
+               <div className="space-y-3">
+                   <div className="bg-black/20 p-3 rounded-xl flex justify-between items-center">
+                       <div>
+                           <p className="text-white font-bold text-sm">Subject-Verb Agreement</p>
+                           <p className="text-zinc-500 text-xs">High Frequency Error (12x)</p>
+                       </div>
+                       <button 
+                         onClick={() => { setActiveDrill('GRAMMAR'); setGymMode(true); }}
+                         className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase rounded-lg transition-all"
+                       >
+                           Start Set
+                       </button>
+                   </div>
+               </div>
+           </div>
+
+           {/* 2. Idea Matrix Card */}
+           <div className="bg-gradient-to-br from-blue-900/20 to-zinc-900 border border-blue-500/20 p-6 rounded-3xl relative overflow-hidden group">
+               <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
+               <div className="flex justify-between items-start mb-4">
+                   <div>
+                       <h3 className="text-blue-400 font-black uppercase tracking-widest text-xs mb-1 flex items-center gap-2">
+                           <BrainCircuit size={14} /> Cognitive Speed
+                       </h3>
+                       <p className="text-2xl font-bold text-white">Idea Matrix</p>
+                   </div>
+                   <div className="px-3 py-1 bg-blue-500/10 text-blue-400 rounded-full text-[10px] font-bold uppercase border border-blue-500/20">
+                       Lv. 1
+                   </div>
+               </div>
+               
+               <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
+                   Train your brain to generate Part 2 content in under 10 seconds. Gamified brainstorming.
+               </p>
+
+               <button 
+                 onClick={() => { setActiveDrill('IDEA'); setGymMode(true); }}
+                 className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+               >
+                   <Play size={16} fill="currentColor"/> Enter Matrix
+               </button>
+           </div>
+        </div>
+
+        <div className="w-full h-px bg-zinc-800/50" />
 
         {/* Search & Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
