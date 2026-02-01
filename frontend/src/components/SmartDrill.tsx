@@ -41,6 +41,11 @@ export function SmartDrill({ errorType, onComplete, onExit }: SmartDrillProps) {
   const [status, setStatus] = useState<"IDLE" | "RECORDING" | "PROCESSING" | "SUCCESS" | "FAIL">("IDLE");
   const [feedback, setFeedback] = useState("");
   const [score, setScore] = useState(0);
+  const isMounted = React.useRef(true);
+
+  useEffect(() => {
+      return () => { isMounted.current = false; };
+  }, []);
 
   useEffect(() => {
     // Load drills or fallback
@@ -62,6 +67,8 @@ export function SmartDrill({ errorType, onComplete, onExit }: SmartDrillProps) {
          // Use existing shadowing analyzer for simplicity
          const result = await ApiClient.analyzeShadowing(currentDrill.target, audioBlob!);
          
+         if (!isMounted.current) return;
+
          if (result.is_passed) {
              setStatus("SUCCESS");
              setScore(s => s + 1);
@@ -69,6 +76,8 @@ export function SmartDrill({ errorType, onComplete, onExit }: SmartDrillProps) {
              
              // Auto advance
              setTimeout(() => {
+                 if (!isMounted.current) return;
+                 
                  if (currentIndex < drillSet.length - 1) {
                      setCurrentIndex(i => i + 1);
                      setStatus("IDLE");
@@ -85,7 +94,7 @@ export function SmartDrill({ errorType, onComplete, onExit }: SmartDrillProps) {
          }
      } catch (e) {
          console.error(e);
-         setStatus("FAIL");
+         if (isMounted.current) setStatus("FAIL");
      }
   };
 
