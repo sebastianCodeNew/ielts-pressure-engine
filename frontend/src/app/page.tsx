@@ -1107,7 +1107,8 @@ export default function TrainingCockpit() {
               </div>
 
               {/* CORRECTION CHALLENGE (The Mastery Drill) */}
-              {feedback.correction_drill && (
+              {/* PHASE 10 ADAPTIVE LOGIC: In Fluency Mode, we suppress strict grammar gates to maintain flow. */}
+              {feedback.correction_drill && (focusMode !== "FLUENCY" || isGateLocked) && (
                 <div className={`p-4 rounded-xl mt-6 animate-in fade-in duration-1000 transition-all ${isGateLocked ? 'bg-red-950/30 border border-red-500/50 shadow-[0_0_30px_rgba(220,38,38,0.2)]' : 'bg-amber-500/5 border border-amber-500/20'}`}>
                   <h4 className={`text-[10px] font-black uppercase tracking-widest mb-2 flex items-center gap-2 ${isGateLocked ? 'text-red-500' : 'text-amber-500'}`}>
                     {isGateLocked ? <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/> LOCK: CORE ERROR DETECTED</div> : <><Zap size={12} className="fill-current" /> Immediate Skill Fix</>}
