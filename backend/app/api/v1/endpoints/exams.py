@@ -69,7 +69,25 @@ def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
     if due_words:
         # Mix in due words, ensuring no duplicates
         vault_words = [w.word for w in due_words]
-        final_keywords = list(set(initial_keywords + vault_words))[:5] # Max 5 for HUD space
+    final_keywords = list(set(initial_keywords + vault_words))[:5] # Max 5 for HUD space
+    
+    # 4. Generate Pre-Exam Briefing (Phase 11)
+    briefing = f"Welcome back. Your target is Band {user.target_band}. "
+    
+    # Fetch chronic issues
+    from app.core.database import ErrorLog
+    error_logs = db.query(ErrorLog).filter(
+        ErrorLog.user_id == request.user_id
+    ).order_by(ErrorLog.count.desc()).limit(2).all()
+    
+    if error_logs:
+        issues = [e.error_type for e in error_logs]
+        briefing += f"Last time, you struggled with {', '.join(issues)}. Focus on avoiding these today. "
+    else:
+        briefing += "Consistent practice is key. Focus on fluency today. "
+
+    if user.weakness and user.weakness != "General":
+       briefing += f"Remember to work on your {user.weakness}."
 
     new_session = ExamSession(
         id=session_id,
@@ -85,7 +103,16 @@ def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_session)
     
-    return new_session
+    return ExamSessionSchema(
+        id=new_session.id, 
+        user_id=new_session.user_id,
+        current_part=new_session.current_part,
+        status=new_session.status,
+        start_time=new_session.start_time,
+        current_prompt=new_session.current_prompt,
+        initial_keywords=new_session.initial_keywords,
+        briefing_text=briefing
+    )
 
 @router.post("/{session_id}/submit-audio", response_model=Intervention)
 def submit_exam_audio(

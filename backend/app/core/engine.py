@@ -25,6 +25,8 @@ def process_user_attempt(
     current_part = "PART_1" # Default
     current_prompt = "Tell me about your hometown." # Better default for IELTS PART 1
     
+    chronic_issues_str = ""
+
     if is_exam_mode:
         exam_session = db.query(ExamSession).filter(ExamSession.id == session_id).first()
         if not exam_session:
@@ -37,6 +39,16 @@ def process_user_attempt(
         user = db.query(User).filter(User.id == exam_session.user_id).first()
         target_band = user.target_band if user else "7.5"
         weakness = user.weakness if user else "General"
+
+        # PHASE 11: PERSISTENT MEMORY
+        from app.core.database import ErrorLog
+        error_logs = db.query(ErrorLog).filter(
+            ErrorLog.user_id == exam_session.user_id
+        ).order_by(ErrorLog.count.desc()).limit(3).all()
+        
+        if error_logs:
+            issues = [f"{e.error_type} ({e.count}x)" for e in error_logs]
+            chronic_issues_str = ", ".join(issues)
 
         # Load History for Adaptation
         from app.core.state import AttemptResult
@@ -108,7 +120,8 @@ def process_user_attempt(
         current_state, 
         signals, 
         current_part=current_part if is_exam_mode else None,
-        user_transcript=attempt.transcript
+        user_transcript=attempt.transcript,
+        chronic_issues=chronic_issues_str
     )
     intervention.user_transcript = attempt.transcript
     

@@ -25,7 +25,8 @@ def formulate_strategy(
     current_metrics: SignalMetrics, 
     current_part: str = "PART_1",
     context_override: str = None,
-    user_transcript: str = ""
+    user_transcript: str = "",
+    chronic_issues: str = ""
 ) -> Intervention:
     """
     Decides the next intervention based on the full User Session State.
@@ -48,6 +49,7 @@ def formulate_strategy(
         USER PROFILE:
         - Target Band: {target_band}
         - Key Weakness: {weakness}
+        - CHRONIC ISSUES (Recurring errors from past sessions): {chronic_issues}
         
         USER WEAKNESS PROFILE (Historical Averages):
         - Avg Fluency: {avg_fluency:.1f} | Avg Coherence: {avg_coherence:.1f}
@@ -116,7 +118,7 @@ def formulate_strategy(
         
         {format_instructions}
         """,
-        input_variables=["stress_level", "fluency_trend", "consecutive_failures", "wpm", "hesitation", "coherence", "lexical_diversity", "grammar_complexity", "history", "current_part", "target_band", "weakness", "context_override", "user_transcript", "avg_fluency", "avg_coherence", "avg_lexical", "avg_grammar", "lowest_area"],
+        input_variables=["stress_level", "fluency_trend", "consecutive_failures", "wpm", "hesitation", "coherence", "lexical_diversity", "grammar_complexity", "history", "current_part", "target_band", "weakness", "context_override", "user_transcript", "avg_fluency", "avg_coherence", "avg_lexical", "avg_grammar", "lowest_area", "chronic_issues"],
         partial_variables={"format_instructions": parser.get_format_instructions()}
     )
     
@@ -160,7 +162,10 @@ def formulate_strategy(
             avg_coherence=avg_coherence,
             avg_lexical=avg_lexical,
             avg_grammar=avg_grammar,
-            lowest_area=lowest_area
+            avg_lexical=avg_lexical,
+            avg_grammar=avg_grammar,
+            lowest_area=lowest_area,
+            chronic_issues=chronic_issues or "None identified."
         )
         
         response = llm.invoke(formatted_prompt)

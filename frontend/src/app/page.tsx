@@ -128,6 +128,7 @@ export default function TrainingCockpit() {
   const [isGateLocked, setIsGateLocked] = useState(false);
   const [gateDrill, setGateDrill] = useState<string | null>(null);
   const [isVerifyingGate, setIsVerifyingGate] = useState(false);
+  const [briefing, setBriefing] = useState<string | null>(null);
 
   // Focus Protocol State (Phase 10)
   const [focusMode, setFocusMode] = useState<"BALANCED" | "FLUENCY" | "GRAMMAR">("BALANCED");
@@ -191,8 +192,15 @@ export default function TrainingCockpit() {
       }
 
       setFeedback({ next_task_prompt: initialPrompt });
-      speak(initialPrompt);
       setNotes(""); // Clear notes for new exam
+      
+      // PHASE 11: Briefing
+      if (session.briefing_text) {
+          setBriefing(session.briefing_text);
+          // Don't speak prompt yet, let them read briefing
+      } else {
+          speak(initialPrompt);
+      }
     } catch (e) {
       console.error(e);
     }
@@ -515,6 +523,43 @@ export default function TrainingCockpit() {
         </div>
 
         {/* Vocabulary Vault Modal */}
+        {briefing && (
+            <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-500">
+                <div className="bg-zinc-900 border border-zinc-700 w-full max-w-lg rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-red-500" />
+                    
+                    <div className="mb-6 flex justify-center">
+                        <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center shadow-lg border border-zinc-700">
+                           <Users size={32} className="text-white" />
+                        </div>
+                    </div>
+                    
+                    <h2 className="text-2xl font-black text-center text-white uppercase tracking-tight mb-2">
+                        Examiner Briefing
+                    </h2>
+                    <p className="text-center text-zinc-400 text-sm mb-8 font-medium italic">
+                        "Here is your personalized focus for this session."
+                    </p>
+                    
+                    <div className="bg-black/40 p-6 rounded-2xl border border-zinc-800 mb-8">
+                        <p className="text-zinc-200 text-lg leading-relaxed text-center font-serif">
+                            {briefing}
+                        </p>
+                    </div>
+                    
+                    <button 
+                        onClick={() => {
+                            setBriefing(null);
+                            if (feedback?.next_task_prompt) speak(feedback.next_task_prompt);
+                        }}
+                        className="w-full py-4 bg-white hover:bg-zinc-200 text-black font-black uppercase tracking-widest rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                        Understood. Begin.
+                    </button>
+                </div>
+            </div>
+        )}
+
         {showVault && (
           <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in">
             <div className="bg-[#18181b] w-full max-w-4xl h-[80vh] rounded-3xl border border-zinc-800 flex flex-col relative overflow-hidden">

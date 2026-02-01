@@ -71,6 +71,7 @@ class ExamSessionSchema(BaseModel):
     current_prompt: Optional[str] = None
     initial_keywords: Optional[List[str]] = None
     overall_band_score: Optional[float] = None
+    briefing_text: Optional[str] = None
 
 class ExamSummary(BaseModel):
     session_id: str
