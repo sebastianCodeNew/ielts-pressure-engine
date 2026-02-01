@@ -16,12 +16,15 @@ import {
   Bookmark,
   Volume2,
   Zap,
+  Activity,
+  ShieldCheck,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import AudioWaveform from "@/components/AudioWaveform";
 import { ApiClient } from "@/lib/api";
 import { WarmUp } from "@/components/WarmUp";
 import { SmartDiff } from "@/components/SmartDiff";
+import { FlowGauge } from "@/components/FlowGauge";
 
 interface FeedbackData {
   next_task_prompt?: string;
@@ -125,6 +128,9 @@ export default function TrainingCockpit() {
   const [isGateLocked, setIsGateLocked] = useState(false);
   const [gateDrill, setGateDrill] = useState<string | null>(null);
   const [isVerifyingGate, setIsVerifyingGate] = useState(false);
+
+  // Focus Protocol State (Phase 10)
+  const [focusMode, setFocusMode] = useState<"BALANCED" | "FLUENCY" | "GRAMMAR">("BALANCED");
 
   const hasNudgedRef = useRef(false);
 
@@ -419,17 +425,53 @@ export default function TrainingCockpit() {
             </p>
           </div>
 
-          <div className="group relative w-48 h-48 mx-auto">
-            <div className="absolute inset-0 bg-red-600/20 rounded-full blur-xl group-hover:bg-red-600/30 transition-all duration-500" />
-            <button
-              onClick={handleStartMock}
-              className="relative z-10 w-full h-full bg-red-600 text-white rounded-full flex flex-col items-center justify-center shadow-2xl transition-all group-hover:scale-105 active:scale-95"
-            >
-              <Play size={48} fill="currentColor" className="mb-2" />
-              <span className="text-xs font-black uppercase tracking-widest">
-                Start Mock Exam
-              </span>
-            </button>
+          <div className="bg-zinc-900/80 border border-zinc-800 p-8 rounded-3xl text-center space-y-6 max-w-md mx-auto backdrop-blur-xl relative z-10 shadow-2xl">
+            <div>
+              <div className="text-4xl mb-4 animate-bounce">🧘</div>
+              <h2 className="text-2xl font-black text-white uppercase tracking-tight">Focus Protocol</h2>
+              <p className="text-zinc-500 text-sm">Select your training intensity.</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
+              <button 
+                onClick={() => { setFocusMode("BALANCED"); handleStartMock(); }}
+                className="bg-black/40 hover:bg-zinc-800 p-4 rounded-xl border border-zinc-700/50 hover:border-zinc-500 transition-all text-left flex items-center gap-4 group"
+              >
+                <div className="w-10 h-10 bg-blue-500/10 text-blue-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-blue-500/20">
+                  <Activity size={20} />
+                </div>
+                <div>
+                  <h4 className="text-white font-bold text-sm group-hover:text-blue-400 transition-colors">Balanced Mode</h4>
+                  <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">Mock Exam Standard</p>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => { setFocusMode("FLUENCY"); handleStartMock(); }}
+                className="bg-black/40 hover:bg-zinc-800 p-4 rounded-xl border border-zinc-700/50 hover:border-emerald-500 transition-all text-left flex items-center gap-4 group"
+              >
+                <div className="w-10 h-10 bg-emerald-500/10 text-emerald-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/20">
+                  <Zap size={20} fill="currentColor" />
+                </div>
+                <div>
+                  <h4 className="text-white font-bold text-sm group-hover:text-emerald-400 transition-colors">Fluency Mode</h4>
+                  <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">High Speed • Low Drag</p>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => { setFocusMode("GRAMMAR"); handleStartMock(); }}
+                className="bg-black/40 hover:bg-zinc-800 p-4 rounded-xl border border-zinc-700/50 hover:border-indigo-500 transition-all text-left flex items-center gap-4 group"
+              >
+                <div className="w-10 h-10 bg-indigo-500/10 text-indigo-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/20">
+                  <ShieldCheck size={20} />
+                </div>
+                <div>
+                  <h4 className="text-white font-bold text-sm group-hover:text-indigo-400 transition-colors">Grammar Mode</h4>
+                  <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">High Precision • Strict</p>
+                </div>
+              </button>
+            </div>
           </div>
 
           <div className="flex gap-4 justify-center">
@@ -599,6 +641,11 @@ export default function TrainingCockpit() {
             </p>
           </div>
         </div>
+      )}
+
+      {/* FOCUS MODE GAUGE (Phase 10) */}
+      {focusMode === "FLUENCY" && (
+          <FlowGauge isRecording={isRecording} silenceTimer={silenceTimer} />
       )}
 
       {/* TOP HUD */}
