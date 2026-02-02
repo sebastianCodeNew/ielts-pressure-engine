@@ -69,7 +69,7 @@ def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
     if due_words:
         # Mix in due words, ensuring no duplicates
         vault_words = [w.word for w in due_words]
-    final_keywords = list(set(initial_keywords + vault_words))[:5] # Max 5 for HUD space
+        final_keywords = list(set(initial_keywords + vault_words))[:5] # Max 5 for HUD space
     
     # 4. Generate Pre-Exam Briefing (Phase 11)
     briefing = f"Welcome back. Your target is Band {user.target_band}. "

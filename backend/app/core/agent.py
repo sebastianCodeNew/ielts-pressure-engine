@@ -162,8 +162,6 @@ def formulate_strategy(
             avg_coherence=avg_coherence,
             avg_lexical=avg_lexical,
             avg_grammar=avg_grammar,
-            avg_lexical=avg_lexical,
-            avg_grammar=avg_grammar,
             lowest_area=lowest_area,
             chronic_issues=chronic_issues or "None identified."
         )

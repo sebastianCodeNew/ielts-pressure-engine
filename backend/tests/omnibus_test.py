@@ -8,6 +8,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.main import app
 from app.core.database import init_db, SessionLocal, engine, Base, ErrorLog
+from sqlalchemy import text
 from app.core.engine import process_user_attempt
 
 # Mocking the AI components to avoid real API costs/delays, 
@@ -22,6 +23,10 @@ client = TestClient(app)
 def run_omnibus_test():
     print("🚀 STARTING OMNIBUS TEST: Phases 8-11 Integration Check\n")
     
+    # -1. Initialize Database
+    print("Initializing Database...")
+    init_db()
+
     # 0. Setup: Clean DB for the test user
     TEST_USER_ID = "test_omnibus_user"
     print(f"[0] Setting up Test User: {TEST_USER_ID}...")
@@ -30,9 +35,9 @@ def run_omnibus_test():
     db = SessionLocal()
     try:
         # Clear old data
-        db.execute(f"DELETE FROM users WHERE id='{TEST_USER_ID}'")
-        db.execute(f"DELETE FROM exam_sessions WHERE user_id='{TEST_USER_ID}'")
-        db.execute(f"DELETE FROM error_logs WHERE user_id='{TEST_USER_ID}'")
+        db.execute(text(f"DELETE FROM users WHERE id=:uid"), {"uid": TEST_USER_ID})
+        db.execute(text(f"DELETE FROM exam_sessions WHERE user_id=:uid"), {"uid": TEST_USER_ID})
+        db.execute(text(f"DELETE FROM error_logs WHERE user_id=:uid"), {"uid": TEST_USER_ID})
         db.commit()
     except Exception as e:
         print(f"Warning during cleanup: {e}")
