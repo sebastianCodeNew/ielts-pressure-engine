@@ -8,21 +8,26 @@ model = WhisperModel("medium.en", device="cpu", compute_type="int8")
 print("--- Whisper Model Loaded ---")
 
 def transcribe_audio(file_path: str) -> dict:
-    # 2. TUNE PARAMETERS
-    # beam_size=5: Explores more paths (better accuracy)
-    # vad_filter=True: Removes silence so the model focuses on speech
-    # word_timestamps=False: Faster, we don't need exact timing yet
-    segments, info = model.transcribe(
-        file_path, 
-        beam_size=5, 
-        vad_filter=True,
-        #min_silence_duration_ms=500 
-    )
-    
-    text = " ".join([segment.text for segment in segments])
-    
-    return {
-        "text": text.strip(),
-        "duration": info.duration,
-        "language": info.language
-    }
+    # 2. VALIDATE FILE
+    if not os.path.exists(file_path) or os.path.getsize(file_path) < 100:
+        print(f"WARNING: Audio file {file_path} is missing or too small.")
+        return {"text": "", "duration": 0.0, "language": "en"}
+
+    try:
+        # 3. TUNE PARAMETERS
+        segments, info = model.transcribe(
+            file_path, 
+            beam_size=5, 
+            vad_filter=True,
+        )
+        
+        text = " ".join([segment.text for segment in segments])
+        
+        return {
+            "text": text.strip(),
+            "duration": info.duration,
+            "language": info.language
+        }
+    except Exception as e:
+        print(f"TRANSCRIPTION CRASH: {e}")
+        return {"text": "", "duration": 0.0, "language": "en"}

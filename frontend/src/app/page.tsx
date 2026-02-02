@@ -41,6 +41,7 @@ interface FeedbackData {
 }
 
 export default function TrainingCockpit() {
+  const lastToggleTime = useRef(0);
   const {
     isRecording,
     startRecording,
@@ -894,7 +895,12 @@ export default function TrainingCockpit() {
             {!isRecording ? (
               <button
                 disabled={isSpeaking || processing}
-                onClick={startRecording}
+                onClick={() => {
+                  const now = Date.now();
+                  if (now - lastToggleTime.current < 500) return;
+                  lastToggleTime.current = now;
+                  startRecording();
+                }}
                 className="relative z-10 w-24 h-24 bg-red-600 hover:bg-red-500 text-white rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(220,38,38,0.4)] transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {processing ? (
@@ -905,8 +911,14 @@ export default function TrainingCockpit() {
               </button>
             ) : (
               <button
-                onClick={stopRecording}
-                className="relative z-10 w-24 h-24 bg-zinc-100 hover:bg-white text-black rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-105 active:scale-95"
+                disabled={processing}
+                onClick={() => {
+                  const now = Date.now();
+                  if (now - lastToggleTime.current < 500) return;
+                  lastToggleTime.current = now;
+                  stopRecording();
+                }}
+                className="relative z-10 w-24 h-24 bg-zinc-100 hover:bg-white text-black rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
               >
                 <Square size={32} fill="currentColor" />
               </button>

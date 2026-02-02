@@ -132,8 +132,7 @@ def submit_exam_audio(
     # Persistent audio storage path
     AUDIO_DIR = "audio_storage"
     os.makedirs(AUDIO_DIR, exist_ok=True)
-    attempt_count = db.query(QuestionAttempt).filter(QuestionAttempt.session_id == session_id).count()
-    persistent_filename = f"{AUDIO_DIR}/{session_id}_{attempt_count}{ext}"
+    persistent_filename = f"{AUDIO_DIR}/{session_id}_{uuid.uuid4()}{ext}"
     
     try:
         with open(temp_filename, "wb") as buffer:
