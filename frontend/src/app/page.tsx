@@ -1057,9 +1057,9 @@ export default function TrainingCockpit() {
                     </span>
                     <ul className="space-y-2">
                       {(examPart === "PART_2" && feedback?.next_task_prompt
-                        ? feedback.next_task_prompt.toLowerCase().includes("person")
+                        ? feedback.next_task_prompt?.toLowerCase()?.includes("person")
                           ? ["First Impression", "Character Trait", "Key Memory", "Lasting Influence"]
-                          : feedback.next_task_prompt.toLowerCase().includes("place")
+                          : feedback.next_task_prompt?.toLowerCase()?.includes("place")
                             ? ["Visual Layout", "Atmosphere/Smell", "Personal Connection", "Why it's unique"]
                             : ["The Setup", "The Climax", "The Resolution", "The Lesson Learned"]
                         : [

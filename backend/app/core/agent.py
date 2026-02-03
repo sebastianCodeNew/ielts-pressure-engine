@@ -93,6 +93,7 @@ def formulate_strategy(
         
         FEEDBACK:
         - Be constructive and specific.
+        - If `user_transcript` is empty or silent, provide feedback about speaking clearly and checking the recording.
         
         IDEAL RESPONSE (The Refined Version):
         - Do NOT provide a generic response.
@@ -117,7 +118,7 @@ def formulate_strategy(
         - List them in the `target_keywords` field.
         
         NEW: SOCRATIC PROBING (v2.0):
-        - If current part is "PART_3" AND (`coherence` < 0.6 or `lexical_diversity` < 0.5):
+        - If current part is "PART_3" AND (`coherence` < 0.6 or `lexical_diversity` < 0.5) AND "TRANSITION" not in str({context_override}):
             * Set `is_probing` to true.
             * Do NOT move to a new topic.
             * Ask a follow-up ("Probe") that forces the user to explain 'Why' or 'How' in more depth.

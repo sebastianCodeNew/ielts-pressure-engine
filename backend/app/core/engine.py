@@ -215,8 +215,8 @@ def process_user_attempt(
                         session_id=session_id
                     ))
         
-        # Transition Logic (Skip if RETRY)
-        if is_retry:
+        # Transition Logic (Skip if RETRY or REFACTOR)
+        if is_retry or is_refactor:
             # If retry, we maintain the same prompt and status
             exam_session.current_prompt = current_prompt
             intervention.next_task_prompt = current_prompt # Repeat the prompt

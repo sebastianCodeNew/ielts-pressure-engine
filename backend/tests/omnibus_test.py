@@ -85,7 +85,8 @@ def run_omnibus_test():
     if response.status_code == 200:
         intervention = response.json()
         print("✅ Audio submission processed.")
-        print(f"   -> Feedback: {intervention.get('feedback_markdown')[:50]}...")
+        feedback_text = intervention.get('feedback_markdown') or "No feedback provided."
+        print(f"   -> Feedback: {feedback_text[:50]}...")
         print(f"   -> Next Prompt: {intervention.get('next_task_prompt')}")
         
         # Check Error Tracking (Phase 11 Logic)

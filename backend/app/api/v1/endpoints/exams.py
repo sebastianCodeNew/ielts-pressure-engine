@@ -153,7 +153,10 @@ def submit_exam_audio(
         )
         
         # Attach audio URL for Audio Mirror feature
-        intervention.user_audio_url = f"/audio/{session_id}_{attempt_count}{ext}"
+        # persistent_filename looks like "audio_storage/session_uuid.ext"
+        # We need to return only the filename part for the /audio/ static route
+        audio_name = os.path.basename(persistent_filename)
+        intervention.user_audio_url = f"/audio/{audio_name}"
         
         return intervention
     except Exception as e:
