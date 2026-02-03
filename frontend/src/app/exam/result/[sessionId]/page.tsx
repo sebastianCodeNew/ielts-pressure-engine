@@ -42,11 +42,11 @@ export default function ExamResultPage() {
   );
 
   const radarData = [
-    { subject: 'Fluency', A: result.breakdown.fluency, fullMark: 9 },
-    { subject: 'Coherence', A: result.breakdown.coherence, fullMark: 9 },
-    { subject: 'Lexical', A: result.breakdown.lexical_resource, fullMark: 9 },
-    { subject: 'Grammar', A: result.breakdown.grammatical_range, fullMark: 9 },
-    { subject: 'Pronunciation', A: result.breakdown.pronunciation, fullMark: 9 },
+    { subject: 'Fluency', A: result.breakdown.fluency, B: 9, fullMark: 9 },
+    { subject: 'Coherence', A: result.breakdown.coherence, B: 9, fullMark: 9 },
+    { subject: 'Lexical', A: result.breakdown.lexical_resource, B: 9, fullMark: 9 },
+    { subject: 'Grammar', A: result.breakdown.grammatical_range, B: 9, fullMark: 9 },
+    { subject: 'Pronunciation', A: result.breakdown.pronunciation, B: 9, fullMark: 9 },
   ];
 
   return (
@@ -95,11 +95,18 @@ export default function ExamResultPage() {
                 <PolarGrid stroke="#27272a" />
                 <PolarAngleAxis dataKey="subject" tick={{ fill: '#a1a1aa', fontSize: 12 }} />
                 <Radar
+                   name="Target 9.0"
+                   dataKey="B"
+                   stroke="#27272a"
+                   fill="#27272a"
+                   fillOpacity={0.1}
+                />
+                <Radar
                    name="You"
                    dataKey="A"
                    stroke="#ef4444"
                    fill="#ef4444"
-                   fillOpacity={0.6}
+                   fillOpacity={0.5}
                 />
               </RadarChart>
             </ResponsiveContainer>

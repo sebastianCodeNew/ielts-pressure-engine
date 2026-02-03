@@ -65,13 +65,14 @@ export class ApiClient {
   static async submitExamAudio(
     sessionId: string,
     blob: Blob,
-    isRetry: boolean = false
+    isRetry: boolean = false,
+    isRefactor: boolean = false
   ): Promise<Intervention> {
     const formData = new FormData();
     formData.append("file", blob, "recording.webm");
 
     const res = await this.fetchWithRetry(
-      `${API_BASE_URL}/v1/exams/${sessionId}/submit-audio?is_retry=${isRetry}`,
+      `${API_BASE_URL}/v1/exams/${sessionId}/submit-audio?is_retry=${isRetry}&is_refactor=${isRefactor}`,
       {
         method: "POST",
         body: formData,

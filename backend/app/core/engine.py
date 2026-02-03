@@ -14,7 +14,8 @@ def process_user_attempt(
     db: Session, 
     session_id: str = "default_user",
     is_exam_mode: bool = False,
-    is_retry: bool = False
+    is_retry: bool = False,
+    is_refactor: bool = False
 ) -> Intervention:
     """
     Orchestrates the full loop: 
@@ -116,12 +117,17 @@ def process_user_attempt(
         signals.pronunciation_score = 0.0
     
     # 5. AGENT DECISION
+    context_msg = None
+    if is_refactor:
+        context_msg = f"REFACTOR_MISSION_ATTEMPT: User is trying to improve their previous response based on your mission."
+
     intervention = formulate_strategy(
         current_state, 
         signals, 
         current_part=current_part if is_exam_mode else None,
         user_transcript=attempt.transcript,
-        chronic_issues=chronic_issues_str
+        chronic_issues=chronic_issues_str,
+        context_override=context_msg
     )
     intervention.user_transcript = attempt.transcript
     

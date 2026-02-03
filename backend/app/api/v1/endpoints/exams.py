@@ -119,6 +119,7 @@ def submit_exam_audio(
     session_id: str, 
     file: UploadFile = File(...), 
     is_retry: bool = False,
+    is_refactor: bool = False,
     db: Session = Depends(get_db)
 ):
     session = db.query(ExamSession).filter(ExamSession.id == session_id).first()
@@ -147,7 +148,8 @@ def submit_exam_audio(
             db=db,
             session_id=session_id,
             is_exam_mode=True,
-            is_retry=is_retry
+            is_retry=is_retry,
+            is_refactor=is_refactor
         )
         
         # Attach audio URL for Audio Mirror feature

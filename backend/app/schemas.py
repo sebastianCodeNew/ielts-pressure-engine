@@ -54,6 +54,11 @@ class Intervention(BaseModel):
     # Audio Mirror
     user_audio_url: Optional[str] = Field(None, description="URL to the user's original audio recording")
     
+    # NEW: Learning v2.0 Fields
+    is_probing: bool = Field(False, description="True if the examiner is asking a Socratic follow-up instead of a new topic")
+    refactor_mission: Optional[str] = Field(None, description="Specific instruction for an immediate retry (e.g., 'Say that again but use the word nonetheless')")
+    interjection_type: Optional[Literal['ELABORATION', 'CONTRAST', 'CAUSE_EFFECT', 'NONE']] = Field('NONE', description="The cognitive strategy used for probing")
+
     # Real-time Engine State
     stress_level: float = 0.0
 

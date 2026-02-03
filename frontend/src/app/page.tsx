@@ -38,10 +38,15 @@ interface FeedbackData {
   reasoning?: string;
   user_audio_url?: string;
   keywords_hit?: string[];
+  // v2.0 Fields
+  is_probing?: boolean;
+  refactor_mission?: string;
+  interjection_type?: string;
 }
 
 export default function TrainingCockpit() {
   const lastToggleTime = useRef(0);
+  const [isRefactor, setIsRefactor] = useState(false);
   const {
     isRecording,
     startRecording,
@@ -283,8 +288,10 @@ export default function TrainingCockpit() {
               sessionId,
               audioBlob,
               isRetry,
+              isRefactor
             );
             setIsRetry(false); // Reset after use
+            setIsRefactor(false); // Reset after use
 
             setFeedback(data);
 
@@ -1046,15 +1053,21 @@ export default function TrainingCockpit() {
                     <span
                       className={`text-[10px] font-black uppercase ${silenceTimer > 4 ? "text-blue-600" : "text-blue-400"}`}
                     >
-                      Coach: Think of...
+                      {examPart === "PART_2" ? "Scaffolding: Prep Hints" : "Coach: Think of..."}
                     </span>
                     <ul className="space-y-2">
-                      {[
+                      {(examPart === "PART_2" && feedback?.next_task_prompt
+                        ? feedback.next_task_prompt.toLowerCase().includes("person")
+                          ? ["First Impression", "Character Trait", "Key Memory", "Lasting Influence"]
+                          : feedback.next_task_prompt.toLowerCase().includes("place")
+                            ? ["Visual Layout", "Atmosphere/Smell", "Personal Connection", "Why it's unique"]
+                            : ["The Setup", "The Climax", "The Resolution", "The Lesson Learned"]
+                        : [
                         "5 Senses (Smell, Sound, etc.)",
                         "A specific conflict or challenge",
                         "How did it change you?",
                         "Emotional peak (Excitement/Loss)",
-                      ].map((item, id) => (
+                      ]).map((item, id) => (
                         <li
                           key={id}
                           className={`flex items-center gap-2 text-[11px] font-bold transition-colors ${silenceTimer > 4 ? "text-blue-800" : "text-blue-700/70"}`}
@@ -1195,6 +1208,20 @@ export default function TrainingCockpit() {
                       💡 {feedback.reasoning}
                     </p>
                   )}
+                </div>
+              )}
+
+              {feedback.refactor_mission && (
+                <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl mt-4 animate-in slide-in-from-left duration-1000">
+                  <h4 className="text-[10px] font-black uppercase text-yellow-500 tracking-widest mb-1 flex items-center gap-2">
+                    <Zap size={12} className="fill-current" /> Active Refactor Mission
+                  </h4>
+                  <p className="text-white text-sm font-bold italic">
+                    "{feedback.refactor_mission}"
+                  </p>
+                  <p className="text-[9px] text-yellow-500/60 font-bold uppercase mt-1">
+                    Click 'Immediate Refactor' below to try now
+                  </p>
                 </div>
               )}
             </div>
@@ -1351,7 +1378,9 @@ export default function TrainingCockpit() {
                     className={`flex-1 py-3 font-bold text-xs uppercase tracking-widest rounded-xl transition-all relative overflow-hidden group ${
                         isGateLocked 
                         ? 'bg-zinc-900 text-zinc-600 cursor-not-allowed border border-zinc-800' 
-                        : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                        : feedback?.is_probing 
+                          ? 'bg-blue-600/20 text-blue-500 border border-blue-600/50 hover:bg-blue-600/40'
+                          : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                     }`}
                 >
                     {isGateLocked && (
@@ -1362,8 +1391,27 @@ export default function TrainingCockpit() {
                             LOCKED: FIX ERROR
                         </div>
                     )}
-                    Next Question <ArrowRight size={14} className="inline ml-2"/>
+                    {feedback?.is_probing ? "Explain Deeper (Probing)" : "Next Question"} <ArrowRight size={14} className="inline ml-2"/>
                 </button>
+                {feedback?.refactor_mission && (
+                   <button
+                    onClick={() => {
+                        setIsRefactor(true);
+                        setFeedback(null);
+                        setShadowingMode(false);
+                        speak(feedback.next_task_prompt || "Try again.");
+                        // Optional: inject the mission text into speech
+                        // speak(feedback.refactor_mission);
+                    }}
+                    className="flex-1 py-3 bg-white text-black font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-zinc-200 transition-all shadow-lg flex flex-col items-center justify-center gap-0.5"
+                   >
+                     <div className="flex items-center gap-2">
+                        <Zap size={14} className="text-yellow-500 fill-current" />
+                        <span>Immediate Refactor</span>
+                     </div>
+                     <span className="text-[8px] opacity-60 font-medium normal-case">Apply mission now</span>
+                   </button>
+                )}
                 <button
                   onClick={() => {
                     setFeedback(null);

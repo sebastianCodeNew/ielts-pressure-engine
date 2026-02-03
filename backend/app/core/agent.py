@@ -116,6 +116,20 @@ def formulate_strategy(
         - Identify 3 advanced (Band 8+) vocabulary items or idioms relevant to the *next question* you are about to ask.
         - List them in the `target_keywords` field.
         
+        NEW: SOCRATIC PROBING (v2.0):
+        - If current part is "PART_3" AND (`coherence` < 0.6 or `lexical_diversity` < 0.5):
+            * Set `is_probing` to true.
+            * Do NOT move to a new topic.
+            * Ask a follow-up ("Probe") that forces the user to explain 'Why' or 'How' in more depth.
+            * Set `interjection_type` to 'ELABORATION' or 'CAUSE_EFFECT'.
+        
+        NEW: REFACTOR MISSIONS (v2.0):
+        - If `user_transcript` has a clear grammatical error or simple vocabulary:
+            * Generate a `refactor_mission`.
+            * Example: "Re-say your last answer, but replace 'good' with 'extraordinary'."
+            * Example: "Try that sentence again, but use a conditional (If I had... I would have...)."
+            * This mission should be ONE short, actionable sentence.
+
         {format_instructions}
         """,
         input_variables=["stress_level", "fluency_trend", "consecutive_failures", "wpm", "hesitation", "coherence", "lexical_diversity", "grammar_complexity", "history", "current_part", "target_band", "weakness", "context_override", "user_transcript", "avg_fluency", "avg_coherence", "avg_lexical", "avg_grammar", "lowest_area", "chronic_issues"],
