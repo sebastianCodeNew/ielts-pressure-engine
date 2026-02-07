@@ -131,6 +131,11 @@ def formulate_strategy(
             * Example: "Try that sentence again, but use a conditional (If I had... I would have...)."
             * This mission should be ONE short, actionable sentence.
 
+        NEW: REAL-TIME WORD BANK (v3.0):
+        - Identify 5 "Power Words" (Band 8+ advanced vocabulary or idioms) that are highly relevant to the *next* question/topic you are about to ask.
+        - These should be practical for use in natural speech.
+        - List them in the `realtime_word_bank` field.
+
         {format_instructions}
         """,
         input_variables=["stress_level", "fluency_trend", "consecutive_failures", "wpm", "hesitation", "coherence", "lexical_diversity", "grammar_complexity", "history", "current_part", "target_band", "weakness", "context_override", "user_transcript", "avg_fluency", "avg_coherence", "avg_lexical", "avg_grammar", "lowest_area", "chronic_issues"],

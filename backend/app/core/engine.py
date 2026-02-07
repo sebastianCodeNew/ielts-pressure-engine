@@ -112,9 +112,13 @@ def process_user_attempt(
     try:
         pron_results = analyze_pronunciation(file_path)
         signals.pronunciation_score = pron_results.get("pronunciation_score", 0.0)
+        signals.prosody_score = pron_results.get("prosody", 0.0)
+        signals.confidence_score = pron_results.get("confidence_score", 0.0)
     except Exception as e:
         print(f"PRONUNCIATION ANALYSIS ERROR: {e}")
         signals.pronunciation_score = 0.0
+        signals.prosody_score = 0.0
+        signals.confidence_score = 0.0
     
     # 5. AGENT DECISION
     context_msg = None
@@ -130,6 +134,7 @@ def process_user_attempt(
         context_override=context_msg
     )
     intervention.user_transcript = attempt.transcript
+    intervention.confidence_score = signals.confidence_score
     
     # 6. UPDATE STATE & PERSIST
     if is_exam_mode:

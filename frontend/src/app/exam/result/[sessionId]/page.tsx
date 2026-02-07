@@ -5,7 +5,7 @@ import { ApiClient } from "@/lib/api";
 import { 
   Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer 
 } from "recharts";
-import { Award, ArrowLeft, RefreshCw, BarChart3, MessageSquare } from "lucide-react";
+import { Award, ArrowLeft, RefreshCw, BarChart3, MessageSquare, Zap } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 export default function ExamResultPage() {
@@ -13,6 +13,7 @@ export default function ExamResultPage() {
   const router = useRouter();
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [drillLoading, setDrillLoading] = useState(false);
 
   useEffect(() => {
     async function fetchResult() {
@@ -27,6 +28,23 @@ export default function ExamResultPage() {
     }
     fetchResult();
   }, [sessionId]);
+
+  const handleMasteryDrill = async () => {
+    if (!result?.topic_prompt) return;
+    setDrillLoading(true);
+    try {
+      // Start a "DRILL" mode exam with the topic override
+      const nextSession = await ApiClient.startExam(
+        "default_user",
+        "PART_3_ONLY",
+        result.topic_prompt,
+      );
+      router.push(`/exam/ongoing/${nextSession.id}`);
+    } catch (err) {
+      console.error("Mastery drill failed:", err);
+      setDrillLoading(false);
+    }
+  };
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen bg-[#0d0d12]">
@@ -128,8 +146,17 @@ export default function ExamResultPage() {
               >
                 <RefreshCw size={18} /> Retry Exam
               </button>
-              <button className="flex-1 py-4 bg-red-600 hover:bg-red-500 rounded-2xl font-bold transition-all shadow-lg">
-                Personalized Drills
+              <button 
+                disabled={drillLoading}
+                onClick={handleMasteryDrill}
+                className="flex-1 py-4 bg-red-600 hover:bg-red-500 rounded-2xl font-bold transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {drillLoading ? (
+                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Zap size={18} fill="currentColor" />
+                )}
+                Topic Mastery Drill
               </button>
             </div>
           </div>

@@ -42,6 +42,9 @@ interface FeedbackData {
   is_probing?: boolean;
   refactor_mission?: string;
   interjection_type?: string;
+  // v3.0 Fields
+  realtime_word_bank?: string[];
+  confidence_score?: number;
 }
 
 export default function TrainingCockpit() {
@@ -137,7 +140,9 @@ export default function TrainingCockpit() {
   const [briefing, setBriefing] = useState<string | null>(null);
 
   // Focus Protocol State (Phase 10)
-  const [focusMode, setFocusMode] = useState<"BALANCED" | "FLUENCY" | "GRAMMAR">("BALANCED");
+  const [focusMode, setFocusMode] = useState<
+    "BALANCED" | "FLUENCY" | "GRAMMAR"
+  >("BALANCED");
 
   const hasNudgedRef = useRef(false);
 
@@ -199,13 +204,13 @@ export default function TrainingCockpit() {
 
       setFeedback({ next_task_prompt: initialPrompt });
       setNotes(""); // Clear notes for new exam
-      
+
       // PHASE 11: Briefing
       if (session.briefing_text) {
-          setBriefing(session.briefing_text);
-          // Don't speak prompt yet, let them read briefing
+        setBriefing(session.briefing_text);
+        // Don't speak prompt yet, let them read briefing
       } else {
-          speak(initialPrompt);
+        speak(initialPrompt);
       }
     } catch (e) {
       console.error(e);
@@ -236,51 +241,54 @@ export default function TrainingCockpit() {
 
   useEffect(() => {
     if (audioBlob && sessionId) {
-        if (shadowingIndex !== null) {
-            // ... shadowing logic ...
-            const sentences = getSentences(feedback?.ideal_response || "");
-            const targetText = sentences[shadowingIndex];
-        
-            const submitShadow = async () => {
-              setShadowProcessing(true);
-              try {
-                const result = await ApiClient.analyzeShadowing(
-                  targetText,
-                  audioBlob,
-                );
-                setShadowResults((prev) => ({ ...prev, [shadowingIndex]: result }));
-              } catch (e) {
-                console.error(e);
-              } finally {
-                setShadowProcessing(false);
-                setShadowingIndex(null);
-                setAudioBlob(null);
-              }
-            };
-            submitShadow();
-        } else if (isVerifyingGate && gateDrill) {
-             // HANDLE CORRECTION GATE VERIFICATION
-             const verifyGate = async () => {
-                 try {
-                     const result = await ApiClient.analyzeShadowing(gateDrill, audioBlob);
-                     if (result.is_passed) {
-                         setIsGateLocked(false);
-                         setIsVerifyingGate(false);
-                         speak("Excellent correction. Unlocked.");
-                     } else {
-                         setIsVerifyingGate(false);
-                         speak("Not quite. Listen and try again.");
-                     }
-                 } catch (e) {
-                     console.error(e);
-                     setIsVerifyingGate(false);
-                 } finally {
-                     setAudioBlob(null);
-                 }
-             };
-             verifyGate();
-        } else {
-          // Handle standard Exam Submission
+      if (shadowingIndex !== null) {
+        // ... shadowing logic ...
+        const sentences = getSentences(feedback?.ideal_response || "");
+        const targetText = sentences[shadowingIndex];
+
+        const submitShadow = async () => {
+          setShadowProcessing(true);
+          try {
+            const result = await ApiClient.analyzeShadowing(
+              targetText,
+              audioBlob,
+            );
+            setShadowResults((prev) => ({ ...prev, [shadowingIndex]: result }));
+          } catch (e) {
+            console.error(e);
+          } finally {
+            setShadowProcessing(false);
+            setShadowingIndex(null);
+            setAudioBlob(null);
+          }
+        };
+        submitShadow();
+      } else if (isVerifyingGate && gateDrill) {
+        // HANDLE CORRECTION GATE VERIFICATION
+        const verifyGate = async () => {
+          try {
+            const result = await ApiClient.analyzeShadowing(
+              gateDrill,
+              audioBlob,
+            );
+            if (result.is_passed) {
+              setIsGateLocked(false);
+              setIsVerifyingGate(false);
+              speak("Excellent correction. Unlocked.");
+            } else {
+              setIsVerifyingGate(false);
+              speak("Not quite. Listen and try again.");
+            }
+          } catch (e) {
+            console.error(e);
+            setIsVerifyingGate(false);
+          } finally {
+            setAudioBlob(null);
+          }
+        };
+        verifyGate();
+      } else {
+        // Handle standard Exam Submission
         const submit = async () => {
           setProcessing(true);
           try {
@@ -288,7 +296,7 @@ export default function TrainingCockpit() {
               sessionId,
               audioBlob,
               isRetry,
-              isRefactor
+              isRefactor,
             );
             setIsRetry(false); // Reset after use
             setIsRefactor(false); // Reset after use
@@ -298,11 +306,11 @@ export default function TrainingCockpit() {
             // CORRECTION GATE LOGIC
             // If correction drill is present, LOCK the gate.
             if (data.correction_drill) {
-                setIsGateLocked(true);
-                setGateDrill(data.correction_drill);
+              setIsGateLocked(true);
+              setGateDrill(data.correction_drill);
             } else {
-                setIsGateLocked(false);
-                setGateDrill(null);
+              setIsGateLocked(false);
+              setGateDrill(null);
             }
 
             // Trigger Celebration
@@ -444,47 +452,72 @@ export default function TrainingCockpit() {
           <div className="bg-zinc-900/80 border border-zinc-800 p-8 rounded-3xl text-center space-y-6 max-w-md mx-auto backdrop-blur-xl relative z-10 shadow-2xl">
             <div>
               <div className="text-4xl mb-4 animate-bounce">🧘</div>
-              <h2 className="text-2xl font-black text-white uppercase tracking-tight">Focus Protocol</h2>
-              <p className="text-zinc-500 text-sm">Select your training intensity.</p>
+              <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+                Focus Protocol
+              </h2>
+              <p className="text-zinc-500 text-sm">
+                Select your training intensity.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 gap-3">
-              <button 
-                onClick={() => { setFocusMode("BALANCED"); handleStartMock(); }}
+              <button
+                onClick={() => {
+                  setFocusMode("BALANCED");
+                  handleStartMock();
+                }}
                 className="bg-black/40 hover:bg-zinc-800 p-4 rounded-xl border border-zinc-700/50 hover:border-zinc-500 transition-all text-left flex items-center gap-4 group"
               >
                 <div className="w-10 h-10 bg-blue-500/10 text-blue-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-blue-500/20">
                   <Activity size={20} />
                 </div>
                 <div>
-                  <h4 className="text-white font-bold text-sm group-hover:text-blue-400 transition-colors">Balanced Mode</h4>
-                  <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">Mock Exam Standard</p>
+                  <h4 className="text-white font-bold text-sm group-hover:text-blue-400 transition-colors">
+                    Balanced Mode
+                  </h4>
+                  <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">
+                    Mock Exam Standard
+                  </p>
                 </div>
               </button>
 
-              <button 
-                onClick={() => { setFocusMode("FLUENCY"); handleStartMock(); }}
+              <button
+                onClick={() => {
+                  setFocusMode("FLUENCY");
+                  handleStartMock();
+                }}
                 className="bg-black/40 hover:bg-zinc-800 p-4 rounded-xl border border-zinc-700/50 hover:border-emerald-500 transition-all text-left flex items-center gap-4 group"
               >
                 <div className="w-10 h-10 bg-emerald-500/10 text-emerald-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/20">
                   <Zap size={20} fill="currentColor" />
                 </div>
                 <div>
-                  <h4 className="text-white font-bold text-sm group-hover:text-emerald-400 transition-colors">Fluency Mode</h4>
-                  <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">High Speed • Low Drag</p>
+                  <h4 className="text-white font-bold text-sm group-hover:text-emerald-400 transition-colors">
+                    Fluency Mode
+                  </h4>
+                  <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">
+                    High Speed • Low Drag
+                  </p>
                 </div>
               </button>
 
-              <button 
-                onClick={() => { setFocusMode("GRAMMAR"); handleStartMock(); }}
+              <button
+                onClick={() => {
+                  setFocusMode("GRAMMAR");
+                  handleStartMock();
+                }}
                 className="bg-black/40 hover:bg-zinc-800 p-4 rounded-xl border border-zinc-700/50 hover:border-indigo-500 transition-all text-left flex items-center gap-4 group"
               >
                 <div className="w-10 h-10 bg-indigo-500/10 text-indigo-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/20">
                   <ShieldCheck size={20} />
                 </div>
                 <div>
-                  <h4 className="text-white font-bold text-sm group-hover:text-indigo-400 transition-colors">Grammar Mode</h4>
-                  <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">High Precision • Strict</p>
+                  <h4 className="text-white font-bold text-sm group-hover:text-indigo-400 transition-colors">
+                    Grammar Mode
+                  </h4>
+                  <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">
+                    High Precision • Strict
+                  </p>
                 </div>
               </button>
             </div>
@@ -532,40 +565,41 @@ export default function TrainingCockpit() {
 
         {/* Vocabulary Vault Modal */}
         {briefing && (
-            <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-500">
-                <div className="bg-zinc-900 border border-zinc-700 w-full max-w-lg rounded-3xl p-8 shadow-2xl relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-red-500" />
-                    
-                    <div className="mb-6 flex justify-center">
-                        <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center shadow-lg border border-zinc-700">
-                           <Users size={32} className="text-white" />
-                        </div>
-                    </div>
-                    
-                    <h2 className="text-2xl font-black text-center text-white uppercase tracking-tight mb-2">
-                        Examiner Briefing
-                    </h2>
-                    <p className="text-center text-zinc-400 text-sm mb-8 font-medium italic">
-                        "Here is your personalized focus for this session."
-                    </p>
-                    
-                    <div className="bg-black/40 p-6 rounded-2xl border border-zinc-800 mb-8">
-                        <p className="text-zinc-200 text-lg leading-relaxed text-center font-serif">
-                            {briefing}
-                        </p>
-                    </div>
-                    
-                    <button 
-                        onClick={() => {
-                            setBriefing(null);
-                            if (feedback?.next_task_prompt) speak(feedback.next_task_prompt);
-                        }}
-                        className="w-full py-4 bg-white hover:bg-zinc-200 text-black font-black uppercase tracking-widest rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                        Understood. Begin.
-                    </button>
+          <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-500">
+            <div className="bg-zinc-900 border border-zinc-700 w-full max-w-lg rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-red-500" />
+
+              <div className="mb-6 flex justify-center">
+                <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center shadow-lg border border-zinc-700">
+                  <Users size={32} className="text-white" />
                 </div>
+              </div>
+
+              <h2 className="text-2xl font-black text-center text-white uppercase tracking-tight mb-2">
+                Examiner Briefing
+              </h2>
+              <p className="text-center text-zinc-400 text-sm mb-8 font-medium italic">
+                "Here is your personalized focus for this session."
+              </p>
+
+              <div className="bg-black/40 p-6 rounded-2xl border border-zinc-800 mb-8">
+                <p className="text-zinc-200 text-lg leading-relaxed text-center font-serif">
+                  {briefing}
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setBriefing(null);
+                  if (feedback?.next_task_prompt)
+                    speak(feedback.next_task_prompt);
+                }}
+                className="w-full py-4 bg-white hover:bg-zinc-200 text-black font-black uppercase tracking-widest rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                Understood. Begin.
+              </button>
             </div>
+          </div>
         )}
 
         {showVault && (
@@ -698,7 +732,7 @@ export default function TrainingCockpit() {
 
       {/* FOCUS MODE GAUGE (Phase 10) */}
       {focusMode === "FLUENCY" && (
-          <FlowGauge isRecording={isRecording} silenceTimer={silenceTimer} />
+        <FlowGauge isRecording={isRecording} silenceTimer={silenceTimer} />
       )}
 
       {/* TOP HUD */}
@@ -855,6 +889,25 @@ export default function TrainingCockpit() {
             </div>
           )}
 
+          {/* REAL-TIME WORD BANK (v3.0) */}
+          {isRecording && feedback?.realtime_word_bank && feedback.realtime_word_bank.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-2 mb-4 animate-in fade-in slide-in-from-top-4 duration-1000">
+              <span className="text-[9px] font-black uppercase text-zinc-500 tracking-widest w-full text-center mb-1">
+                Power Words: Try to use these
+              </span>
+              {feedback.realtime_word_bank.map((word, idx) => (
+                <div
+                  key={idx}
+                  className="px-3 py-1 bg-zinc-900 border border-zinc-800 rounded-full text-zinc-300 text-[11px] font-bold shadow-lg flex items-center gap-2 animate-bounce"
+                  style={{ animationDelay: `${idx * 200}ms` }}
+                >
+                  <div className="w-1 h-1 bg-emerald-500 rounded-full" />
+                  {word}
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* PROMPT */}
           <div className="text-center space-y-6 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-zinc-800 bg-zinc-900/50 text-zinc-400 text-[10px] font-bold uppercase tracking-widest">
@@ -946,8 +999,8 @@ export default function TrainingCockpit() {
                     {part2Phase === "PREP" ? "Preparation Time" : "Long Turn"}
                   </h3>
                   <div className="text-5xl font-black tabular-nums tracking-tighter">
-                    {Math.floor(timer / 60)}:
-                    {(timer % 60).toString().padStart(2, "0")}
+                    {Math.floor(Math.max(0, timer) / 60)}:
+                    {(Math.max(0, timer) % 60).toString().padStart(2, "0")}
                   </div>
                 </div>
                 {part2Phase === "PREP" && (
@@ -1006,27 +1059,32 @@ export default function TrainingCockpit() {
                 </div>
               )}
 
-            {/* STRATEGY CARDS (Panic Management) */}
-            {silenceTimer > 6 && part2Phase !== "PREP" && (
+              {/* STRATEGY CARDS (Panic Management) */}
+              {silenceTimer > 6 && part2Phase !== "PREP" && (
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] animate-in zoom-in slide-in-from-bottom-5 duration-500">
-                    <div className="bg-blue-600 text-white p-6 rounded-3xl shadow-2xl shadow-blue-900/50 max-w-sm border-4 border-blue-400/30">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center animate-bounce">
-                                <Zap size={18} fill="currentColor" />
-                            </div>
-                            <h4 className="font-black uppercase tracking-widest text-xs">Strategy: Buy Time</h4>
-                        </div>
-                        <p className="text-xl font-bold leading-tight mb-4 text-center">
-                            "That's a fascinating question, I've never thought about it deeply, but..."
-                        </p>
-                        <div className="flex justify-center">
-                            <span className="text-[10px] bg-black/20 px-3 py-1 rounded-full font-medium">Say this to reset your brain</span>
-                        </div>
+                  <div className="bg-blue-600 text-white p-6 rounded-3xl shadow-2xl shadow-blue-900/50 max-w-sm border-4 border-blue-400/30">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center animate-bounce">
+                        <Zap size={18} fill="currentColor" />
+                      </div>
+                      <h4 className="font-black uppercase tracking-widest text-xs">
+                        Strategy: Buy Time
+                      </h4>
                     </div>
+                    <p className="text-xl font-bold leading-tight mb-4 text-center">
+                      "That's a fascinating question, I've never thought about
+                      it deeply, but..."
+                    </p>
+                    <div className="flex justify-center">
+                      <span className="text-[10px] bg-black/20 px-3 py-1 rounded-full font-medium">
+                        Say this to reset your brain
+                      </span>
+                    </div>
+                  </div>
                 </div>
-            )}
+              )}
 
-             {/* AI Notepad */}
+              {/* AI Notepad */}
               <div className="mt-6 flex flex-col gap-2">
                 <div className="flex justify-between items-center bg-zinc-100 p-3 rounded-lg border border-zinc-200">
                   <span className="text-[10px] font-black uppercase text-zinc-400">
@@ -1053,21 +1111,43 @@ export default function TrainingCockpit() {
                     <span
                       className={`text-[10px] font-black uppercase ${silenceTimer > 4 ? "text-blue-600" : "text-blue-400"}`}
                     >
-                      {examPart === "PART_2" ? "Scaffolding: Prep Hints" : "Coach: Think of..."}
+                      {examPart === "PART_2"
+                        ? "Scaffolding: Prep Hints"
+                        : "Coach: Think of..."}
                     </span>
                     <ul className="space-y-2">
                       {(examPart === "PART_2" && feedback?.next_task_prompt
-                        ? feedback.next_task_prompt?.toLowerCase()?.includes("person")
-                          ? ["First Impression", "Character Trait", "Key Memory", "Lasting Influence"]
-                          : feedback.next_task_prompt?.toLowerCase()?.includes("place")
-                            ? ["Visual Layout", "Atmosphere/Smell", "Personal Connection", "Why it's unique"]
-                            : ["The Setup", "The Climax", "The Resolution", "The Lesson Learned"]
+                        ? feedback.next_task_prompt
+                            ?.toLowerCase()
+                            ?.includes("person")
+                          ? [
+                              "First Impression",
+                              "Character Trait",
+                              "Key Memory",
+                              "Lasting Influence",
+                            ]
+                          : feedback.next_task_prompt
+                                ?.toLowerCase()
+                                ?.includes("place")
+                            ? [
+                                "Visual Layout",
+                                "Atmosphere/Smell",
+                                "Personal Connection",
+                                "Why it's unique",
+                              ]
+                            : [
+                                "The Setup",
+                                "The Climax",
+                                "The Resolution",
+                                "The Lesson Learned",
+                              ]
                         : [
-                        "5 Senses (Smell, Sound, etc.)",
-                        "A specific conflict or challenge",
-                        "How did it change you?",
-                        "Emotional peak (Excitement/Loss)",
-                      ]).map((item, id) => (
+                            "5 Senses (Smell, Sound, etc.)",
+                            "A specific conflict or challenge",
+                            "How did it change you?",
+                            "Emotional peak (Excitement/Loss)",
+                          ]
+                      ).map((item, id) => (
                         <li
                           key={id}
                           className={`flex items-center gap-2 text-[11px] font-bold transition-colors ${silenceTimer > 4 ? "text-blue-800" : "text-blue-700/70"}`}
@@ -1083,13 +1163,36 @@ export default function TrainingCockpit() {
                 </div>
               </div>
 
-              {/* Visual Pressure Hook */}
+              {/* Visual Pressure Hook & Momentum Nudges (v3.0) */}
               {part2Phase === "SPEAKING" && (
-                <div className="mt-8 w-full h-1 bg-zinc-200 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-1000 ${timer < 20 ? "bg-red-500" : timer < 60 ? "bg-yellow-500" : "bg-emerald-500"}`}
-                    style={{ width: `${(timer / 120) * 100}%` }}
-                  />
+                <div className="mt-8 space-y-3">
+                  <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-tighter">
+                    <span className={timer > 45 ? "text-emerald-500" : "text-zinc-400"}>
+                      {timer > 45 ? "✓ Level 1: Context" : "Level 1: Narrate"}
+                    </span>
+                    <span className={timer > 75 ? "text-emerald-500" : timer > 45 ? "text-amber-500 animate-pulse" : "text-zinc-400"}>
+                      {timer > 75 ? "✓ Level 2: Analysis" : "Level 2: Deepen"}
+                    </span>
+                    <span className={timer > 105 ? "text-emerald-500" : timer > 75 ? "text-amber-500 animate-pulse" : "text-zinc-400"}>
+                      {timer > 105 ? "✓ Level 3: Reflection" : "Level 3: Reflect"}
+                    </span>
+                  </div>
+                  <div className="w-full h-2 bg-zinc-200 rounded-full overflow-hidden relative">
+                     {/* Tier markers */}
+                     <div className="absolute left-[37.5%] top-0 w-0.5 h-full bg-white/50 z-10" /> {/* 45s */}
+                     <div className="absolute left-[62.5%] top-0 w-0.5 h-full bg-white/50 z-10" /> {/* 75s */}
+                     <div className="absolute left-[87.5%] top-0 w-0.5 h-full bg-white/50 z-10" /> {/* 105s */}
+
+                    <div
+                      className={`h-full transition-all duration-1000 ${timer < 20 ? "bg-red-500" : timer < 80 ? "bg-emerald-500" : "bg-red-500"}`}
+                      style={{ width: `${(timer / 120) * 100}%` }}
+                    />
+                  </div>
+                  <p className="text-center text-[10px] font-bold text-zinc-500 italic">
+                    {timer < 45 ? "Story-tell: Who, What, Where?" : 
+                     timer < 75 ? "Shift: How did it make you feel? Why?" :
+                     timer < 105 ? "Reflect: What is the long-term impact?" : "Wrap up: Summarize your final thought."}
+                  </p>
                 </div>
               )}
 
@@ -1172,49 +1275,94 @@ export default function TrainingCockpit() {
               <h4 className="text-xs font-black text-red-500 uppercase tracking-widest flex items-center gap-2">
                 <Wand2 size={14} /> AI Examiner Analysis
               </h4>
+
+              {/* CONFIDENCE HUD (v3.0) */}
+              {feedback.confidence_score !== undefined && (
+                <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center gap-4">
+                  <div className="flex-1 space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                      <span className="text-zinc-500">Confidence Level</span>
+                      <span className={feedback.confidence_score > 0.7 ? "text-emerald-500" : feedback.confidence_score > 0.4 ? "text-amber-500" : "text-red-500"}>
+                        {Math.round(feedback.confidence_score * 100)}%
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-1000 ${feedback.confidence_score > 0.7 ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" : feedback.confidence_score > 0.4 ? "bg-amber-500" : "bg-red-500"}`}
+                        style={{ width: `${feedback.confidence_score * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${feedback.confidence_score > 0.7 ? "border-emerald-500/30 text-emerald-500" : "border-zinc-800 text-zinc-600"}`}>
+                    <Mic2 size={14} className={feedback.confidence_score > 0.7 ? "animate-pulse" : ""} />
+                  </div>
+                </div>
+              )}
               <div className="prose prose-invert prose-sm max-w-none prose-p:text-zinc-400 prose-strong:text-white h-48 overflow-y-auto pr-2 custom-scrollbar">
                 <ReactMarkdown>{feedback.feedback_markdown}</ReactMarkdown>
               </div>
 
               {/* CORRECTION CHALLENGE (The Mastery Drill) */}
               {/* PHASE 10 ADAPTIVE LOGIC: In Fluency Mode, we suppress strict grammar gates to maintain flow. */}
-              {feedback.correction_drill && (focusMode !== "FLUENCY" || isGateLocked) && (
-                <div className={`p-4 rounded-xl mt-6 animate-in fade-in duration-1000 transition-all ${isGateLocked ? 'bg-red-950/30 border border-red-500/50 shadow-[0_0_30px_rgba(220,38,38,0.2)]' : 'bg-amber-500/5 border border-amber-500/20'}`}>
-                  <h4 className={`text-[10px] font-black uppercase tracking-widest mb-2 flex items-center gap-2 ${isGateLocked ? 'text-red-500' : 'text-amber-500'}`}>
-                    {isGateLocked ? <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/> LOCK: CORE ERROR DETECTED</div> : <><Zap size={12} className="fill-current" /> Immediate Skill Fix</>}
-                  </h4>
-                  <p className="text-zinc-300 text-xs italic font-medium leading-relaxed mb-3">
-                    "{feedback.correction_drill}"
-                  </p>
-                  
-                  {isGateLocked && (
-                        <div className="flex gap-2">
-                             <button
-                               disabled={isVerifyingGate}
-                               onClick={() => {
-                                   setIsVerifyingGate(true);
-                                   startRecording();
-                               }}
-                               className="w-full py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-red-900/50"
-                             >
-                               {isVerifyingGate ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"/> : <Mic2 size={14} />}
-                               {isVerifyingGate ? "Recording... Say it correctly!" : "Record Fit to Unlock"}
-                             </button>
+              {feedback.correction_drill &&
+                (focusMode !== "FLUENCY" || isGateLocked) && (
+                  <div
+                    className={`p-4 rounded-xl mt-6 animate-in fade-in duration-1000 transition-all ${isGateLocked ? "bg-red-950/30 border border-red-500/50 shadow-[0_0_30px_rgba(220,38,38,0.2)]" : "bg-amber-500/5 border border-amber-500/20"}`}
+                  >
+                    <h4
+                      className={`text-[10px] font-black uppercase tracking-widest mb-2 flex items-center gap-2 ${isGateLocked ? "text-red-500" : "text-amber-500"}`}
+                    >
+                      {isGateLocked ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />{" "}
+                          LOCK: CORE ERROR DETECTED
                         </div>
-                  )}
-
-                  {feedback.reasoning && !isGateLocked && (
-                    <p className="mt-2 text-[9px] text-zinc-500 font-bold uppercase tracking-tight flex items-center gap-1">
-                      💡 {feedback.reasoning}
+                      ) : (
+                        <>
+                          <Zap size={12} className="fill-current" /> Immediate
+                          Skill Fix
+                        </>
+                      )}
+                    </h4>
+                    <p className="text-zinc-300 text-xs italic font-medium leading-relaxed mb-3">
+                      "{feedback.correction_drill}"
                     </p>
-                  )}
-                </div>
-              )}
+
+                    {isGateLocked && (
+                      <div className="flex gap-2">
+                        <button
+                          disabled={isVerifyingGate}
+                          onClick={() => {
+                            setIsVerifyingGate(true);
+                            startRecording();
+                          }}
+                          className="w-full py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-red-900/50"
+                        >
+                          {isVerifyingGate ? (
+                            <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          ) : (
+                            <Mic2 size={14} />
+                          )}
+                          {isVerifyingGate
+                            ? "Recording... Say it correctly!"
+                            : "Record Fit to Unlock"}
+                        </button>
+                      </div>
+                    )}
+
+                    {feedback.reasoning && !isGateLocked && (
+                      <p className="mt-2 text-[9px] text-zinc-500 font-bold uppercase tracking-tight flex items-center gap-1">
+                        💡 {feedback.reasoning}
+                      </p>
+                    )}
+                  </div>
+                )}
 
               {feedback.refactor_mission && (
                 <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl mt-4 animate-in slide-in-from-left duration-1000">
                   <h4 className="text-[10px] font-black uppercase text-yellow-500 tracking-widest mb-1 flex items-center gap-2">
-                    <Zap size={12} className="fill-current" /> Active Refactor Mission
+                    <Zap size={12} className="fill-current" /> Active Refactor
+                    Mission
                   </h4>
                   <p className="text-white text-sm font-bold italic">
                     "{feedback.refactor_mission}"
@@ -1250,18 +1398,21 @@ export default function TrainingCockpit() {
                     Your Potential (Band 9 Refined)
                   </h4>
                   {/* Smart Diff Visualization */}
-                    {feedback.ideal_response && feedback.user_transcript ? (
-                        <div className="relative z-10">
-                            <SmartDiff original={feedback.user_transcript} improved={feedback.ideal_response} />
-                        </div>
-                    ) : (
-                      <p className="text-white text-sm italic leading-relaxed relative z-10 font-medium">
-                        "
-                        {feedback.ideal_response ||
-                          "Excellent answer. Focus on expanding your Part 3 responses."}
-                        "
-                      </p>
-                    )}
+                  {feedback.ideal_response && feedback.user_transcript ? (
+                    <div className="relative z-10">
+                      <SmartDiff
+                        original={feedback.user_transcript}
+                        improved={feedback.ideal_response}
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-white text-sm italic leading-relaxed relative z-10 font-medium">
+                      "
+                      {feedback.ideal_response ||
+                        "Excellent answer. Focus on expanding your Part 3 responses."}
+                      "
+                    </p>
+                  )}
 
                   {/* AUDIO MIRROR: Side-by-Side Playback */}
                   <div className="flex gap-3 mt-6">
@@ -1302,7 +1453,7 @@ export default function TrainingCockpit() {
                         <p className="text-xs text-zinc-300 leading-relaxed">
                           {s}
                         </p>
-                        {shadowResults[i] && (
+                        {shadowResults && shadowResults[i] && (
                           <div className="flex items-center gap-3">
                             <span
                               className={`text-[10px] font-black uppercase ${shadowResults[i].is_passed ? "text-emerald-500" : "text-amber-500"}`}
@@ -1372,45 +1523,53 @@ export default function TrainingCockpit() {
               )}
 
               <div className="flex gap-4 mt-8">
-                <button 
-                    disabled={isGateLocked}
-                    onClick={() => { setFeedback(null); setShadowingMode(false); }} 
-                    className={`flex-1 py-3 font-bold text-xs uppercase tracking-widest rounded-xl transition-all relative overflow-hidden group ${
-                        isGateLocked 
-                        ? 'bg-zinc-900 text-zinc-600 cursor-not-allowed border border-zinc-800' 
-                        : feedback?.is_probing 
-                          ? 'bg-blue-600/20 text-blue-500 border border-blue-600/50 hover:bg-blue-600/40'
-                          : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                    }`}
+                <button
+                  disabled={isGateLocked}
+                  onClick={() => {
+                    setFeedback(null);
+                    setShadowingMode(false);
+                  }}
+                  className={`flex-1 py-3 font-bold text-xs uppercase tracking-widest rounded-xl transition-all relative overflow-hidden group ${
+                    isGateLocked
+                      ? "bg-zinc-900 text-zinc-600 cursor-not-allowed border border-zinc-800"
+                      : feedback?.is_probing
+                        ? "bg-blue-600/20 text-blue-500 border border-blue-600/50 hover:bg-blue-600/40"
+                        : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                  }`}
                 >
-                    {isGateLocked && (
-                        <div className="absolute inset-0 bg-zinc-950/80 flex items-center justify-center gap-2 text-red-500 font-bold z-10 w-full h-full">
-                            <div className="w-4 h-4 rounded-full border-2 border-red-500 flex items-center justify-center">
-                                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                            </div>
-                            LOCKED: FIX ERROR
-                        </div>
-                    )}
-                    {feedback?.is_probing ? "Explain Deeper (Probing)" : "Next Question"} <ArrowRight size={14} className="inline ml-2"/>
+                  {isGateLocked && (
+                    <div className="absolute inset-0 bg-zinc-950/80 flex items-center justify-center gap-2 text-red-500 font-bold z-10 w-full h-full">
+                      <div className="w-4 h-4 rounded-full border-2 border-red-500 flex items-center justify-center">
+                        <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                      </div>
+                      LOCKED: FIX ERROR
+                    </div>
+                  )}
+                  {feedback?.is_probing
+                    ? "Explain Deeper (Probing)"
+                    : "Next Question"}{" "}
+                  <ArrowRight size={14} className="inline ml-2" />
                 </button>
                 {feedback?.refactor_mission && (
-                   <button
+                  <button
                     onClick={() => {
-                        setIsRefactor(true);
-                        setFeedback(null);
-                        setShadowingMode(false);
-                        speak(feedback.next_task_prompt || "Try again.");
-                        // Optional: inject the mission text into speech
-                        // speak(feedback.refactor_mission);
+                      setIsRefactor(true);
+                      setFeedback(null);
+                      setShadowingMode(false);
+                      speak(feedback.next_task_prompt || "Try again.");
+                      // Optional: inject the mission text into speech
+                      // speak(feedback.refactor_mission);
                     }}
                     className="flex-1 py-3 bg-white text-black font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-zinc-200 transition-all shadow-lg flex flex-col items-center justify-center gap-0.5"
-                   >
-                     <div className="flex items-center gap-2">
-                        <Zap size={14} className="text-yellow-500 fill-current" />
-                        <span>Immediate Refactor</span>
-                     </div>
-                     <span className="text-[8px] opacity-60 font-medium normal-case">Apply mission now</span>
-                   </button>
+                  >
+                    <div className="flex items-center gap-2">
+                      <Zap size={14} className="text-yellow-500 fill-current" />
+                      <span>Immediate Refactor</span>
+                    </div>
+                    <span className="text-[8px] opacity-60 font-medium normal-case">
+                      Apply mission now
+                    </span>
+                  </button>
                 )}
                 <button
                   onClick={() => {

@@ -25,6 +25,8 @@ class SignalMetrics(BaseModel):
     lexical_diversity: float = 0.0 
     grammar_complexity: float = 0.0 
     pronunciation_score: float = 0.0
+    prosody_score: float = 0.0 # v3.0
+    confidence_score: float = 0.0 # v3.0
     is_complete: bool
     
     # Detailed AI feedback
@@ -59,6 +61,10 @@ class Intervention(BaseModel):
     refactor_mission: Optional[str] = Field(None, description="Specific instruction for an immediate retry (e.g., 'Say that again but use the word nonetheless')")
     interjection_type: Optional[Literal['ELABORATION', 'CONTRAST', 'CAUSE_EFFECT', 'NONE']] = Field('NONE', description="The cognitive strategy used for probing")
 
+    # NEW: Learning v3.0 Fields
+    realtime_word_bank: List[str] = Field(default_factory=list, description="Top 5 Band 8+ words for the user to use in the NEXT turn (HUD display)")
+    confidence_score: float = 0.0 # 0.0 (Uncertain) -> 1.0 (Confident)
+
     # Real-time Engine State
     stress_level: float = 0.0
 
@@ -66,6 +72,7 @@ class Intervention(BaseModel):
 class ExamStartRequest(BaseModel):
     exam_type: str = "FULL_MOCK" # FULL_MOCK, PART_1_ONLY, etc.
     user_id: str = "default_user"
+    topic_override: Optional[str] = None # v3.0 Mastery Drill
 
 class ExamSessionSchema(BaseModel):
     id: str

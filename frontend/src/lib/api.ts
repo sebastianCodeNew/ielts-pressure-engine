@@ -52,11 +52,16 @@ export class ApiClient {
   static async startExam(
     userId: string,
     examType: string = "FULL_MOCK",
+    topicOverride?: string,
   ): Promise<any> {
     const res = await this.fetchWithRetry(`${API_BASE_URL}/v1/exams/start`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: userId, exam_type: examType }),
+      body: JSON.stringify({
+        user_id: userId,
+        exam_type: examType,
+        topic_override: topicOverride,
+      }),
     });
     if (!res.ok) throw new Error("Failed to start exam");
     return res.json();

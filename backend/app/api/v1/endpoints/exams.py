@@ -46,8 +46,8 @@ def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
 
     session_id = str(uuid.uuid4())
     
-    # Randomize Topic
-    initial_prompt = random.choice(PART_1_TOPICS)
+    # Randomize Topic or use Override (Mastery Drill)
+    initial_prompt = request.topic_override or random.choice(PART_1_TOPICS)
     
     # Map topics to initial Band 8+ keywords
     TOPIC_KEYWORDS = {
@@ -178,6 +178,7 @@ def get_exam_summary(session_id: str, db: Session = Depends(get_db)):
     return {
         "session_id": session_id,
         "overall_score": session.overall_band_score or 0.0,
+        "topic_prompt": session.current_prompt,
         "breakdown": {
             "fluency": session.fluency_score or 0.0,
             "coherence": session.coherence_score or 0.0,
