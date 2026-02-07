@@ -1,6 +1,6 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { useTTS } from "@/hooks/useTTS";
 import {
@@ -47,7 +47,7 @@ interface FeedbackData {
   confidence_score?: number;
 }
 
-export default function TrainingCockpit() {
+export function TrainingCockpit() {
   const lastToggleTime = useRef(0);
   const [isRefactor, setIsRefactor] = useState(false);
   const {
@@ -184,6 +184,38 @@ export default function TrainingCockpit() {
       })
       .catch((e) => console.error(e));
   }, []);
+
+  const resumeSession = async (sid: string) => {
+    try {
+      const status = await ApiClient.getExamStatus(sid);
+      const summary = await ApiClient.getExamSummary(sid); // Get prompt metadata
+      
+      setSessionId(sid);
+      setExamPart(status.current_part as any);
+      setPart2Phase("IDLE");
+      
+      const prompt = summary.topic_prompt || "Continue the session.";
+      setFeedback({ next_task_prompt: prompt });
+      speak(prompt);
+      
+      // If summary has keywords, set them
+      const initialKeywords = ["culinary", "experience", "delicacy"]; // Fallback or fetch more if needed
+      setActiveMission(initialKeywords);
+
+    } catch (e) {
+      console.error("Failed to resume session:", e);
+      // Fallback to fresh start if sid is invalid
+      startExam();
+    }
+  };
+
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const sid = searchParams.get("sessionId");
+    if (sid && !sessionId) {
+      resumeSession(sid);
+    }
+  }, [searchParams, sessionId]);
 
   const startExam = async () => {
     try {
@@ -1670,5 +1702,13 @@ function PartBadge({
     >
       {label}
     </div>
+  );
+}
+
+export default function TrainingCockpitPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0d0d12] flex items-center justify-center text-zinc-500 font-bold">Synchronizing Session...</div>}>
+      <TrainingCockpit />
+    </Suspense>
   );
 }

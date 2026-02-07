@@ -39,7 +39,7 @@ export default function ExamResultPage() {
         "PART_3_ONLY",
         result.topic_prompt,
       );
-      router.push(`/exam/ongoing/${nextSession.id}`);
+      router.push(`/?sessionId=${nextSession.id}`);
     } catch (err) {
       console.error("Mastery drill failed:", err);
       setDrillLoading(false);
