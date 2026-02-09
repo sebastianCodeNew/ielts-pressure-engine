@@ -36,6 +36,11 @@ export interface Intervention {
   
   // Celebration
   keywords_hit?: string[];
+
+  // v4.0 Active Recall Quiz
+  quiz_question?: string;
+  quiz_options?: string[];
+  quiz_correct_index?: number;
 }
 
 export interface TranslationResponse {

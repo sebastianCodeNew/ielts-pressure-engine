@@ -65,6 +65,11 @@ class Intervention(BaseModel):
     realtime_word_bank: List[str] = Field(default_factory=list, description="Top 5 Band 8+ words for the user to use in the NEXT turn (HUD display)")
     confidence_score: float = 0.0 # 0.0 (Uncertain) -> 1.0 (Confident)
 
+    # NEW: Learning v4.0 - Active Recall Quiz
+    quiz_question: Optional[str] = Field(None, description="A single-question quiz to reinforce the correction (e.g., 'Which is correct?')")
+    quiz_options: Optional[List[str]] = Field(None, description="4 multiple-choice options, first one is correct")
+    quiz_correct_index: int = Field(0, description="Index of the correct answer (0-3)")
+
     # Real-time Engine State
     stress_level: float = 0.0
 

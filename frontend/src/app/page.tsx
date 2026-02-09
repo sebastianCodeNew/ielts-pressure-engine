@@ -45,6 +45,10 @@ interface FeedbackData {
   // v3.0 Fields
   realtime_word_bank?: string[];
   confidence_score?: number;
+  // v4.0 Fields - Active Recall Quiz
+  quiz_question?: string;
+  quiz_options?: string[];
+  quiz_correct_index?: number;
 }
 
 export function TrainingCockpit() {
@@ -133,6 +137,11 @@ export function TrainingCockpit() {
   const [celebrationKeywords, setCelebrationKeywords] = useState<string[]>([]);
   const [showCelebration, setShowCelebration] = useState(false);
 
+  // Active Recall Quiz State (v4.0)
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
+  const [quizResult, setQuizResult] = useState<"correct" | "incorrect" | null>(null);
+
   // Correction Gate State
   const [isGateLocked, setIsGateLocked] = useState(false);
   const [gateDrill, setGateDrill] = useState<string | null>(null);
@@ -143,6 +152,14 @@ export function TrainingCockpit() {
   const [focusMode, setFocusMode] = useState<
     "BALANCED" | "FLUENCY" | "GRAMMAR"
   >("BALANCED");
+
+  // Micro-Wins State (v4.0 - Radar Chart)
+  const [microWins, setMicroWins] = useState<{
+    fluency: number;
+    lexical: number;
+    grammar: number;
+    pronunciation: number;
+  }>({ fluency: 0, lexical: 0, grammar: 0, pronunciation: 0 });
 
   const hasNudgedRef = useRef(false);
 
@@ -386,6 +403,13 @@ export function TrainingCockpit() {
                 ]);
               }
               setLastError(data.correction_drill.split(" ")[0]);
+            }
+
+            // ACTIVE RECALL QUIZ TRIGGER (v4.0)
+            if (data.quiz_question && data.quiz_options && data.quiz_options.length >= 2) {
+              setQuizAnswer(null);
+              setQuizResult(null);
+              setShowQuiz(true);
             }
 
             // If we were in Mastery Mode and passed, exit it
@@ -867,6 +891,11 @@ export function TrainingCockpit() {
           </p>
         </div>
 
+        {/* MICRO-WINS RADAR (v4.0) */}
+        <div className="absolute top-8 right-8 w-40 opacity-70 hover:opacity-100 transition-opacity">
+          <MicroWinsRadar scores={microWins} />
+        </div>
+
         {/* MAIN INTERACTION ZONE */}
         <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-8 space-y-12">
           {/* LEXICAL MISSION HUD */}
@@ -1129,14 +1158,67 @@ export function TrainingCockpit() {
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <textarea
-                    value={notes}
-                    onChange={(e) =>
-                      part2Phase === "PREP" && setNotes(e.target.value)
-                    }
-                    placeholder="Type your notes here..."
-                    className={`w-full h-40 p-4 text-sm font-medium border-0 focus:ring-2 focus:ring-blue-500 transition-all rounded-lg resize-none ${part2Phase === "SPEAKING" ? "bg-zinc-50/50 text-zinc-400 cursor-not-allowed opacity-60" : "bg-zinc-50 text-zinc-800 shadow-inner"}`}
-                  />
+                  {/* Structured Notepad Template */}
+                  <div className={`w-full h-40 p-4 text-sm font-medium border-0 transition-all rounded-lg ${part2Phase === "SPEAKING" ? "bg-zinc-50/50 text-zinc-400 cursor-not-allowed opacity-60" : "bg-zinc-50 text-zinc-800 shadow-inner"}`}>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="text-blue-500 font-bold">📌 WHO/WHAT:</span>
+                        <input
+                          type="text"
+                          disabled={part2Phase === "SPEAKING"}
+                          placeholder="The topic/person/event..."
+                          className="flex-1 bg-transparent border-b border-zinc-300 focus:border-blue-500 outline-none px-1 py-0.5"
+                          onChange={(e) => setNotes(prev => {
+                            const lines = prev.split('\n');
+                            lines[0] = `WHO/WHAT: ${e.target.value}`;
+                            return lines.join('\n');
+                          })}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-emerald-500 font-bold">📍 WHEN/WHERE:</span>
+                        <input
+                          type="text"
+                          disabled={part2Phase === "SPEAKING"}
+                          placeholder="Time and location..."
+                          className="flex-1 bg-transparent border-b border-zinc-300 focus:border-emerald-500 outline-none px-1 py-0.5"
+                          onChange={(e) => setNotes(prev => {
+                            const lines = prev.split('\n');
+                            lines[1] = `WHEN/WHERE: ${e.target.value}`;
+                            return lines.join('\n');
+                          })}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-purple-500 font-bold">💭 FEELINGS:</span>
+                        <input
+                          type="text"
+                          disabled={part2Phase === "SPEAKING"}
+                          placeholder="How you felt..."
+                          className="flex-1 bg-transparent border-b border-zinc-300 focus:border-purple-500 outline-none px-1 py-0.5"
+                          onChange={(e) => setNotes(prev => {
+                            const lines = prev.split('\n');
+                            lines[2] = `FEELINGS: ${e.target.value}`;
+                            return lines.join('\n');
+                          })}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-amber-500 font-bold">⭐ WHY IMPORTANT:</span>
+                        <input
+                          type="text"
+                          disabled={part2Phase === "SPEAKING"}
+                          placeholder="Why it matters..."
+                          className="flex-1 bg-transparent border-b border-zinc-300 focus:border-amber-500 outline-none px-1 py-0.5"
+                          onChange={(e) => setNotes(prev => {
+                            const lines = prev.split('\n');
+                            lines[3] = `WHY IMPORTANT: ${e.target.value}`;
+                            return lines.join('\n');
+                          })}
+                        />
+                      </div>
+                    </div>
+                  </div>
                   <div
                     className={`bg-blue-50/50 rounded-lg p-4 flex flex-col gap-3 transition-all duration-700 ${silenceTimer > 4 ? "ring-2 ring-blue-400 ring-offset-2 animate-pulse shadow-lg bg-blue-100" : ""}`}
                   >
@@ -1682,6 +1764,194 @@ export function TrainingCockpit() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(16,185,129,0.05)_100%)]" />
         </div>
       )}
+
+      {/* ACTIVE RECALL QUIZ MODAL (v4.0) */}
+      {showQuiz && feedback?.quiz_question && feedback?.quiz_options && (
+        <QuizModal
+          question={feedback.quiz_question}
+          options={feedback.quiz_options}
+          correctIndex={feedback.quiz_correct_index ?? 0}
+          onAnswer={(isCorrect) => {
+            setQuizResult(isCorrect ? "correct" : "incorrect");
+            setTimeout(() => setShowQuiz(false), 1500);
+          }}
+          onClose={() => setShowQuiz(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// Micro-Wins Radar Chart (v4.0)
+function MicroWinsRadar({
+  scores,
+}: {
+  scores: { fluency: number; lexical: number; grammar: number; pronunciation: number };
+}) {
+  const labels = ["Fluency", "Lexical", "Grammar", "Pronunciation"];
+  const values = [scores.fluency, scores.lexical, scores.grammar, scores.pronunciation];
+  const max = 9; // Band scale
+  const cx = 60, cy = 60, r = 40;
+
+  // Calculate polygon points for radar
+  const getPoint = (value: number, index: number) => {
+    const angle = (Math.PI * 2 * index) / 4 - Math.PI / 2;
+    const radius = (value / max) * r;
+    return `${cx + radius * Math.cos(angle)},${cy + radius * Math.sin(angle)}`;
+  };
+
+  const polygonPoints = values.map((v, i) => getPoint(v, i)).join(" ");
+  const gridLevels = [3, 6, 9];
+
+  return (
+    <div className="bg-zinc-900/80 backdrop-blur-xl rounded-2xl p-4 border border-zinc-800">
+      <h4 className="text-[10px] font-black uppercase text-zinc-500 tracking-widest mb-2 text-center">
+        Session Progress
+      </h4>
+      <svg viewBox="0 0 120 120" className="w-full h-24">
+        {/* Grid circles */}
+        {gridLevels.map((level) => (
+          <polygon
+            key={level}
+            points={[0, 1, 2, 3].map((i) => getPoint(level, i)).join(" ")}
+            fill="none"
+            stroke="#27272a"
+            strokeWidth="1"
+          />
+        ))}
+        {/* Axes */}
+        {[0, 1, 2, 3].map((i) => (
+          <line
+            key={i}
+            x1={cx}
+            y1={cy}
+            x2={parseFloat(getPoint(max, i).split(",")[0])}
+            y2={parseFloat(getPoint(max, i).split(",")[1])}
+            stroke="#27272a"
+            strokeWidth="1"
+          />
+        ))}
+        {/* Data polygon */}
+        <polygon
+          points={polygonPoints}
+          fill="rgba(16, 185, 129, 0.3)"
+          stroke="#10b981"
+          strokeWidth="2"
+          className="transition-all duration-700"
+        />
+        {/* Data points */}
+        {values.map((v, i) => {
+          const [x, y] = getPoint(v, i).split(",").map(Number);
+          return (
+            <circle
+              key={i}
+              cx={x}
+              cy={y}
+              r={3}
+              fill="#10b981"
+              className="transition-all duration-700"
+            />
+          );
+        })}
+        {/* Labels */}
+        {labels.map((label, i) => {
+          const angle = (Math.PI * 2 * i) / 4 - Math.PI / 2;
+          const lx = cx + (r + 15) * Math.cos(angle);
+          const ly = cy + (r + 15) * Math.sin(angle);
+          return (
+            <text
+              key={label}
+              x={lx}
+              y={ly}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              className="text-[6px] fill-zinc-500 font-bold uppercase"
+            >
+              {label.slice(0, 4)}
+            </text>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+// Active Recall Quiz Modal (v4.0)
+function QuizModal({
+  question,
+  options,
+  correctIndex,
+  onAnswer,
+  onClose,
+}: {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  onAnswer: (isCorrect: boolean) => void;
+  onClose: () => void;
+}) {
+  const [selected, setSelected] = useState<number | null>(null);
+  const [revealed, setRevealed] = useState(false);
+
+  const handleSelect = (idx: number) => {
+    if (revealed) return;
+    setSelected(idx);
+    setRevealed(true);
+    const isCorrect = idx === correctIndex;
+    setTimeout(() => onAnswer(isCorrect), 1500);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-300">
+      <div className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-4 duration-500">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
+            <HelpCircle size={20} className="text-white" />
+          </div>
+          <div>
+            <h3 className="text-xs font-black uppercase text-blue-600 tracking-widest">Active Recall Quiz</h3>
+            <p className="text-zinc-500 text-xs">Test your understanding</p>
+          </div>
+        </div>
+
+        <p className="text-lg font-bold text-zinc-900 mb-6">{question}</p>
+
+        <div className="space-y-3">
+          {options.map((opt, idx) => {
+            const isCorrect = idx === correctIndex;
+            const isSelected = idx === selected;
+            let bgClass = "bg-zinc-100 hover:bg-zinc-200 border-transparent";
+            
+            if (revealed) {
+              if (isCorrect) bgClass = "bg-emerald-100 border-emerald-500 text-emerald-800";
+              else if (isSelected) bgClass = "bg-red-100 border-red-500 text-red-800";
+              else bgClass = "bg-zinc-50 border-transparent opacity-50";
+            }
+
+            return (
+              <button
+                key={idx}
+                onClick={() => handleSelect(idx)}
+                disabled={revealed}
+                className={`w-full p-4 rounded-xl border-2 text-left font-medium transition-all ${bgClass}`}
+              >
+                <span className="font-bold mr-2">{String.fromCharCode(65 + idx)}.</span>
+                {opt}
+                {revealed && isCorrect && <span className="ml-2">✓</span>}
+                {revealed && isSelected && !isCorrect && <span className="ml-2">✗</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {revealed && (
+          <div className="mt-6 text-center">
+            <p className={`text-sm font-bold ${selected === correctIndex ? "text-emerald-600" : "text-red-600"}`}>
+              {selected === correctIndex ? "🎉 Correct! Knowledge reinforced." : "❌ Not quite. Review the correct answer above."}
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

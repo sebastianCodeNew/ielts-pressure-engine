@@ -136,6 +136,13 @@ def formulate_strategy(
         - These should be practical for use in natural speech.
         - List them in the `realtime_word_bank` field.
 
+        NEW: ACTIVE RECALL QUIZ (v4.0):
+        - If you identified a grammar or vocabulary error in `correction_drill`, generate a quick quiz:
+            * `quiz_question`: A short question testing the specific rule (e.g., "Which sentence uses correct subject-verb agreement?")
+            * `quiz_options`: 4 options (A, B, C, D). The FIRST option (index 0) must be the CORRECT answer.
+            * Example: ["The group of students is here.", "The group of students are here.", "The students is here.", "The group are here."]
+        - If no quiz is needed, leave these fields as null.
+
         {format_instructions}
         """,
         input_variables=["stress_level", "fluency_trend", "consecutive_failures", "wpm", "hesitation", "coherence", "lexical_diversity", "grammar_complexity", "history", "current_part", "target_band", "weakness", "context_override", "user_transcript", "avg_fluency", "avg_coherence", "avg_lexical", "avg_grammar", "lowest_area", "chronic_issues"],
