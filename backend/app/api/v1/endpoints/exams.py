@@ -93,7 +93,7 @@ def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
         id=session_id,
         user_id=request.user_id,
         exam_type=request.exam_type,
-        current_part="PART_1",
+        current_part="PART_3" if request.exam_type == "PART_3_ONLY" else "PART_2" if request.exam_type == "PART_2_ONLY" else "PART_1",
         current_prompt=initial_prompt,
         initial_keywords=final_keywords,
         status="IN_PROGRESS",
@@ -179,6 +179,7 @@ def get_exam_summary(session_id: str, db: Session = Depends(get_db)):
         "session_id": session_id,
         "overall_score": session.overall_band_score or 0.0,
         "topic_prompt": session.current_prompt,
+        "initial_keywords": session.initial_keywords,
         "breakdown": {
             "fluency": session.fluency_score or 0.0,
             "coherence": session.coherence_score or 0.0,

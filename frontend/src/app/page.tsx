@@ -198,9 +198,9 @@ export function TrainingCockpit() {
       setFeedback({ next_task_prompt: prompt });
       speak(prompt);
       
-      // If summary has keywords, set them
-      const initialKeywords = ["culinary", "experience", "delicacy"]; // Fallback or fetch more if needed
-      setActiveMission(initialKeywords);
+      if (summary.initial_keywords) {
+        setActiveMission(summary.initial_keywords);
+      }
 
     } catch (e) {
       console.error("Failed to resume session:", e);

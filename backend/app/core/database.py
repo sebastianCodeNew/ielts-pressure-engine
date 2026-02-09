@@ -53,6 +53,11 @@ class ExamSession(Base):
     lexical_resource_score = Column(Float, nullable=True)
     grammatical_range_score = Column(Float, nullable=True)
     pronunciation_score = Column(Float, nullable=True)
+
+    # v3.0 State Persistence
+    stress_level = Column(Float, default=0.5)
+    fluency_trend = Column(String, default="stable")
+    consecutive_failures = Column(Integer, default=0)
     
     user = relationship("User", back_populates="exam_sessions")
     attempts = relationship("QuestionAttempt", back_populates="session")

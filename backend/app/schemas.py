@@ -88,6 +88,8 @@ class ExamSessionSchema(BaseModel):
 class ExamSummary(BaseModel):
     session_id: str
     overall_score: float
+    topic_prompt: Optional[str] = None
+    initial_keywords: Optional[List[str]] = None
     breakdown: DetailedScores
     feedback: str
     recommendations: List[str]

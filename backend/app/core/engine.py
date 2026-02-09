@@ -78,9 +78,9 @@ def process_user_attempt(
 
         current_state = AgentState(
             session_id=session_id,
-            stress_level=0.5,
-            consecutive_failures=0,
-            fluency_trend="stable",
+            stress_level=exam_session.stress_level,
+            consecutive_failures=exam_session.consecutive_failures,
+            fluency_trend=exam_session.fluency_trend,
             history=history, 
             current_part=current_part,
             target_band=target_band,
@@ -138,6 +138,15 @@ def process_user_attempt(
     
     # 6. UPDATE STATE & PERSIST
     if is_exam_mode:
+        # Update Emotional/Cognitive state for the NEXT turn
+        outcome = 'FAIL' if intervention.action_id == 'FAIL' else 'PASS'
+        new_state = update_state(current_state, attempt, signals, outcome, current_prompt)
+        
+        # Persist to ExamSession for adaptation next turn
+        exam_session.stress_level = new_state.stress_level
+        exam_session.fluency_trend = new_state.fluency_trend
+        exam_session.consecutive_failures = new_state.consecutive_failures
+        
         # Load or create new attempt
         new_qa = None
         if is_retry:
