@@ -217,4 +217,12 @@ export class ApiClient {
     if (!res.ok) throw new Error("Failed to fetch warmup vocabulary");
     return res.json();
   }
+
+  static async getErrorGym(userId: string = "default_user"): Promise<any> {
+    const res = await this.fetchWithRetry(`${API_BASE_URL}/v1/exams/error-gym/${userId}`, {
+      method: "GET",
+    });
+    if (!res.ok) throw new Error("Failed to fetch Error Gym drills");
+    return res.json();
+  }
 }

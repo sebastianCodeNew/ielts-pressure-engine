@@ -251,3 +251,18 @@ def get_exam_status(session_id: str, db: Session = Depends(get_db)):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     return {"status": session.status, "current_part": session.current_part}
+
+@router.get("/error-gym/{user_id}")
+def get_error_gym(user_id: str, db: Session = Depends(get_db)):
+    """
+    Fetches targeted remediation drills for the user's most frequent error.
+    """
+    from app.core.error_gym import get_top_errors_for_user, generate_error_gym_drills
+    
+    top_errors = get_top_errors_for_user(db, user_id, limit=1)
+    if not top_errors:
+        return {"message": "No chronic errors identified yet. Keep practicing!", "drills": []}
+    
+    error_type = top_errors[0]["error_type"]
+    session = generate_error_gym_drills(error_type)
+    return session

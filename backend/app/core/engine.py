@@ -137,6 +137,15 @@ def process_user_attempt(
     intervention.confidence_score = signals.confidence_score
     
     # 6. UPDATE STATE & PERSIST
+    # 6. POPULATE RADAR METRICS & UPDATE STATE
+    # Map 0.0-1.0 metrics to 1.0-9.0 band scores for visual radar chart
+    intervention.radar_metrics = {
+        "fluency": round(1.0 + (signals.fluency_wpm / 200.0) * 8.0, 1), # Max 200 WPM
+        "lexical": round(1.0 + signals.lexical_diversity * 8.0, 1),
+        "grammar": round(1.0 + signals.grammar_complexity * 8.0, 1),
+        "pronunciation": round(1.0 + signals.pronunciation_score * 8.0, 1)
+    }
+
     if is_exam_mode:
         # Update Emotional/Cognitive state for the NEXT turn
         outcome = 'FAIL' if intervention.action_id == 'FAIL' else 'PASS'

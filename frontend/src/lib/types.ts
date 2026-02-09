@@ -41,6 +41,9 @@ export interface Intervention {
   quiz_question?: string;
   quiz_options?: string[];
   quiz_correct_index?: number;
+
+  // v4.0 Radar Chart
+  radar_metrics?: Record<string, number>;
 }
 
 export interface TranslationResponse {

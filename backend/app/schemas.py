@@ -69,6 +69,9 @@ class Intervention(BaseModel):
     quiz_question: Optional[str] = Field(None, description="A single-question quiz to reinforce the correction (e.g., 'Which is correct?')")
     quiz_options: Optional[List[str]] = Field(None, description="4 multiple-choice options, first one is correct")
     quiz_correct_index: int = Field(0, description="Index of the correct answer (0-3)")
+    
+    # NEW: Learning v4.0 - Radar Chart Metrics
+    radar_metrics: Optional[Dict[str, float]] = Field(None, description="Granular scores for the turn (0-9 band scale)")
 
     # Real-time Engine State
     stress_level: float = 0.0

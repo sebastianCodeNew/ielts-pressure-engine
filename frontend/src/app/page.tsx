@@ -49,6 +49,8 @@ interface FeedbackData {
   quiz_question?: string;
   quiz_options?: string[];
   quiz_correct_index?: number;
+  // v4.0 Fields - Radar Chart
+  radar_metrics?: Record<string, number>;
 }
 
 export function TrainingCockpit() {
@@ -121,7 +123,7 @@ export function TrainingCockpit() {
   const [shadowProcessing, setShadowProcessing] = useState(false);
 
   // AI Notepad State
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState("WHO/WHAT: \nWHEN/WHERE: \nFEELINGS: \nWHY IMPORTANT: ");
 
   // Pattern Spotlight State
   const [recurringErrors, setRecurringErrors] = useState<string[]>([]);
@@ -410,6 +412,16 @@ export function TrainingCockpit() {
               setQuizAnswer(null);
               setQuizResult(null);
               setShowQuiz(true);
+            }
+
+            // MICRO-WINS RADAR UPDATE (v4.0)
+            if (data.radar_metrics) {
+              setMicroWins({
+                fluency: data.radar_metrics.fluency || 0,
+                lexical: data.radar_metrics.lexical || 0,
+                grammar: data.radar_metrics.grammar || 0,
+                pronunciation: data.radar_metrics.pronunciation || 0,
+              });
             }
 
             // If we were in Mastery Mode and passed, exit it
