@@ -56,12 +56,16 @@ def generate_study_plan(user_id: str = "default_user", db: Session = Depends(get
         response = llm.invoke([SystemMessage(content=prompt)])
         content = response.content.strip()
         
-        # Robust JSON extraction (find first [ and last ])
-        match = re.search(r'\[.*\]', content, re.DOTALL)
-        if match:
-            clean_json = match.group(0)
+        # Robust JSON Extraction
+        json_match = re.search(r"```json\s*(.*?)\s*```", content, re.DOTALL)
+        if json_match:
+            clean_json = json_match.group(1).strip()
         else:
-            clean_json = content
+            match = re.search(r'\[.*\]', content, re.DOTALL)
+            if match:
+                clean_json = match.group(0)
+            else:
+                clean_json = content
             
         plan_data = json.loads(clean_json)
         

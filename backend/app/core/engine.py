@@ -1,12 +1,14 @@
 from sqlalchemy.orm import Session
+import re
 from datetime import datetime
 from app.schemas import UserAttempt, Intervention, DetailedScores, SignalMetrics
 from app.core.transcriber import transcribe_audio
 from app.core.evaluator import extract_signals
 from app.core.agent import formulate_strategy
 from app.core.state import AgentState, update_state
-from app.core.database import SessionModel, ExamSession, QuestionAttempt, User
+from app.core.database import SessionModel, ExamSession, QuestionAttempt, User, VocabularyItem
 from app.core.pronunciation import analyze_pronunciation
+from app.core.config import settings
 
 def process_user_attempt(
     file_path: str, 
@@ -24,7 +26,7 @@ def process_user_attempt(
     
     # 1. LOAD STATE FROM DB
     current_part = "PART_1" # Default
-    current_prompt = "Tell me about your hometown." # Better default for IELTS PART 1
+    current_prompt = settings.INITIAL_PROMPT
     
     chronic_issues_str = ""
 
@@ -93,12 +95,14 @@ def process_user_attempt(
     
     # 2. TRANSCRIBE
     print(f"--- Processing Attempt (ExamMode={is_exam_mode}, Prompt='{current_prompt}') ---")
+    transcription_error = False
     try:
         transcript_data = transcribe_audio(file_path)
         print(f"DEBUG: Transcript -> {transcript_data['text']}")
     except Exception as e:
         print(f"TRANSCRIPTION ERROR: {e}")
-        transcript_data = {"text": "", "duration": 0.0, "language": "en"}
+        transcript_data = {"text": "[TRANSRIPTION_FAILED]", "duration": 0.0, "language": "en"}
+        transcription_error = True
 
     # 3. ANALYZE (Linguistic)
     attempt = UserAttempt(
@@ -120,11 +124,9 @@ def process_user_attempt(
         signals.prosody_score = 0.0
         signals.confidence_score = 0.0
     
-    # 5. AGENT DECISION
+    # Context override for Part 3 bridges
     context_msg = None
-    if is_refactor:
-        context_msg = f"REFACTOR_MISSION_ATTEMPT: User is trying to improve their previous response based on your mission."
-
+    
     intervention = formulate_strategy(
         current_state, 
         signals, 
@@ -136,9 +138,14 @@ def process_user_attempt(
     intervention.user_transcript = attempt.transcript
     intervention.confidence_score = signals.confidence_score
     
-    # 6. UPDATE STATE & PERSIST
+    if transcription_error or not transcript_data['text'].strip():
+        intervention.feedback_markdown = "⚠️ **Microphone Error**: Saya tidak bisa mendengar suara Anda dengan jelas. Tolong pastikan mic aktif dan coba lagi."
+        intervention.action_id = "RETRY_REQUIRED"
+        # Skip costly analysis if no audio
+        if not transcript_data['text'].strip():
+            return intervention
+    
     # 6. POPULATE RADAR METRICS & UPDATE STATE
-    # Map 0.0-1.0 metrics to 1.0-9.0 band scores for visual radar chart
     intervention.radar_metrics = {
         "fluency": round(1.0 + (signals.fluency_wpm / 200.0) * 8.0, 1), # Max 200 WPM
         "lexical": round(1.0 + signals.lexical_diversity * 8.0, 1),
@@ -167,6 +174,9 @@ def process_user_attempt(
         if not new_qa:
             new_qa = QuestionAttempt(session_id=session_id, part=current_part)
             db.add(new_qa)
+        
+        # KEY HARDENING: Flush to assign ID and status before keyword analysis
+        db.flush()
 
         # Update metadata
         new_qa.question_text = current_prompt
@@ -181,20 +191,36 @@ def process_user_attempt(
         new_qa.feedback_markdown = intervention.feedback_markdown
         new_qa.improved_response = intervention.ideal_response
         
+        # New: Persist Translations
+        if current_prompt:
+            new_qa.question_translated = translate_to_indonesian(current_prompt)
+        
+        # Correction: intervention.user_transcript_translated should be for the user's answer
+        if attempt.transcript:
+            new_qa.transcript_translated = translate_to_indonesian(attempt.transcript)
+            intervention.user_transcript_translated = new_qa.transcript_translated
+            
+        if intervention.feedback_markdown:
+            new_qa.feedback_translated = translate_to_indonesian(intervention.feedback_markdown)
+            intervention.feedback_translated = new_qa.feedback_translated
+            
+        if intervention.ideal_response:
+            new_qa.improved_response_translated = translate_to_indonesian(intervention.ideal_response)
+            intervention.ideal_response_translated = new_qa.improved_response_translated
+        
         # Keyword Hit Detection
-        # Keyword Hit Detection
-        # Safe retrieval of previous attempt to find target keywords
         last_qa = None
-        if is_retry and new_qa.id:
-             # If retrying, we want the attempt BEFORE the current one (which we just overwrote)
+        if is_retry:
+             # If retrying, we want the attempt BEFORE the current one
              last_qa = db.query(QuestionAttempt).filter(
                 QuestionAttempt.session_id == session_id,
                 QuestionAttempt.id < new_qa.id
             ).order_by(QuestionAttempt.id.desc()).first()
         else:
-             # If new attempt (not flushed yet), the latest in DB is the previous turn
+             # If new attempt, the latest aside from current is the previous turn
              last_qa = db.query(QuestionAttempt).filter(
-                QuestionAttempt.session_id == session_id
+                QuestionAttempt.session_id == session_id,
+                QuestionAttempt.id != new_qa.id
             ).order_by(QuestionAttempt.id.desc()).first()
         
         if last_qa and last_qa.target_keywords and attempt.transcript:
@@ -204,6 +230,29 @@ def process_user_attempt(
                 if re.search(rf"\b{re.escape(kw.lower())}\b", lower_ts):
                     hits.append(kw)
             intervention.keywords_hit = hits
+            # Persist Keyword Hits
+            new_qa.keywords_hit = hits
+            
+            # --- AUTO-SAVE TO WORD BANK ---
+            from app.core.database import VocabularyItem
+            for word in hits:
+                # Check if it already exists for this user
+                existing_vocab = db.query(VocabularyItem).filter(
+                    VocabularyItem.user_id == exam_session.user_id,
+                    VocabularyItem.word == word
+                ).first()
+                if not existing_vocab:
+                    # Generic definition for now, or we could generate one
+                    vocab_item = VocabularyItem(
+                        user_id=exam_session.user_id,
+                        word=word,
+                        word_translated=translate_to_indonesian(word),
+                        definition="Used correctly in session.",
+                        definition_translated="Digunakan dengan benar dalam sesi.",
+                        context_sentence=attempt.transcript,
+                        source_type="EXAM_HIT"
+                    )
+                    db.add(vocab_item)
         elif not last_qa and exam_session.initial_keywords and attempt.transcript:
             # Check against initial keywords for first turn
             lower_ts = attempt.transcript.lower()
@@ -212,6 +261,27 @@ def process_user_attempt(
                 if re.search(rf"\b{re.escape(kw.lower())}\b", lower_ts):
                     hits.append(kw)
             intervention.keywords_hit = hits
+            # Persist Keyword Hits
+            new_qa.keywords_hit = hits
+            
+            # --- AUTO-SAVE TO WORD BANK ---
+            from app.core.database import VocabularyItem
+            for word in hits:
+                existing_vocab = db.query(VocabularyItem).filter(
+                    VocabularyItem.user_id == exam_session.user_id,
+                    VocabularyItem.word == word
+                ).first()
+                if not existing_vocab:
+                    vocab_item = VocabularyItem(
+                        user_id=exam_session.user_id,
+                        word=word,
+                        word_translated=translate_to_indonesian(word),
+                        definition="Used correctly in initial turn.",
+                        definition_translated="Digunakan dengan benar di turn pertama.",
+                        context_sentence=attempt.transcript,
+                        source_type="EXAM_HIT"
+                    )
+                    db.add(vocab_item)
         else:
             intervention.keywords_hit = []
 
@@ -238,40 +308,45 @@ def process_user_attempt(
                         session_id=session_id
                     ))
         
-        # Transition Logic (Skip if RETRY or REFACTOR)
-        if is_retry or is_refactor:
-            # If retry, we maintain the same prompt and status
+        # Transition Logic (Skip if RETRY or MIC ERROR)
+        if is_retry or is_refactor or intervention.action_id == "RETRY_REQUIRED":
             exam_session.current_prompt = current_prompt
-            intervention.next_task_prompt = current_prompt # Repeat the prompt
+            intervention.next_task_prompt = current_prompt
             db.commit()
             intervention.stress_level = current_state.stress_level
             return intervention
 
-        part_count = db.query(QuestionAttempt).filter(
+        # Count unique non-retry questions for transition logic
+        from sqlalchemy import func
+        part_count = db.query(func.count(func.distinct(QuestionAttempt.question_text))).filter(
             QuestionAttempt.session_id == session_id,
-            QuestionAttempt.part == current_part
-        ).count() + 1
+            QuestionAttempt.part == current_part,
+            QuestionAttempt.transcript.isnot(None),
+            QuestionAttempt.transcript != "[TRANSRIPTION_FAILED]"
+        ).scalar()
         
         if part_count >= 3 and current_part == "PART_1":
-            # End of Part 1 -> Transition to Part 2
             exam_session.current_part = "PART_2"
-            new_prompt = "Describe a place you like to visit."
+            
+            p2_topics = settings.PART_2_CUES
+            import random
+            cue_card = random.choice(p2_topics)
+            
+            # Format Cue Card for UI and AI
+            cues_text = "\n".join([f"- {c}" for c in cue_card['cues']])
+            new_prompt = f"{cue_card['main_prompt']}\n\nYou should say:\n{cues_text}"
+            
             exam_session.current_prompt = new_prompt
-            intervention.next_task_prompt = new_prompt
+            intervention.next_task_prompt = f"Thank you. Now, for Part 2, I'm going to give you a topic and I'd like you to talk about it for one to two minutes. {new_prompt}"
             intervention.action_id = "TRANSITION_PART_2"
         elif part_count >= 1 and current_part == "PART_2":
-            # End of Part 2 -> Transition to Part 3
             exam_session.current_part = "PART_3"
-            
-            # Socratic Bridge: Pull the Part 2 content to seed Part 3
             part2_attempt = db.query(QuestionAttempt).filter(
                 QuestionAttempt.session_id == session_id,
                 QuestionAttempt.part == "PART_2"
-            ).first()
-            
+            ).order_by(QuestionAttempt.id.desc()).first()
             p2_context = part2_attempt.transcript if part2_attempt else ""
             
-            # Re-run strategy with Part 3 context
             intervention = formulate_strategy(
                 current_state, 
                 signals, 
@@ -280,10 +355,8 @@ def process_user_attempt(
                 user_transcript=attempt.transcript
             )
             intervention.user_transcript = attempt.transcript
-            
             exam_session.current_prompt = intervention.next_task_prompt
         elif part_count >= 4 and current_part == "PART_3":
-            # End of Part 3 -> Finish
             exam_session.status = "COMPLETED"
             exam_session.end_time = datetime.utcnow()
             exam_session.current_prompt = "Exam Completed"
@@ -302,19 +375,18 @@ def process_user_attempt(
                 avg_grammar = safe_avg([a.grammar_complexity for a in all_attempts])
                 avg_pron = safe_avg([a.pronunciation_score for a in all_attempts])
                 
-                exam_session.fluency_score = min(max(avg_wpm / 15, 1.0), 9.0)
-                exam_session.coherence_score = min(max(avg_coherence * 9, 1.0), 9.0)
-                exam_session.lexical_resource_score = min(max(avg_lexical * 15, 1.0), 9.0)
-                exam_session.grammatical_range_score = min(max(avg_grammar * 40, 1.0), 9.0)
-                exam_session.pronunciation_score = min(max(avg_pron * 9, 1.0), 9.0)
+                exam_session.fluency_score = min(max(avg_wpm / 15.0, 1.0), 9.0)
+                exam_session.coherence_score = min(max(avg_coherence * 9.0, 1.0), 9.0)
+                exam_session.lexical_resource_score = min(max(avg_lexical * 15.0, 1.0), 9.0)
+                exam_session.grammatical_range_score = min(max(avg_grammar * 40.0, 1.0), 9.0)
+                exam_session.pronunciation_score = min(max(avg_pron * 9.0, 1.0), 9.0)
                 
                 exam_session.overall_band_score = round((
                     exam_session.fluency_score + exam_session.coherence_score + 
                     exam_session.lexical_resource_score + exam_session.grammatical_range_score + 
                     exam_session.pronunciation_score
-                ) / 5, 1)
+                ) / 5.0, 1)
 
-                # Aggregates
                 user = db.query(User).filter(User.id == exam_session.user_id).first()
                 if user:
                     all_scores = db.query(ExamSession.overall_band_score).filter(
@@ -326,14 +398,12 @@ def process_user_attempt(
                     user.total_exams_taken = len(score_list)
                     user.average_band_score = round(sum(score_list) / len(score_list), 1)
         else:
-            # Same part, step prompt
             exam_session.current_prompt = intervention.next_task_prompt
+    # FINAL STEP: Ensure the NEXT prompt is translated (handling transitions)
+    if intervention.next_task_prompt:
+        exam_session.current_prompt_translated = translate_to_indonesian(intervention.next_task_prompt)
+        intervention.next_task_prompt_translated = exam_session.current_prompt_translated
     else:
-        # Testing mode
-        outcome = 'FAIL' if intervention.action_id == 'FAIL' else 'PASS'
-        new_state = update_state(current_state, attempt, signals, outcome, current_prompt)
-        # Testing mode uses dummy session ID if not real, but we don't have db_session here in scope
-        # unless it's session_id = default_user. Skipping testing state persist for brevity in repair.
         pass
 
     db.commit()

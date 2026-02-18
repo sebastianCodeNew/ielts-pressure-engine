@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.core.database import get_db, VocabularyItem
 from app.schemas import VocabularyItemSchema, VocabularyCreate
+from datetime import datetime
 
 router = APIRouter()
 
@@ -41,6 +42,6 @@ def update_mastery(item_id: int, level: int, db: Session = Depends(get_db)):
     db_item = db.query(VocabularyItem).filter(VocabularyItem.id == item_id).first()
     if not db_item:
         raise HTTPException(status_code=404, detail="Item not found")
-    db_item.mastery_level = level
+    db_item.mastery_level = min(100, max(0, level))
     db.commit()
     return {"status": "success"}

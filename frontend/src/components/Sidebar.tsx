@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
-  LayoutDashboard, Mic2, Library, BookOpen, Settings, LogOut, Trophy
+  LayoutDashboard, Mic2, Library, BookOpen, LogOut, Trophy
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -13,7 +13,6 @@ export default function Sidebar() {
     { icon: Mic2, label: "Simulator", href: "/exam" },
     { icon: Library, label: "Topic Bank", href: "/practice" },
     { icon: BookOpen, label: "Vocabulary", href: "/vocabulary" },
-    { icon: Trophy, label: "Achievements", href: "/achievements" },
   ];
 
   return (
@@ -45,10 +44,6 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-zinc-900">
-        <button className="flex items-center gap-3 px-4 py-3 w-full rounded-xl font-bold text-zinc-500 hover:text-white hover:bg-zinc-900 transition-all">
-          <Settings size={20} />
-          Settings
-        </button>
         <button className="flex items-center gap-3 px-4 py-3 w-full rounded-xl font-bold text-red-500 hover:bg-red-500/10 transition-all">
           <LogOut size={20} />
           Logout

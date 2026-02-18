@@ -1,14 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Mic2, Library, Award, BookOpen, Settings } from "lucide-react";
+import { LayoutDashboard, Mic2, Library, BookOpen, Settings } from "lucide-react";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Exam Simulator", href: "/exam", icon: Mic2 },
   { name: "Topic Bank", href: "/practice", icon: Library },
   { name: "Vocabulary", href: "/vocabulary", icon: BookOpen },
-  { name: "Achievements", href: "/achievements", icon: Award },
 ];
 
 export default function Sidebar() {
@@ -45,10 +44,6 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-zinc-900 mt-auto">
-        <Link href="/settings" className="flex items-center gap-3 px-4 py-3 text-zinc-400 hover:text-white transition-colors">
-          <Settings size={20} />
-          <span className="text-sm font-medium">Settings</span>
-        </Link>
         <div className="mt-4 p-4 bg-zinc-900/50 rounded-xl border border-zinc-800">
            <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center font-bold text-sm text-white">S</div>

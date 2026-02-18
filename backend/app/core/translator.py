@@ -2,12 +2,15 @@ import os
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage
 
+from app.core.config import settings
+
 # Reuse the same cheap/fast model
 llm = ChatOpenAI(
-    base_url="https://api.deepinfra.com/v1/openai",
-    api_key=os.getenv("DEEPINFRA_API_KEY"),
-    model="meta-llama/Llama-3.2-3B-Instruct",
+    base_url=settings.DEEPINFRA_BASE_URL,
+    api_key=settings.DEEPINFRA_API_KEY,
+    model=settings.TRANSLATOR_MODEL,
     temperature=0.0, # We want exact translation, not creativity
+    timeout=20,
 )
 
 def translate_to_english(text_id: str) -> str:
@@ -32,3 +35,25 @@ def translate_to_english(text_id: str) -> str:
     except Exception as e:
         print(f"Translation Error: {e}")
         return "Error loading translation."
+
+def translate_to_indonesian(text_en: str) -> str:
+    """
+    Translates English text to natural spoken Indonesian.
+    """
+    prompt = f"""
+    Task: Translate this English text to Indonesian.
+    Style: Educational, Supportive, Natural.
+    Input: "{text_en}"
+    
+    Rules:
+    - Output ONLY the Indonesian translation.
+    - No explanations.
+    - No "Here is the translation".
+    """
+    
+    try:
+        response = llm.invoke([SystemMessage(content=prompt)])
+        return response.content.strip().replace('"', '')
+    except Exception as e:
+        print(f"Translation Error (EN->ID): {e}")
+        return "Gagal memuat terjemahan."

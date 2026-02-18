@@ -6,12 +6,15 @@ from langchain_core.messages import SystemMessage
 from app.core.state import AgentState
 from app.schemas import SignalMetrics, Intervention
 
+from app.core.config import settings
+
 # Configure DeepInfra
 llm = ChatOpenAI(
-    base_url="https://api.deepinfra.com/v1/openai",
-    api_key=os.getenv("DEEPINFRA_API_KEY"),
-    model="meta-llama/Llama-3.3-70B-Instruct",
-    temperature=0.1, 
+    base_url=settings.DEEPINFRA_BASE_URL,
+    api_key=settings.DEEPINFRA_API_KEY,
+    model=settings.EVALUATOR_MODEL,
+    temperature=0.1,
+    timeout=30, # Hard timeout for stability
 )
 
 from langchain_core.output_parsers import PydanticOutputParser
@@ -82,8 +85,8 @@ def formulate_strategy(
         ADAPTIVE LOGIC:
         - Compare metrics against Target Band {target_band}.
         - EXAMINER PERSONALITY (Dynamic):
-            * If `stress_level` > 0.7 or `fluency_trend` is "declining": Become a SUPPORTIVE MENTOR. Use encouraging, simpler language. Soften the pressure.
-            * If `stress_level` < 0.4 and performance is AT/ABOVE target: Become a STRICT CHALLENGER. Use formal, professional language. Be more direct and less emotive.
+            * If `stress_level` > {stress_inc_threshold} or `fluency_trend` is "declining": Become a SUPPORTIVE MENTOR. Use encouraging, simpler language. Soften the pressure.
+            * If `stress_level` < {stress_dec_threshold} and performance is AT/ABOVE target: Become a STRICT CHALLENGER. Use formal, professional language. Be more direct and less emotive.
         - If USER WEAKNESS is "{weakness}", focus feedback specifically on that area.
         - If user is performing BELOW target, simplify questions and be encouraging.
         - If user is performing AT/ABOVE target, challenge them with abstract/complex follow-ups.
@@ -131,6 +134,16 @@ def formulate_strategy(
             * Example: "Try that sentence again, but use a conditional (If I had... I would have...)."
             * This mission should be ONE short, actionable sentence.
 
+        NEW: CUE COMPLIANCE (v5.0 - PART 2 ONLY):
+        - If `current_part` is "PART_2", verify if the user addressed all bullet points in the cue card (provided in `context_override`).
+        - If any were missed, mention it gently in the `feedback_markdown`.
+        - Do NOT penalize too harshly if the talk was otherwise fluent, but note it for "Task Response".
+
+        NEW: EXAMINER BRIDGES (v5.0):
+        - If `context_override` contains "TRANSITION", your `next_task_prompt` MUST begin with a professional bridge.
+        - Example P1->P2: "Thank you. Now, for Part 2, I'm going to give you a topic..."
+        - Example P2->P3: "We've been talking about [Topic], and now I'd like to discuss one or two more general questions related to this..."
+        
         NEW: REAL-TIME WORD BANK (v3.0):
         - Identify 5 "Power Words" (Band 8+ advanced vocabulary or idioms) that are highly relevant to the *next* question/topic you are about to ask.
         - These should be practical for use in natural speech.
@@ -146,7 +159,11 @@ def formulate_strategy(
         {format_instructions}
         """,
         input_variables=["stress_level", "fluency_trend", "consecutive_failures", "wpm", "hesitation", "coherence", "lexical_diversity", "grammar_complexity", "history", "current_part", "target_band", "weakness", "context_override", "user_transcript", "avg_fluency", "avg_coherence", "avg_lexical", "avg_grammar", "lowest_area", "chronic_issues"],
-        partial_variables={"format_instructions": parser.get_format_instructions()}
+        partial_variables={
+            "format_instructions": parser.get_format_instructions(),
+            "stress_inc_threshold": settings.STRESS_INCREASE_THRESHOLD,
+            "stress_dec_threshold": settings.STRESS_DECREASE_THRESHOLD
+        }
     )
     
     # Calculate historical weakness profile
@@ -197,13 +214,36 @@ def formulate_strategy(
         content = response.content.strip()
 
         # 4. Robust JSON Extraction
-        # Look for the first '{' and the last '}'
-        match = re.search(r"\{.*\}", content, re.DOTALL)
-        if match:
-            content = match.group(0)
+        content = response.content.strip()
+        
+        # Strategy: Look for json code blocks first, then widest braces
+        json_match = re.search(r"```json\s*(.*?)\s*```", content, re.DOTALL)
+        if json_match:
+            content = json_match.group(1).strip()
+        else:
+            match = re.search(r"\{.*\}", content, re.DOTALL)
+            if match:
+                content = match.group(0)
         
         # 5. Parse Output
-        intervention = parser.parse(content)
+        try:
+            intervention = parser.parse(content)
+        except Exception as parse_err:
+            print(f"DEBUG: Pydantic parsing failed: {parse_err}")
+            raw_data = json.loads(content)
+            
+            # Map raw fields safely to prevent initialization errors
+            safe_data = {
+                "action_id": raw_data.get("action_id", "MAINTAIN"),
+                "next_task_prompt": raw_data.get("next_task_prompt", "Continue speaking."),
+                "constraints": raw_data.get("constraints", {"timer": 45}),
+                "ideal_response": raw_data.get("ideal_response", ""),
+                "feedback_markdown": raw_data.get("feedback_markdown", "Well done, keep going."),
+                "stress_level": raw_data.get("stress_level", state.stress_level)
+            }
+            # Only pass fields that exists in Pydantic model to avoid unexpected keyword errors
+            intervention = Intervention(**safe_data)
+            
         return intervention
         
     except Exception as e:

@@ -44,6 +44,16 @@ export interface Intervention {
 
   // v4.0 Radar Chart
   radar_metrics?: Record<string, number>;
+
+  // v5.0 Hardening & Real-time
+  realtime_word_bank?: string[];
+  confidence_score?: number;
+
+  // v5.1 Translation Fields
+  next_task_prompt_translated?: string;
+  ideal_response_translated?: string;
+  feedback_translated?: string;
+  user_transcript_translated?: string;
 }
 
 export interface TranslationResponse {

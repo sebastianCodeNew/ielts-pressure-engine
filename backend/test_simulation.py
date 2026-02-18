@@ -19,31 +19,17 @@ def run_simulation():
     state = AgentState(session_id="test_user")
     print(f"Initial State: Stress={state.stress_level}")
     
-    # 2. Simulate Attempt 1: Good Flow
-    print("\n--- Try 1: Good Fluency ---")
-    metrics_1 = SignalMetrics(fluency_wpm=120, hesitation_ratio=0.1, grammar_error_count=0, coherence_score=0.9, lexical_diversity=0.8, grammar_complexity=0.7, pronunciation_score=0.8, is_complete=True)
-    attempt_1 = UserAttempt(task_id="1", transcript="I went to the store.", audio_duration=10.0)
+    # 2. Simulate Attempt 1: High Band (Fluent)
+    print("\n--- Try 1: Band 8/9 Performance (Fluent) ---")
+    # "Actually, I'm originally from Jakarta, which is a bustling metropolis known for its vibrant culture..."
+    metrics_1 = SignalMetrics(fluency_wpm=140, hesitation_ratio=0.05, grammar_error_count=0, coherence_score=0.95, lexical_diversity=0.85, grammar_complexity=0.8, pronunciation_score=0.9, is_complete=True)
+    attempt_1 = UserAttempt(task_id="1", transcript="Actually, I'm originally from Jakarta, which is a bustling metropolis known for its vibrant culture and, unfortunately, its notorious traffic congestion. Despite the overcrowding, I've always found the local food scene to be quite exquisite.", audio_duration=20.0)
     
-    # Decision
-    # Note: formulate_strategy calls LLM, so this needs API Key. If not set, it might fail or print error.
-    # We will assume environment is set or gracefully handle.
-    try:
-        intervention_1 = formulate_strategy(state, metrics_1)
-        print(f"Agent Action: {intervention_1.action_id} -> {intervention_1.next_task_prompt}")
-    except Exception as e:
-        print(f"Agent failed (likely no API key): {e}")
-
-    # print("MOCK AGENT: Doing nothing (PASS)")
-
-
-    # Update State
-    state = update_state(state, attempt_1, metrics_1, "PASS", "Describe your day")
-    print(f"New Stress: {state.stress_level}")
-    
-    # 3. Simulate Attempt 2: Stuttering (High Stress Input)
-    print("\n--- Try 2: Low Fluency (Stuttering) ---")
-    metrics_2 = SignalMetrics(fluency_wpm=40, hesitation_ratio=0.6, grammar_error_count=0, coherence_score=0.8, lexical_diversity=0.3, grammar_complexity=0.3, pronunciation_score=0.4, is_complete=True)
-    attempt_2 = UserAttempt(task_id="2", transcript="I... uh...", audio_duration=10.0)
+    # 3. Simulate Attempt 2: Low Band (Struggling)
+    print("\n--- Try 2: Band 4/5 Performance (High Pressure Input) ---")
+    # "I... uh... from Jakarta. It is big. Many cars. Very busy. Uh... I like it."
+    metrics_2 = SignalMetrics(fluency_wpm=45, hesitation_ratio=0.55, grammar_error_count=3, coherence_score=0.3, lexical_diversity=0.2, grammar_complexity=0.2, pronunciation_score=0.4, is_complete=True)
+    attempt_2 = UserAttempt(task_id="2", transcript="I... uh... from Jakarta. It is big. Many cars. Very busy. Uh... I like it.", audio_duration=15.0)
 
     # Update State
     state = update_state(state, attempt_2, metrics_2, "PASS", "Describe your day")

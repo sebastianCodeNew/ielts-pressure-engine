@@ -1,0 +1,44 @@
+{
+  "topics": [
+    {
+      "id": "p2_travel_place",
+      "main_prompt": "Describe a place you like to visit.",
+      "cues": [
+        "Where this place is",
+        "What you can see or do there",
+        "Who you usually go with",
+        "And explain why you like visiting this place so much"
+      ]
+    },
+    {
+      "id": "p2_book_influence",
+      "main_prompt": "Describe a book that had a major influence on you.",
+      "cues": [
+        "What the book is",
+        "What it is about",
+        "When you read it",
+        "And explain how it influenced you"
+      ]
+    },
+    {
+      "id": "p2_traditional_festival",
+      "main_prompt": "Describe a traditional festival in your country.",
+      "cues": [
+        "What the festival is",
+        "When it is held",
+        "What people do during the festival",
+        "And explain why this festival is important to you"
+      ]
+    },
+    {
+      "id": "p2_interesting_person",
+      "main_prompt": "Describe an interesting person you met recently.",
+      "cues": [
+        "Who this person is",
+        "How you met them",
+        "What you talked about",
+        "And explain why you found them interesting"
+      ]
+    }
+  ]
+}

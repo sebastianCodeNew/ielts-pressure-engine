@@ -1,7 +1,8 @@
 import { Intervention, TranslationResponse } from "./types";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const DEFAULT_USER_ID = process.env.NEXT_PUBLIC_DEFAULT_USER_ID || "default_user";
 
 export class ApiClient {
   private static async fetchWithRetry(
@@ -46,6 +47,15 @@ export class ApiClient {
       body: formData,
     });
     if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
+    return res.json();
+  }
+
+  static async getDetailedHistory(userId: string = DEFAULT_USER_ID): Promise<any[]> {
+    const res = await this.fetchWithRetry(
+      `${API_BASE_URL}/v1/exams/history/${userId}`,
+      { method: "GET" },
+    );
+    if (!res.ok) throw new Error("Failed to fetch detailed history");
     return res.json();
   }
 
@@ -218,7 +228,15 @@ export class ApiClient {
     return res.json();
   }
 
-  static async getErrorGym(userId: string = "default_user"): Promise<any> {
+  static async getErrorGym(userId: string = "default_user"): Promise<{
+    focus_area: string;
+    drills: Array<{
+      sentence_with_error: string;
+      correct_sentence: string;
+      explanation: string;
+    }>;
+    message?: string;
+  }> {
     const res = await this.fetchWithRetry(`${API_BASE_URL}/v1/exams/error-gym/${userId}`, {
       method: "GET",
     });

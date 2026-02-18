@@ -44,7 +44,9 @@ def get_embedding(text: str) -> List[float]:
             return data["data"][0]["embedding"]
             
     except Exception as e:
+        import traceback
         print(f"Embedding Network Error: {e}")
+        traceback.print_exc()
         return [0.0] * 768
 
 def calculate_coherence(target_prompt: str, user_response: str) -> float:

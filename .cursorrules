@@ -1,0 +1,12 @@
+# Project Rules
+
+## Virtual Environment
+
+- **ALWAYS** use the virtual environment located at `c:\Sebastian\Project\ielts-pressure-engine\backend\venv`.
+- For python commands, prefer using the absolute path: `c:\Sebastian\Project\ielts-pressure-engine\backend\venv\Scripts\python.exe`.
+- When using `pip`, ensure it is the pip from the virtual environment: `c:\Sebastian\Project\ielts-pressure-engine\backend\venv\Scripts\pip.exe`.
+- Before running any complex python scripts, if not using absolute paths, ensure the venv is activated via `backend\venv\Scripts\activate`.
+
+## General
+
+- This project structure has a clear frontend/backend separation. Ensure commands are run in the appropriate subdirectory if context requires it.

@@ -33,10 +33,16 @@ def get_hint(session_id: str, db: Session = Depends(get_db)):
         
         response = llm.invoke(hint_prompt.format(prompt=current_prompt))
         
-        # Simple cleanup if the model outputs markdown code blocks
         content = response.content.strip()
-        if content.startswith("```json"):
-            content = content.replace("```json", "").replace("```", "")
+        
+        # Robust JSON Extraction
+        json_match = re.search(r"```json\s*(.*?)\s*```", content, re.DOTALL)
+        if json_match:
+            content = json_match.group(1).strip()
+        else:
+            match = re.search(r"\{.*\}", content, re.DOTALL)
+            if match:
+                content = match.group(0)
         
         import json
         return json.loads(content)

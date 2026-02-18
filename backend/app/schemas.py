@@ -73,6 +73,12 @@ class Intervention(BaseModel):
     # NEW: Learning v4.0 - Radar Chart Metrics
     radar_metrics: Optional[Dict[str, float]] = Field(None, description="Granular scores for the turn (0-9 band scale)")
 
+    # NEW: Learning v5.0 - Translation Fields
+    next_task_prompt_translated: Optional[str] = None
+    ideal_response_translated: Optional[str] = None
+    feedback_translated: Optional[str] = None
+    user_transcript_translated: Optional[str] = None
+
     # Real-time Engine State
     stress_level: float = 0.0
 
@@ -89,6 +95,7 @@ class ExamSessionSchema(BaseModel):
     status: str
     start_time: datetime
     current_prompt: Optional[str] = None
+    current_prompt_translated: Optional[str] = None
     initial_keywords: Optional[List[str]] = None
     overall_band_score: Optional[float] = None
     briefing_text: Optional[str] = None

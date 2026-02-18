@@ -16,7 +16,10 @@ def get_user_profile(user_id: str = "default_user", db: Session = Depends(get_db
 def get_user_stats(user_id: str = "default_user", db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        # Auto-create for MVP/Onboarding flow
+        user = User(id=user_id, username=user_id, target_band="7.0", weakness="General")
+        db.add(user)
+        db.commit()
     
     sessions = db.query(ExamSession).filter(ExamSession.user_id == user_id).all()
     
@@ -25,7 +28,7 @@ def get_user_stats(user_id: str = "default_user", db: Session = Depends(get_db))
     
     skill_breakdown = [
         {"subject": 'Fluency', "A": sum(s.fluency_score or 0 for s in completed_sessions) / len(completed_sessions) if completed_sessions else 0, "fullMark": 9},
-        {"subject": 'Coherence', "A": sum(s.lexical_resource_score or 0 for s in completed_sessions) / len(completed_sessions) if completed_sessions else 0, "fullMark": 9},
+        {"subject": 'Coherence', "A": sum(s.coherence_score or 0 for s in completed_sessions) / len(completed_sessions) if completed_sessions else 0, "fullMark": 9},
         {"subject": 'Lexical', "A": sum(s.lexical_resource_score or 0 for s in completed_sessions) / len(completed_sessions) if completed_sessions else 0, "fullMark": 9},
         {"subject": 'Grammar', "A": sum(s.grammatical_range_score or 0 for s in completed_sessions) / len(completed_sessions) if completed_sessions else 0, "fullMark": 9},
         {"subject": 'Pronunciation', "A": sum(s.pronunciation_score or 0 for s in completed_sessions) / len(completed_sessions) if completed_sessions else 0, "fullMark": 9},

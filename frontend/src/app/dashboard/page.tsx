@@ -10,7 +10,6 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, AreaChart, Area
 } from "recharts";
 import { ApiClient } from "@/lib/api";
-import AchievementsList from "@/components/Achievements";
 
 interface ScoreData { name: string; score: number; }
 interface SkillData { subject: string; A: number; fullMark: number; }
@@ -202,7 +201,6 @@ export default function Dashboard() {
 
         {/* Sidebar Gadgets */}
         <div className="space-y-8">
-            <AchievementsList />
             
             <div className="bg-gradient-to-br from-zinc-800 to-zinc-900 p-8 rounded-[40px] border border-zinc-800 shadow-xl relative overflow-hidden group">
                 <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">

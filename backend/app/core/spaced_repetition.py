@@ -45,6 +45,9 @@ def calculate_next_review(item: VocabularyItem, quality: int) -> VocabularyItem:
     item.last_reviewed_at = datetime.utcnow()
     
     # Update mastery level (0-100 scale)
+    if item.mastery_level is None:
+        item.mastery_level = 0
+        
     if quality >= 4:
         item.mastery_level = min(100, item.mastery_level + 10)
     elif quality < 3:

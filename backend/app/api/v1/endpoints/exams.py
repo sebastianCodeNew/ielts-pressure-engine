@@ -9,21 +9,15 @@ from datetime import datetime
 from app.core.database import get_db, ExamSession, QuestionAttempt, User
 from app.schemas import ExamStartRequest, ExamSessionSchema, Intervention
 from app.core.engine import process_user_attempt 
+from app.core.translator import translate_to_indonesian
+from app.core.config import settings
 
 router = APIRouter()
 
-PART_1_TOPICS = [
-    "Tell me about your hometown.",
-    "Tell me about your job or studies.",
-    "Do you prefer living in a house or an apartment?",
-    "How do you usually spend your weekends?",
-    "Tell me about your family.",
-    "Do you like traveling?",
-    "What kind of music do you like?"
-]
+PART_1_TOPICS = settings.PART_1_TOPICS
 
 @router.get("/warmup")
-def get_exam_warmup(user_id: str = "default_user", db: Session = Depends(get_db)):
+def get_exam_warmup(user_id: str = settings.DEFAULT_USER_ID, db: Session = Depends(get_db)):
     """Fetches due vocabulary for the pre-flight warm-up."""
     from app.core.spaced_repetition import get_due_vocabulary
     due_words = get_due_vocabulary(db, user_id, limit=3)
@@ -95,6 +89,7 @@ def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
         exam_type=request.exam_type,
         current_part="PART_3" if request.exam_type == "PART_3_ONLY" else "PART_2" if request.exam_type == "PART_2_ONLY" else "PART_1",
         current_prompt=initial_prompt,
+        current_prompt_translated=translate_to_indonesian(initial_prompt),
         initial_keywords=final_keywords,
         status="IN_PROGRESS",
         start_time=datetime.utcnow()
@@ -110,9 +105,42 @@ def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
         status=new_session.status,
         start_time=new_session.start_time,
         current_prompt=new_session.current_prompt,
+        current_prompt_translated=new_session.current_prompt_translated,
         initial_keywords=new_session.initial_keywords,
-        briefing_text=briefing
+        briefing_text=briefing # Briefing is already English, but could be translated if needed
     )
+
+@router.get("/history/{user_id}")
+def get_detailed_history(user_id: str, db: Session = Depends(get_db)):
+    """
+    Fetches all past question attempts for a user, including the AI's improved responses.
+    """
+    from app.core.database import QuestionAttempt, ExamSession
+    
+    # Get all attempts joined with session start time for sorting
+    attempts = db.query(QuestionAttempt).join(ExamSession).filter(
+        ExamSession.user_id == user_id
+    ).order_by(QuestionAttempt.created_at.desc()).all()
+    
+    return [
+        {
+            "id": a.id,
+            "session_id": a.session_id,
+            "part": a.part,
+            "question": a.question_text,
+            "question_translated": a.question_translated,
+            "your_answer": a.transcript,
+            "your_answer_translated": a.transcript_translated,
+            "improved_answer": a.improved_response,
+            "improved_answer_translated": a.improved_response_translated,
+            "feedback": a.feedback_markdown,
+            "feedback_translated": a.feedback_translated,
+            "audio_url": f"/audio/{os.path.basename(a.audio_path)}" if a.audio_path else None,
+            "keywords_hit": a.keywords_hit or [],
+            "score": round((a.wpm or 0) / 15.0, 1) if a.wpm else 0.0,
+            "date": a.created_at.strftime("%b %d, %Y")
+        } for a in attempts
+    ]
 
 @router.post("/{session_id}/submit-audio", response_model=Intervention)
 def submit_exam_audio(
@@ -126,9 +154,21 @@ def submit_exam_audio(
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # Use unique UUID for temp file
-    ext = os.path.splitext(file.filename)[1] or ".webm"
-    temp_filename = f"temp_exam_{session_id}_{uuid.uuid4()}{ext}"
+    # Security: File Extension Validation
+    ext = os.path.splitext(file.filename)[1].lower() if file.filename else ".webm"
+    if ext not in [".webm", ".mp3", ".wav", ".m4a", ".ogg"]:
+        raise HTTPException(status_code=400, detail="Invalid audio format. Use .webm, .mp3, or .wav")
+
+    # Security: File Size Limit (10MB)
+    MAX_SIZE = 10 * 1024 * 1024
+    file.file.seek(0, 2)
+    file_size = file.file.tell()
+    file.file.seek(0)
+    
+    if file_size > MAX_SIZE:
+        raise HTTPException(status_code=413, detail="File too large. Max 10MB.")
+
+    temp_filename = os.path.abspath(f"temp_exam_{session_id}_{uuid.uuid4().hex}{ext}")
     
     # Persistent audio storage path
     AUDIO_DIR = "audio_storage"
@@ -152,11 +192,22 @@ def submit_exam_audio(
             is_refactor=is_refactor
         )
         
+        # Save persistent audio path to the attempt record for refresh recovery
+        # We find the latest attempt for this session (which was just handled in engine.py)
+        # and attach the persistent path.
+        latest_qa = db.query(QuestionAttempt).filter(
+            QuestionAttempt.session_id == session_id
+        ).order_by(QuestionAttempt.id.desc()).first()
+        
+        if latest_qa:
+            latest_qa.audio_path = persistent_filename
+            db.commit()
+
         # Attach audio URL for Audio Mirror feature
-        # persistent_filename looks like "audio_storage/session_uuid.ext"
-        # We need to return only the filename part for the /audio/ static route
         audio_name = os.path.basename(persistent_filename)
         intervention.user_audio_url = f"/audio/{audio_name}"
+        # Also include keywords hit in history for consistency
+        intervention.keywords_hit = intervention.keywords_hit or []
         
         return intervention
     except Exception as e:
@@ -167,7 +218,8 @@ def submit_exam_audio(
             try:
                 os.remove(temp_filename)
             except Exception as e:
-                print(f"Failed to delete temp file {temp_filename}: {e}")
+                # Log with more detail
+                print(f"CRITICAL: Failed to delete temp file {temp_filename}. Manual cleanup may be required. Error: {e}")
 
 @router.get("/{session_id}/summary")
 def get_exam_summary(session_id: str, db: Session = Depends(get_db)):
@@ -250,7 +302,12 @@ def get_exam_status(session_id: str, db: Session = Depends(get_db)):
     session = db.query(ExamSession).filter(ExamSession.id == session_id).first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-    return {"status": session.status, "current_part": session.current_part}
+    return {
+        "status": session.status, 
+        "current_part": session.current_part,
+        "current_prompt": session.current_prompt,
+        "current_prompt_translated": session.current_prompt_translated
+    }
 
 @router.get("/error-gym/{user_id}")
 def get_error_gym(user_id: str, db: Session = Depends(get_db)):

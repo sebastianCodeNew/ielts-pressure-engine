@@ -2,10 +2,9 @@ from sqlalchemy import create_engine, Column, String, Integer, Float, Boolean, J
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
+from app.core.config import settings
 
-SQLITE_URL = "sqlite:///./ielts_pressure.db"
-
-engine = create_engine(SQLITE_URL, connect_args={"check_same_thread": False})
+engine = create_engine(settings.DATABASE_URL, connect_args={"check_same_thread": False, "timeout": 30})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -44,6 +43,7 @@ class ExamSession(Base):
     exam_type = Column(String, default="FULL_MOCK") 
     current_part = Column(String, default="PART_1") 
     current_prompt = Column(String, nullable=True) 
+    current_prompt_translated = Column(String, nullable=True)
     initial_keywords = Column(JSON, nullable=True) 
     
     # Overall Scores
@@ -83,8 +83,14 @@ class QuestionAttempt(Base):
     pronunciation_score = Column(Float, nullable=True) 
     
     feedback_markdown = Column(String, nullable=True)
+    feedback_translated = Column(String, nullable=True)
     improved_response = Column(String, nullable=True)
+    improved_response_translated = Column(String, nullable=True)
+    question_translated = Column(String, nullable=True)
+    transcript_translated = Column(String, nullable=True)
+    
     target_keywords = Column(JSON, nullable=True) # The keywords suggested for the NEXT turn
+    keywords_hit = Column(JSON, nullable=True) # The keywords hit in THIS turn
     
     created_at = Column(DateTime, default=datetime.utcnow)
     session = relationship("ExamSession", back_populates="attempts")
@@ -96,8 +102,11 @@ class VocabularyItem(Base):
     user_id = Column(String, ForeignKey("users.id"))
     
     word = Column(String, index=True)
+    word_translated = Column(String, nullable=True)
     definition = Column(String)
+    definition_translated = Column(String, nullable=True)
     context_sentence = Column(String, nullable=True)
+    source_type = Column(String, default="MANUAL") # e.g. MANUAL, EXAM_HIT
     
     mastery_level = Column(Integer, default=0) 
     last_reviewed_at = Column(DateTime, default=datetime.utcnow)
@@ -131,9 +140,12 @@ class ErrorLog(Base):
     last_seen = Column(DateTime, default=datetime.utcnow)
     session_id = Column(String, nullable=True)  # Optional: track which session
 
+# --- DEPRECATION NOTICE ---
+# SessionModel is legacy. Use ExamSession and QuestionAttempt instead.
 class SessionModel(Base):
     __tablename__ = "sessions_legacy" 
     session_id = Column(String, primary_key=True, index=True)
+    # ... rest remains for backward compatibility if needed for data recovery
     stress_level = Column(Float, default=0.0)
     current_difficulty = Column(Integer, default=1)
     consecutive_failures = Column(Integer, default=0)
@@ -141,52 +153,66 @@ class SessionModel(Base):
     current_prompt = Column(String, default="Describe the room you are in right now.")
     history_json = Column(JSON, default=list)
 
+def get_columns(conn, table_name):
+    res = conn.execute(text(f"PRAGMA table_info({table_name})"))
+    return [row[1] for row in res]
+
 def init_db():
     Base.metadata.create_all(bind=engine)
     
-    # MIGRATION LOGIC
+    # MIGRATION LOGIC (Manual but robust)
     with engine.connect() as conn:
-        res = conn.execute(text("PRAGMA table_info(question_attempts)"))
-        cols_qa = [row[1] for row in res]
+        # 1. Question Attempts
+        cols_qa = get_columns(conn, "question_attempts")
+        migrations_qa = {
+            "lexical_diversity": "FLOAT",
+            "grammar_complexity": "FLOAT",
+            "pronunciation_score": "FLOAT",
+            "audio_path": "TEXT",
+            "improved_response": "TEXT",
+            "improved_response_translated": "TEXT",
+            "feedback_translated": "TEXT",
+            "question_translated": "TEXT",
+            "transcript_translated": "TEXT",
+            "target_keywords": "JSON",
+            "keywords_hit": "JSON"
+        }
+        for col, col_type in migrations_qa.items():
+            if col not in cols_qa:
+                conn.execute(text(f"ALTER TABLE question_attempts ADD COLUMN {col} {col_type}"))
         
-        if "lexical_diversity" not in cols_qa:
-            conn.execute(text("ALTER TABLE question_attempts ADD COLUMN lexical_diversity FLOAT"))
-        if "grammar_complexity" not in cols_qa:
-            conn.execute(text("ALTER TABLE question_attempts ADD COLUMN grammar_complexity FLOAT"))
-        if "pronunciation_score" not in cols_qa:
-            conn.execute(text("ALTER TABLE question_attempts ADD COLUMN pronunciation_score FLOAT"))
-        if "improved_response" not in cols_qa:
-            conn.execute(text("ALTER TABLE question_attempts ADD COLUMN improved_response TEXT"))
-        if "target_keywords" not in cols_qa:
-            conn.execute(text("ALTER TABLE question_attempts ADD COLUMN target_keywords JSON"))
+        # 2. Exam Sessions
+        cols_es = get_columns(conn, "exam_sessions")
+        migrations_es = {
+            "coherence_score": "FLOAT",
+            "current_prompt": "TEXT",
+            "current_prompt_translated": "TEXT",
+            "initial_keywords": "JSON"
+        }
+        for col, col_type in migrations_es.items():
+            if col not in cols_es:
+                conn.execute(text(f"ALTER TABLE exam_sessions ADD COLUMN {col} {col_type}"))
         
-        res = conn.execute(text("PRAGMA table_info(exam_sessions)"))
-        cols_es = [row[1] for row in res]
-        if "coherence_score" not in cols_es:
-            conn.execute(text("ALTER TABLE exam_sessions ADD COLUMN coherence_score FLOAT"))
-        if "current_prompt" not in cols_es:
-            conn.execute(text("ALTER TABLE exam_sessions ADD COLUMN current_prompt TEXT"))
-        if "initial_keywords" not in cols_es:
-            conn.execute(text("ALTER TABLE exam_sessions ADD COLUMN initial_keywords JSON"))
-        
-        # User Migrations
-        res = conn.execute(text("PRAGMA table_info(users)"))
-        cols_u = [row[1] for row in res]
-        # Check carefully to avoid error if column exists
+        # 3. Users
+        cols_u = get_columns(conn, "users")
         if "target_band" not in cols_u:
             conn.execute(text("ALTER TABLE users ADD COLUMN target_band VARCHAR DEFAULT '6.5'"))
         if "weakness" not in cols_u:
             conn.execute(text("ALTER TABLE users ADD COLUMN weakness VARCHAR DEFAULT 'General'"))
         
-        # Vocabulary Migrations (Spaced Repetition)
-        res = conn.execute(text("PRAGMA table_info(vocabulary_items)"))
-        cols_v = [row[1] for row in res]
-        if "next_review_at" not in cols_v:
-            conn.execute(text("ALTER TABLE vocabulary_items ADD COLUMN next_review_at DATETIME"))
-        if "interval_days" not in cols_v:
-            conn.execute(text("ALTER TABLE vocabulary_items ADD COLUMN interval_days INTEGER DEFAULT 1"))
-        if "ease_factor" not in cols_v:
-            conn.execute(text("ALTER TABLE vocabulary_items ADD COLUMN ease_factor FLOAT DEFAULT 2.5"))
+        # 4. Vocabulary (Spaced Repetition)
+        cols_v = get_columns(conn, "vocabulary_items")
+        migrations_v = {
+            "next_review_at": "DATETIME",
+            "interval_days": "INTEGER DEFAULT 1",
+            "ease_factor": "FLOAT DEFAULT 2.5",
+            "word_translated": "TEXT",
+            "definition_translated": "TEXT",
+            "source_type": "VARCHAR DEFAULT 'MANUAL'"
+        }
+        for col, col_type in migrations_v.items():
+            if col not in cols_v:
+                conn.execute(text(f"ALTER TABLE vocabulary_items ADD COLUMN {col} {col_type}"))
             
         conn.commit()
     print("--- Database Schema Verified & Migrated ---")
