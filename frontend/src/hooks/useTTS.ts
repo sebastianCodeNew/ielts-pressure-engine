@@ -1,13 +1,27 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export const useTTS = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [supportsTTS, setSupportsTTS] = useState(false);
+  const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      setSupportsTTS(true);
-    }
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    
+    setSupportsTTS(true);
+
+    // B12 Fix: Voices are loaded asynchronously in most browsers.
+    // We must listen for `voiceschanged` to get the full list.
+    const loadVoices = () => {
+      voicesRef.current = window.speechSynthesis.getVoices();
+    };
+
+    loadVoices(); // Try immediately (works in Firefox)
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+    };
   }, []);
 
   const speak = useCallback((text: string) => {
@@ -18,10 +32,11 @@ export const useTTS = () => {
 
     const utterance = new SpeechSynthesisUtterance(text);
     
-    // Select a voice (Preferably a clear English one)
-    const voices = window.speechSynthesis.getVoices();
+    // Select a voice (use cached voices from ref)
+    const voices = voicesRef.current;
     const preferredVoice = voices.find(v => v.name.includes("Google US English")) || 
                            voices.find(v => v.lang.startsWith("en-US")) || 
+                           voices.find(v => v.lang.startsWith("en")) ||
                            voices[0];
     
     if (preferredVoice) utterance.voice = preferredVoice;

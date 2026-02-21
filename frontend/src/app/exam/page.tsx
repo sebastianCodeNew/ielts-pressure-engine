@@ -7,22 +7,12 @@ import { Mic2, Square, Wand2, ArrowRight, Timer, AlertCircle, Lightbulb, CheckCi
 import ReactMarkdown from "react-markdown";
 import AudioWaveform from "@/components/AudioWaveform";
 import { ApiClient } from "@/lib/api";
+import { Intervention } from "@/lib/types";
+import { SmartDiff } from "@/components/SmartDiff";
 
 // --- TYPES ---
-interface FeedbackData {
-  next_task_prompt?: string;
-  next_task_prompt_translated?: string;
-  feedback_markdown?: string;
-  feedback_translated?: string;
-  action_id?: string;
-  target_keywords?: string[];
-  ideal_response?: string;
-  ideal_response_translated?: string;
-  user_transcript?: string;
-  user_transcript_translated?: string;
-  user_audio_url?: string;
-  keywords_hit?: string[];
-  realtime_word_bank?: string[];
+interface FeedbackData extends Intervention {
+  stress_level?: number;
 }
 
 // --- VOCABULARY HEATMAP ---
@@ -138,7 +128,7 @@ export default function ExamSimulator() {
   const audioMirrorRef = useRef<HTMLAudioElement | null>(null);
 
   // Vocabulary HUD State
-  const [wordBank, setWordBank] = useState<string[]>([]);
+  const [wordBank, setWordBank] = useState<{ word: string; translation?: string }[]>([]);
 
   // Prep Phase State (Part 2)
   const [isPrepPhase, setIsPrepPhase] = useState(false);
@@ -151,6 +141,10 @@ export default function ExamSimulator() {
   // Hint State
   const [showHint, setShowHint] = useState(false);
   const [hintData, setHintData] = useState<{ vocabulary: string[]; starter: string; grammar_tip: string } | null>(null);
+
+  // U5: Response Timer for Part 1/3
+  const [responseTimer, setResponseTimer] = useState(0);
+  const responseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // --- LIFECYCLE ---
   useEffect(() => {
@@ -190,7 +184,7 @@ export default function ExamSimulator() {
             setFeedback({ 
               next_task_prompt: data.current_prompt,
               next_task_prompt_translated: data.current_prompt_translated
-            });
+            } as FeedbackData);
           }
         }
       }).catch(() => {
@@ -210,6 +204,22 @@ export default function ExamSimulator() {
     }
     return () => clearInterval(interval);
   }, [isPrepPhase, prepTimer, speak]);
+
+  // U5: Response Timer (counts up during recording)
+  useEffect(() => {
+    if (isRecording) {
+      setResponseTimer(0);
+      responseTimerRef.current = setInterval(() => setResponseTimer((s) => s + 1), 1000);
+    } else {
+      if (responseTimerRef.current) {
+        clearInterval(responseTimerRef.current);
+        responseTimerRef.current = null;
+      }
+    }
+    return () => {
+      if (responseTimerRef.current) clearInterval(responseTimerRef.current);
+    };
+  }, [isRecording]);
 
   // --- HANDLERS ---
   const handleGetHint = async () => {
@@ -301,10 +311,14 @@ export default function ExamSimulator() {
           setIsRetaking(false);
           
           if (data.target_keywords && data.target_keywords.length > 0) {
-            setWordBank(data.target_keywords);
+            setWordBank(data.target_keywords.map(w => ({ word: w })));
           }
           if (data.realtime_word_bank && data.realtime_word_bank.length > 0) {
-            setWordBank(data.realtime_word_bank);
+            const paired = data.realtime_word_bank.map((word, i) => ({
+              word,
+              translation: data.realtime_word_bank_translated?.[i]
+            }));
+            setWordBank(paired);
           }
 
           const session = await ApiClient.getExamStatus(sessionId);
@@ -463,9 +477,17 @@ export default function ExamSimulator() {
               </button>
             </div>
             <div className="space-y-4">
-              <div className="bg-zinc-800/50 p-4 rounded-lg text-zinc-300 border border-zinc-700/50">
-                {feedback.ideal_response || "Analysis in progress..."}
-              </div>
+              {/* U1: SmartDiff — Visual diff of user response vs ideal */}
+              {feedback.user_transcript && feedback.ideal_response ? (
+                <SmartDiff 
+                  original={feedback.user_transcript} 
+                  improved={feedback.ideal_response} 
+                />
+              ) : (
+                <div className="bg-zinc-800/50 p-4 rounded-lg text-zinc-300 border border-zinc-700/50">
+                  {feedback.ideal_response || "Analysis in progress..."}
+                </div>
+              )}
               {feedback.ideal_response_translated && (
                 <div className="text-sm text-zinc-500 italic px-4">
                   {feedback.ideal_response_translated}
@@ -489,9 +511,16 @@ export default function ExamSimulator() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
             <button 
               onClick={handleRetake}
-              className="py-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all active:scale-95 border border-zinc-700"
+              className="py-4 bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 border border-amber-600/30 rounded-2xl font-black uppercase tracking-widest flex flex-col items-center justify-center gap-2 transition-all active:scale-95"
             >
-              <RotateCcw size={18}/> Practice This Fix
+              <div className="flex items-center gap-2">
+                <RotateCcw size={18}/> Say It Better
+              </div>
+              {feedback.correction_drill && (
+                <span className="text-[10px] text-amber-500/70 font-medium normal-case tracking-normal max-w-xs text-center">
+                  Focus: &quot;{feedback.correction_drill.slice(0, 60)}{feedback.correction_drill.length > 60 ? '...' : ''}&quot;
+                </span>
+              )}
             </button>
             <button 
               onClick={handleContinue}
@@ -514,13 +543,13 @@ export default function ExamSimulator() {
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                    feedback?.stress_level > 0.6 
+                    (feedback?.stress_level ?? 0.5) > 0.6 
                     ? "bg-green-600/20 text-green-500 border border-green-500/30" 
-                    : feedback?.stress_level < 0.4
+                    : (feedback?.stress_level ?? 0.5) < 0.4
                     ? "bg-red-600/20 text-red-500 border border-red-500/30"
                     : "bg-zinc-800 text-zinc-400"
                   }`}>
-                    {feedback?.stress_level > 0.6 ? "Supportive Mentor" : feedback?.stress_level < 0.4 ? "Strict Challenger" : "Standard Examiner"}
+                    {(feedback?.stress_level ?? 0.5) > 0.6 ? "Supportive Mentor" : (feedback?.stress_level ?? 0.5) < 0.4 ? "Strict Challenger" : "Standard Examiner"}
                   </span>
                   <div className="flex gap-1">
                     {[1, 2, 3].map((i) => (
@@ -589,6 +618,46 @@ export default function ExamSimulator() {
                   ))}
                 </div>
               )}
+
+              {/* U6: Show correction drill when retaking */}
+              {isRetaking && feedback?.correction_drill && !isRecording && (
+                <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl animate-in fade-in slide-in-from-top-4 duration-500">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Wand2 size={14} className="text-amber-500" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">Focus On This</span>
+                  </div>
+                  <p className="text-sm text-zinc-300 italic font-medium leading-relaxed">
+                    &quot;{feedback.correction_drill}&quot;
+                  </p>
+                  {feedback.reasoning && (
+                    <p className="mt-2 text-[9px] text-amber-500/70 font-bold uppercase">
+                      💡 {feedback.reasoning}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* U5: Response timer during recording */}
+              {isRecording && (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-zinc-400 font-mono text-sm">
+                    <Timer size={14} className={responseTimer > 45 ? "text-amber-500 animate-pulse" : "text-zinc-500"} />
+                    <span className={responseTimer > 45 ? "text-amber-500" : ""}>
+                      {Math.floor(responseTimer / 60)}:{(responseTimer % 60).toString().padStart(2, '0')}
+                    </span>
+                  </div>
+                  {examPart === "PART_1" && responseTimer > 45 && (
+                    <span className="text-[10px] text-amber-500 font-bold uppercase animate-pulse">
+                      Wrap up your answer
+                    </span>
+                  )}
+                  {examPart === "PART_3" && responseTimer > 60 && (
+                    <span className="text-[10px] text-amber-500 font-bold uppercase animate-pulse">
+                      Consider concluding
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {showHint && hintData && (
@@ -603,9 +672,14 @@ export default function ExamSimulator() {
                 <span className="text-xs font-black uppercase tracking-widest text-zinc-500">Try Using These Words</span>
               </div>
               <div className="flex flex-wrap gap-3">
-                {wordBank.map((word, idx) => (
-                  <div key={idx} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl transition-all hover:scale-105 cursor-default group">
-                    <span className="text-sm font-bold text-zinc-300 group-hover:text-white">{word}</span>
+                {wordBank.map((item, idx) => (
+                  <div key={idx} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl transition-all hover:scale-105 cursor-default group flex flex-col items-center">
+                    <span className="text-sm font-bold text-zinc-300 group-hover:text-white uppercase tracking-tight">{item.word}</span>
+                    {item.translation && (
+                      <span className="text-[10px] text-zinc-500 font-medium italic border-t border-zinc-700/50 mt-1 pt-1 w-full text-center">
+                        {item.translation}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>

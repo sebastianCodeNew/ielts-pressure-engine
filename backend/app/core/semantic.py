@@ -1,11 +1,11 @@
-import os
 import httpx
 import numpy as np
 from typing import List
+from app.core.config import settings
 
-# Load API Key from environment
-DEEPINFRA_KEY = os.getenv("DEEPINFRA_API_KEY")
-BASE_URL = "https://api.deepinfra.com/v1/openai"
+# Load API Key from centralized config
+DEEPINFRA_KEY = settings.DEEPINFRA_API_KEY
+BASE_URL = settings.DEEPINFRA_BASE_URL
 
 def get_embedding(text: str) -> List[float]:
     """

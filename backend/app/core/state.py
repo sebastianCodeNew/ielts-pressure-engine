@@ -26,6 +26,9 @@ class AgentState(BaseModel):
     stress_level: float = 0.0 # 0.0 (Bored) -> 1.0 (Panic)
     fluency_trend: Literal['improving', 'stable', 'degrading'] = 'stable'
     
+    # Context (Where in the exam?)
+    current_part: str = "PART_1"
+    
     # User Context (Deep Adaptation)
     target_band: str = "7.5"
     weakness: str = "General"

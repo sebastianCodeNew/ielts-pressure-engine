@@ -16,10 +16,10 @@ export interface SignalMetrics {
 }
 
 export interface Intervention {
-  action_id: ActionId;
-  next_task_prompt: string;
+  action_id?: ActionId;
+  next_task_prompt?: string;
   topic_core?: string;
-  constraints: Record<string, any>;
+  constraints?: Record<string, any>;
   
   // Educational Fields
   ideal_response?: string;
@@ -47,6 +47,7 @@ export interface Intervention {
 
   // v5.0 Hardening & Real-time
   realtime_word_bank?: string[];
+  realtime_word_bank_translated?: string[];
   confidence_score?: number;
 
   // v5.1 Translation Fields

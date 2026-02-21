@@ -63,6 +63,7 @@ class Intervention(BaseModel):
 
     # NEW: Learning v3.0 Fields
     realtime_word_bank: List[str] = Field(default_factory=list, description="Top 5 Band 8+ words for the user to use in the NEXT turn (HUD display)")
+    realtime_word_bank_translated: List[str] = Field(default_factory=list, description="Indonesian translations for the power words (HUD display)")
     confidence_score: float = 0.0 # 0.0 (Uncertain) -> 1.0 (Confident)
 
     # NEW: Learning v4.0 - Active Recall Quiz

@@ -13,12 +13,17 @@ def extract_signals(attempt: UserAttempt, current_prompt_text: str = "general to
     word_count = len(transcript.split()) if transcript else 0
     wpm = (word_count / (attempt.audio_duration / 60)) if attempt.audio_duration > 0 else 0
 
-    hesitation_score = 0.0
-    if attempt.audio_duration > 5 and wpm < 40:
-        hesitation_score = 0.8 
-        
+    # Filler word detection
     fillers = re.findall(r"\b(um|uh|er|ah|like|you know)\b", transcript.lower())
     filler_count = len(fillers)
+
+    hesitation_score = 0.0
+    if attempt.audio_duration > 3:
+        # Gradient: Low WPM = High hesitation. 100+ WPM = 0 hesitation.
+        hesitation_score = max(0.0, min(1.0, 1.0 - (wpm / 100.0)))
+        # Filler words also contribute to hesitation
+        if filler_count > 3:
+            hesitation_score = min(1.0, hesitation_score + 0.1 * (filler_count - 3))
 
     # 2. Semantic Analysis
     coherence = calculate_coherence(current_prompt_text, transcript)

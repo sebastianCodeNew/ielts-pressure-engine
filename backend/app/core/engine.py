@@ -138,11 +138,11 @@ def process_user_attempt(
     intervention.user_transcript = attempt.transcript
     intervention.confidence_score = signals.confidence_score
     
-    if transcription_error or not transcript_data['text'].strip():
+    if transcription_error or not transcript_data['text'].strip() or len(transcript_data['text'].split()) < 2:
         intervention.feedback_markdown = "⚠️ **Microphone Error**: Saya tidak bisa mendengar suara Anda dengan jelas. Tolong pastikan mic aktif dan coba lagi."
-        intervention.action_id = "RETRY_REQUIRED"
+        intervention.action_id = "FORCE_RETRY"
         # Skip costly analysis if no audio
-        if not transcript_data['text'].strip():
+        if not transcript_data['text'].strip() or len(transcript_data['text'].split()) < 2:
             return intervention
     
     # 6. POPULATE RADAR METRICS & UPDATE STATE
@@ -191,22 +191,34 @@ def process_user_attempt(
         new_qa.feedback_markdown = intervention.feedback_markdown
         new_qa.improved_response = intervention.ideal_response
         
-        # New: Persist Translations
+        # New: Persist Translations (wrapped in try/except to prevent timeout crashes)
         if current_prompt:
-            new_qa.question_translated = translate_to_indonesian(current_prompt)
+            try:
+                new_qa.question_translated = translate_to_indonesian(current_prompt)
+            except Exception as e:
+                print(f"Translation error (question): {e}")
+                new_qa.question_translated = None
         
-        # Correction: intervention.user_transcript_translated should be for the user's answer
         if attempt.transcript:
-            new_qa.transcript_translated = translate_to_indonesian(attempt.transcript)
-            intervention.user_transcript_translated = new_qa.transcript_translated
+            try:
+                new_qa.transcript_translated = translate_to_indonesian(attempt.transcript)
+                intervention.user_transcript_translated = new_qa.transcript_translated
+            except Exception as e:
+                print(f"Translation error (transcript): {e}")
             
         if intervention.feedback_markdown:
-            new_qa.feedback_translated = translate_to_indonesian(intervention.feedback_markdown)
-            intervention.feedback_translated = new_qa.feedback_translated
+            try:
+                new_qa.feedback_translated = translate_to_indonesian(intervention.feedback_markdown)
+                intervention.feedback_translated = new_qa.feedback_translated
+            except Exception as e:
+                print(f"Translation error (feedback): {e}")
             
         if intervention.ideal_response:
-            new_qa.improved_response_translated = translate_to_indonesian(intervention.ideal_response)
-            intervention.ideal_response_translated = new_qa.improved_response_translated
+            try:
+                new_qa.improved_response_translated = translate_to_indonesian(intervention.ideal_response)
+                intervention.ideal_response_translated = new_qa.improved_response_translated
+            except Exception as e:
+                print(f"Translation error (ideal response): {e}")
         
         # Keyword Hit Detection
         last_qa = None
@@ -309,7 +321,7 @@ def process_user_attempt(
                     ))
         
         # Transition Logic (Skip if RETRY or MIC ERROR)
-        if is_retry or is_refactor or intervention.action_id == "RETRY_REQUIRED":
+        if is_retry or is_refactor or intervention.action_id == "FORCE_RETRY":
             exam_session.current_prompt = current_prompt
             intervention.next_task_prompt = current_prompt
             db.commit()
@@ -397,14 +409,16 @@ def process_user_attempt(
                     score_list.append(exam_session.overall_band_score)
                     user.total_exams_taken = len(score_list)
                     user.average_band_score = round(sum(score_list) / len(score_list), 1)
-        else:
-            exam_session.current_prompt = intervention.next_task_prompt
-    # FINAL STEP: Ensure the NEXT prompt is translated (handling transitions)
-    if intervention.next_task_prompt:
-        exam_session.current_prompt_translated = translate_to_indonesian(intervention.next_task_prompt)
-        intervention.next_task_prompt_translated = exam_session.current_prompt_translated
-    else:
-        pass
+            else:
+                exam_session.current_prompt = intervention.next_task_prompt
+
+        # FINAL STEP: Ensure the NEXT prompt is translated (handling transitions)
+        if intervention.next_task_prompt:
+            try:
+                exam_session.current_prompt_translated = translate_to_indonesian(intervention.next_task_prompt)
+                intervention.next_task_prompt_translated = exam_session.current_prompt_translated
+            except Exception as e:
+                print(f"Translation error (next prompt): {e}")
 
     db.commit()
     intervention.stress_level = current_state.stress_level

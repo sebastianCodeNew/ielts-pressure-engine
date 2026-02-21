@@ -148,6 +148,7 @@ def formulate_strategy(
         - Identify 5 "Power Words" (Band 8+ advanced vocabulary or idioms) that are highly relevant to the *next* question/topic you are about to ask.
         - These should be practical for use in natural speech.
         - List them in the `realtime_word_bank` field.
+        - List their Indonesian translations in the `realtime_word_bank_translated` field (in the same order).
 
         NEW: ACTIVE RECALL QUIZ (v4.0):
         - If you identified a grammar or vocabulary error in `correction_drill`, generate a quick quiz:
@@ -214,7 +215,6 @@ def formulate_strategy(
         content = response.content.strip()
 
         # 4. Robust JSON Extraction
-        content = response.content.strip()
         
         # Strategy: Look for json code blocks first, then widest braces
         json_match = re.search(r"```json\s*(.*?)\s*```", content, re.DOTALL)
