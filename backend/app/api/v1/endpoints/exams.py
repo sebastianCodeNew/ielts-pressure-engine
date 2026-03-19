@@ -150,16 +150,33 @@ async def submit_exam_audio(
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    ext = os.path.splitext(file.filename)[1].lower() if file.filename else ".webm"
+    # 1. File Validation
+    filename = file.filename or "response.webm"
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in settings.ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail=f"Unsupported file extension: {ext}")
+    
+    # Read content to check size
+    content = await file.read()
+    if len(content) > settings.MAX_AUDIO_SIZE_BYTES:
+        raise HTTPException(status_code=400, detail="File too large")
+    if len(content) < 100:
+        # Return graceful intervention instead of crashing/400
+        return Intervention(
+            action_id="MAINTAIN",
+            next_task_prompt="Please try again with a longer recording.",
+            feedback_markdown="⚠️ **Audio too short**. Please record for at least 3 seconds."
+        )
+
     temp_filename = os.path.abspath(f"temp_exam_{session_id}_{uuid.uuid4().hex}{ext}")
     
-    AUDIO_DIR = "audio_storage"
+    AUDIO_DIR = settings.AUDIO_STORAGE_DIR
     os.makedirs(AUDIO_DIR, exist_ok=True)
     persistent_filename = f"{AUDIO_DIR}/{session_id}_{uuid.uuid4()}{ext}"
     
     try:
         with open(temp_filename, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+            buffer.write(content)
         shutil.copy(temp_filename, persistent_filename)
 
         intervention = await process_user_attempt(

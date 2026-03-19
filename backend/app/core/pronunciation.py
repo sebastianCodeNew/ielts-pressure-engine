@@ -1,6 +1,7 @@
 import numpy as np
 import librosa
 from typing import Dict
+from app.core.transcriber import whisper_lock
 
 def analyze_pronunciation(audio_path: str) -> Dict[str, float]:
     """
@@ -14,7 +15,8 @@ def analyze_pronunciation(audio_path: str) -> Dict[str, float]:
             try:
                 # Local import to avoid overhead if not used, but wrapped safely
                 from faster_whisper.audio import decode_audio
-                y = decode_audio(audio_path, sampling_rate=22050)
+                with whisper_lock:
+                    y = decode_audio(audio_path, sampling_rate=22050)
                 sr = 22050
             except ImportError:
                 print("Faster-whisper not installed or audio module missing.")
@@ -33,7 +35,8 @@ def analyze_pronunciation(audio_path: str) -> Dict[str, float]:
                     # Final fallback try
                     try:
                         from faster_whisper.audio import decode_audio
-                        y = decode_audio(audio_path, sampling_rate=22050)
+                        with whisper_lock:
+                            y = decode_audio(audio_path, sampling_rate=22050)
                         sr = 22050
                     except Exception as e2:
                         print(f"Final audio decode fallback failed: {e2}")

@@ -51,16 +51,9 @@ export class ApiClient {
     blob: Blob,
     taskId: string = "default",
   ): Promise<Intervention> {
-    const formData = new FormData();
-    formData.append("file", blob, "recording.webm");
-    formData.append("task_id", taskId);
-
-    const res = await this.fetchWithRetry(`${API_BASE_URL}/submit-audio`, {
-      method: "POST",
-      body: formData,
-    });
-    if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
-    return res.json();
+    // Redirecting to the versioned endpoint for consistency
+    // Note: taskId is mapped to sessionId for simplicity in training mode
+    return this.submitExamAudio(taskId, blob);
   }
 
   static async getDetailedHistory(userId: string = DEFAULT_USER_ID): Promise<any[]> {

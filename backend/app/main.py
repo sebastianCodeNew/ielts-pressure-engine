@@ -37,12 +37,11 @@ class RateLimiter:
             self.requests[client_id].append(now)
             return True
         
-        # Periodic cleanup of all inactive clients to prevent memory leak
-        # Must be before return False so it is actually reachable
-        if len(self.requests) > 1000:
+        # Frequent cleanup to prevent memory slow-leak
+        if len(self.requests) > 100 or random.random() < 0.05:
             self.cleanup()
             
-        return False
+        return len(self.requests.get(client_id, [])) < self.limit
         
     def cleanup(self):
         """Removes client records that have no request history in the window."""
@@ -61,6 +60,9 @@ audio_limiter = RateLimiter(limit=settings.RATE_LIMIT_COUNT, window=settings.RAT
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from app.core.cleanup import cleanup_old_audio
+    cleanup_old_audio(max_age_hours=settings.AUDIO_CLEANUP_HOURS)
+    
     init_cache_db()
     init_db()
     print("--- Databases Loaded & Migrated ---")
@@ -101,8 +103,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={
             "detail": "Koneksi terganggu atau terjadi kesalahan sistem (Server Error). Silakan coba lagi.",
-            "error_en": "Internal Server Error. Please contact support if this persists.",
-            "error_type": exc.__class__.__name__
+            "error_en": "Internal Server Error. Please contact support if this persists."
         }
     )
 
@@ -119,54 +120,5 @@ app.mount("/audio", StaticFiles(directory=AUDIO_DIR), name="audio")
 def health_check():
     return {"status": "system_active", "mode": "performance_optimized"}
 
-@app.post("/api/submit-audio")
-async def process_audio_attempt(
-    file: UploadFile = File(...), 
-    task_id: str = Form(...), 
-    is_retry: bool = Form(False),
-    db: Session = Depends(get_db)
-):
-    # Use UUID to prevent collision if multiple users (or sessions) upload simultaneously
-    # Security: File Extension Validation
-    ext = os.path.splitext(file.filename)[1].lower()
-    if ext not in settings.ALLOWED_EXTENSIONS:
-        raise HTTPException(status_code=400, detail=f"Invalid audio format. Use {', '.join(settings.ALLOWED_EXTENSIONS)}")
-        
-    temp_filename = f"temp_{uuid.uuid4().hex}{ext}"
-    
-    # Security: File Size Limit
-    MAX_SIZE = settings.MAX_AUDIO_SIZE_BYTES
-    file.file.seek(0, 2) # Seek to end
-    file_size = file.file.tell()
-    file.file.seek(0) # Reset
-    
-    if file_size > MAX_SIZE:
-        raise HTTPException(status_code=413, detail=f"File too large. Max {MAX_SIZE // (1024*1024)}MB.")
-
-    with open(temp_filename, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    try:
-        # Check if task_id is a valid UUID (Exam Mode)
-        is_exam = False
-        try:
-            uuid.UUID(task_id)
-            is_exam = True
-        except ValueError:
-            pass
-
-        intervention = await process_user_attempt(
-            file_path=temp_filename,
-            task_id=task_id,
-            db=db,
-            session_id=task_id, # Use correct session ID
-            is_exam_mode=is_exam, # Enable exam logic if UUID
-            is_retry=is_retry
-        )
-        return intervention
-    finally:
-        if os.path.exists(temp_filename):
-            try:
-                os.remove(temp_filename)
-            except Exception as e:
-                print(f"Cleanup Error: {e}")
+# Redundant endpoint removed.
+# All audio submissions should now use the /api/v1/exams/{session_id}/submit-audio endpoint.

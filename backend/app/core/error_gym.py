@@ -54,14 +54,8 @@ Make the sentences relevant to IELTS speaking topics (Part 1: everyday life, Par
         partial_variables={"format_instructions": parser.get_format_instructions()}
     )
     
-    # Use DeepInfra with Llama 3 for cost-effective generation
-    llm = ChatOpenAI(
-        model_name="meta-llama/Llama-3.2-3B-Instruct",
-        openai_api_key=os.getenv("DEEPINFRA_API_KEY"),
-        openai_api_base="https://api.deepinfra.com/v1/openai",
-        temperature=0.7,
-        timeout=60
-    )
+    from app.core.llm import get_llm
+    llm = get_llm(temperature=0.7)
     
     chain = prompt | llm | parser
     

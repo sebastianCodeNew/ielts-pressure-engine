@@ -157,6 +157,8 @@ export function TrainingCockpit() {
   const [gateDrill, setGateDrill] = useState<string | null>(null);
   const [isVerifyingGate, setIsVerifyingGate] = useState(false);
   const [briefing, setBriefing] = useState<string | null>(null);
+  const [resuming, setResuming] = useState(false);
+  const part2StartTimeRef = useRef<number | null>(null);
 
   // Focus Protocol State (Phase 10)
   const [focusMode, setFocusMode] = useState<
@@ -209,7 +211,10 @@ export function TrainingCockpit() {
       setSilenceTimer(0);
       hasNudgedRef.current = false; // Reset for next turn
     }
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      hasNudgedRef.current = false;
+    };
   }, [isRecording, isSpeaking, speak]);
 
   useEffect(() => {
@@ -222,9 +227,10 @@ export function TrainingCockpit() {
 
 
   const resumeSession = async (sid: string) => {
+    setResuming(true);
     try {
       const status = await ApiClient.getExamStatus(sid);
-      const summary = await ApiClient.getExamSummary(sid); // Get prompt metadata
+      const summary = await ApiClient.getExamSummary(sid); 
       
       setSessionId(sid);
       setExamPart(status.current_part as any);
@@ -240,8 +246,9 @@ export function TrainingCockpit() {
 
     } catch (e) {
       console.error("Failed to resume session:", e);
-      // Fallback to fresh start if sid is invalid
       startExam();
+    } finally {
+      setResuming(false);
     }
   };
 
@@ -435,29 +442,41 @@ export function TrainingCockpit() {
   useEffect(() => {
     // 1. Detect Entry into Part 2
     if (examPart === "PART_2" && part2Phase === "IDLE") {
-      setPart2Phase("PREP");
-      setTimer(60); // 1 Minute Prep
+      if (!isSpeaking) {
+        setPart2Phase("PREP");
+        setTimer(60); 
+        part2StartTimeRef.current = Date.now();
+      }
     }
 
-    // 2. Timer Countdown
+    // 2. Timer Countdown (Timestamp Based for Accuracy)
     let interval: NodeJS.Timeout;
-    if (part2Phase === "PREP" && timer > 0) {
-      interval = setInterval(() => setTimer((t) => t - 1), 1000);
-    } else if (part2Phase === "PREP" && timer === 0) {
-      // Auto-Transition to Speaking
-      setPart2Phase("SPEAKING");
-      setTimer(120); // 2 Minutes Speaking
-      startRecording();
-    } else if (part2Phase === "SPEAKING" && timer > 0) {
-      interval = setInterval(() => setTimer((t) => t - 1), 1000);
-    } else if (part2Phase === "SPEAKING" && timer === 0) {
-      // Time's up! Force stop.
-      stopRecording();
-      // The existing useEffect will handle the audioBlob submission
+    if ((part2Phase === "PREP" || part2Phase === "SPEAKING") && timer > 0) {
+      interval = setInterval(() => {
+        if (!part2StartTimeRef.current) return;
+        const elapsed = Math.floor((Date.now() - part2StartTimeRef.current) / 1000);
+        const limit = part2Phase === "PREP" ? 60 : 120;
+        const remaining = Math.max(0, limit - elapsed);
+        setTimer(remaining);
+        
+        if (remaining === 0) {
+          if (part2Phase === "PREP") {
+            setPart2Phase("SPEAKING");
+            setTimer(120);
+            part2StartTimeRef.current = Date.now();
+            startRecording();
+          } else {
+            stopRecording();
+            setPart2Phase("IDLE");
+          }
+        }
+      }, 500); // Check every 500ms
     }
 
-    return () => clearInterval(interval);
-  }, [examPart, part2Phase, timer, startRecording, stopRecording]);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [examPart, part2Phase, timer, startRecording, stopRecording, isSpeaking]);
 
   // IDLE STATE
   if (examPart === "INTRO" || examPart === "FINISHED") {
@@ -481,10 +500,10 @@ export function TrainingCockpit() {
             <div>
               <div className="text-4xl mb-4 animate-bounce">🧘</div>
               <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-                Focus Protocol
+                {resuming ? "Restoring Session..." : "Focus Protocol"}
               </h2>
               <p className="text-zinc-500 text-sm">
-                Select your training intensity.
+                {resuming ? "Please wait while we reconnect to your examiner." : "Select your training intensity."}
               </p>
             </div>
 

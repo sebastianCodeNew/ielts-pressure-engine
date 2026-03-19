@@ -45,12 +45,12 @@ class Settings(BaseSettings):
     ALLOWED_EXTENSIONS: list[str] = [".webm", ".mp3", ".wav", ".m4a", ".ogg"]
     RATE_LIMIT_COUNT: int = 10
     RATE_LIMIT_WINDOW_SECONDS: int = 60
+    AUDIO_CLEANUP_HOURS: int = 24
     
     # Adaptive Logic Thresholds
     STRESS_INCREASE_THRESHOLD: float = 0.7
     STRESS_DECREASE_THRESHOLD: float = 0.4
     
-    class Config:
-        env_file = ".env"
+    model_config = {"env_file": ".env", "extra": "ignore"}
 
 settings = Settings()

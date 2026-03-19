@@ -40,6 +40,9 @@ async def process_user_attempt(
         if not exam_session:
             raise ValueError(f"Exam session {session_id} not found")
         
+        # Ensure we have the latest state from other potential parallel workers
+        db.refresh(exam_session)
+        
         current_part = exam_session.current_part
         current_prompt = exam_session.current_prompt or "General topic"
         
@@ -498,6 +501,19 @@ async def process_user_attempt(
             except Exception as e:
                 print(f"Translation error (next prompt): {e}")
 
-    db.commit()
+    try:
+        # Most of the function body will be moved inside here or handled by the caller.
+        # However, since this is a large function, I'll add a catch-all at the end 
+        # for logic that happens BEFORE the final return.
+        
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"CRITICAL ENGINE ERROR: {e}")
+        # We don't re-raise here if we want to return the intervention 
+        # (which might contain a FORCE_RETRY or MIC_ERROR already)
+        # but for unexpected crashes, it's better to ensure rollback.
+        raise
+
     intervention.stress_level = current_state.stress_level
     return intervention

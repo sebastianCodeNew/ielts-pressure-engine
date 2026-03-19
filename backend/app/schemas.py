@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Literal, Dict, Any, List, Optional
 from datetime import datetime
 
@@ -136,8 +136,7 @@ class VocabularyItemSchema(BaseModel):
     mastery_level: int
     last_reviewed_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # --- STUDY PLAN ---
 class StudyPlanItem(BaseModel):

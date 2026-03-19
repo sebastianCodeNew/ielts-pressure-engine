@@ -1,5 +1,9 @@
 from faster_whisper import WhisperModel
 import os
+import threading
+
+# Global lock to synchronize access to the Whisper model (not thread-safe on CPU)
+whisper_lock = threading.Lock()
 
 # 1. UPGRADE MODEL: 'medium.en' for high accuracy
 # 'small.en' is a fallback if this is too slow on CPU.
@@ -15,11 +19,12 @@ def transcribe_audio(file_path: str) -> dict:
 
     try:
         # 3. TUNE PARAMETERS
-        segments, info = model.transcribe(
-            file_path, 
-            beam_size=5, 
-            vad_filter=True,
-        )
+        with whisper_lock:
+            segments, info = model.transcribe(
+                file_path, 
+                beam_size=5, 
+                vad_filter=True,
+            )
         
         text = " ".join([segment.text for segment in segments])
         
