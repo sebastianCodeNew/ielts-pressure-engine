@@ -7,13 +7,12 @@ from app.core.config import settings
 DEEPINFRA_KEY = settings.DEEPINFRA_API_KEY
 BASE_URL = settings.DEEPINFRA_BASE_URL
 
-def get_embedding(text: str) -> List[float]:
+async def get_embedding_async(text: str) -> List[float]:
     """
-    Sends text to DeepInfra and returns a vector (list of floats).
+    Sends text to DeepInfra and returns a vector (list of floats) (Async).
     """
-    # Safety: If text is empty/None, return a zero-vector
     if not text or not isinstance(text, str):
-        return [0.0] * 768  # Gemma-300m uses 768 dimensions
+        return [0.0] * 768
         
     if not DEEPINFRA_KEY:
         print("WARNING: DEEPINFRA_API_KEY is missing. Returning zero vector.")
@@ -31,44 +30,40 @@ def get_embedding(text: str) -> List[float]:
     }
 
     try:
-        # We use a context manager to ensure connection closes
-        with httpx.Client(timeout=10.0) as client:
-            response = client.post(f"{BASE_URL}/embeddings", json=payload, headers=headers)
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.post(f"{BASE_URL}/embeddings", json=payload, headers=headers)
             
             if response.status_code != 200:
                 print(f"Embedding API Error: {response.text}")
                 return [0.0] * 768
 
             data = response.json()
-            # Extract the vector from the OpenAI-compatible response format
             return data["data"][0]["embedding"]
             
     except Exception as e:
-        import traceback
-        print(f"Embedding Network Error: {e}")
-        traceback.print_exc()
+        print(f"Embedding Network Error (Async): {e}")
         return [0.0] * 768
 
-def calculate_coherence(target_prompt: str, user_response: str) -> float:
+async def calculate_coherence_async(target_prompt: str, user_response: str) -> float:
     """
-    Math: Calculates the Cosine Similarity between two text vectors.
+    Calculates the Cosine Similarity between two text vectors (Async).
     """
-    # 1. Get Vectors
-    vec_a = get_embedding(target_prompt)
-    vec_b = get_embedding(user_response)
+    import asyncio
     
-    # 2. Convert to Numpy Arrays for fast math
+    # Run both embeddings in parallel
+    vec_a, vec_b = await asyncio.gather(
+        get_embedding_async(target_prompt),
+        get_embedding_async(user_response)
+    )
+    
     a = np.array(vec_a)
     b = np.array(vec_b)
     
-    # 3. Calculate Dot Product and Norms (Magnitude)
     dot_product = np.dot(a, b)
     norm_a = np.linalg.norm(a)
     norm_b = np.linalg.norm(b)
     
-    # 4. Avoid Division by Zero
     if norm_a == 0 or norm_b == 0:
         return 0.0
         
-    # 5. Result
-    return float(dot_product / (norm_a * norm_b))
+    return float(dot_product / (norm_a * norm_b))

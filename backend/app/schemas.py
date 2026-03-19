@@ -27,7 +27,7 @@ class SignalMetrics(BaseModel):
     pronunciation_score: float = 0.0
     prosody_score: float = 0.0 # v3.0
     confidence_score: float = 0.0 # v3.0
-    is_complete: bool
+    is_complete: Optional[bool] = True
     
     # Detailed AI feedback
     detailed_scores: Optional[DetailedScores] = None
@@ -66,6 +66,13 @@ class Intervention(BaseModel):
     realtime_word_bank_translated: List[str] = Field(default_factory=list, description="Indonesian translations for the power words (HUD display)")
     confidence_score: float = 0.0 # 0.0 (Uncertain) -> 1.0 (Confident)
 
+    # NEW: Exam Simulation - Checkpoint Words (Mandatory)
+    checkpoint_words: List[str] = Field(default_factory=list, description="Mandatory words the user must use in the NEXT turn")
+    checkpoint_words_translated: List[str] = Field(default_factory=list, description="Indonesian translations for checkpoint words (same order)")
+    checkpoint_words_meanings: List[str] = Field(default_factory=list, description="Short, simple meanings for checkpoint words (same order)")
+    checkpoint_words_hit: List[str] = Field(default_factory=list, description="Checkpoint words used successfully in THIS turn")
+    checkpoint_compliance_score: float = Field(0.0, description="0.0-1.0 ratio of mandatory checkpoint words used in THIS turn")
+
     # NEW: Learning v4.0 - Active Recall Quiz
     quiz_question: Optional[str] = Field(None, description="A single-question quiz to reinforce the correction (e.g., 'Which is correct?')")
     quiz_options: Optional[List[str]] = Field(None, description="4 multiple-choice options, first one is correct")
@@ -98,6 +105,11 @@ class ExamSessionSchema(BaseModel):
     current_prompt: Optional[str] = None
     current_prompt_translated: Optional[str] = None
     initial_keywords: Optional[List[str]] = None
+    initial_keywords_translated: Optional[List[str]] = None
+    initial_keywords_meanings: Optional[List[str]] = None
+    checkpoint_words: Optional[List[str]] = None
+    checkpoint_words_translated: Optional[List[str]] = None
+    checkpoint_words_meanings: Optional[List[str]] = None
     overall_band_score: Optional[float] = None
     briefing_text: Optional[str] = None
 

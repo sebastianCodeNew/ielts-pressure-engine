@@ -14,7 +14,7 @@ llm = ChatOpenAI(
     api_key=settings.DEEPINFRA_API_KEY,
     model=settings.EVALUATOR_MODEL,
     temperature=0.1,
-    timeout=30, # Hard timeout for stability
+    timeout=60, # Increased for stability under heavy load
 )
 
 from langchain_core.output_parsers import PydanticOutputParser
@@ -65,6 +65,7 @@ def formulate_strategy(
         - If {lowest_area} is "Lexical": Ask about topics requiring specialized vocabulary.
         - If {lowest_area} is "Grammar": Ask hypothetical or conditional questions.
         - If {lowest_area} is "Fluency": Ask simpler, faster-paced questions.
+ 
 
         USER STATE:
         - Stress Level: {stress_level:.2f}
@@ -75,6 +76,18 @@ def formulate_strategy(
 
         USER TRANSCRIPT:
         {user_transcript}
+
+        TOPIC CONTEXT VALIDATION:
+        - Check if user's response matches the asked topic
+        - If user talks about different topic, gently redirect: "I notice you're talking about [topic]. Let's focus on [original_topic]."
+        - Example: If asked about music but user talks about family, redirect gently
+
+        GRAMMAR ERROR DETECTION:
+        - Look for common grammar mistakes in user transcript:
+          * Subject-verb agreement: "My family is created" → "My family was" or "I was"
+          * Tense confusion: "family is created" (past event with present tense)
+          * Word choice: "family is created" (unnatural phrasing)
+        - Provide specific correction in feedback
 
         CURRENT ATTEMPT METRICS:
         - WPM: {wpm}
@@ -230,7 +243,13 @@ def formulate_strategy(
             intervention = parser.parse(content)
         except Exception as parse_err:
             print(f"DEBUG: Pydantic parsing failed: {parse_err}")
-            raw_data = json.loads(content)
+            print(f"DEBUG: Raw LLM output (truncated): {content[:800]}")
+            try:
+                raw_data = json.loads(content)
+            except Exception as json_err:
+                print(f"DEBUG: json.loads failed: {json_err}")
+                # Re-raise to trigger the outer fallback (and keep logs)
+                raise
             
             # Map raw fields safely to prevent initialization errors
             safe_data = {
@@ -248,14 +267,122 @@ def formulate_strategy(
         
     except Exception as e:
         print(f"AGENT ERROR: {e}")
-        # Fallback
+        # Fallback: keep it aligned with the user's transcript to avoid confusing topic drift.
+        fallback_feedback = (
+            " **AI Evaluator Timeout**: Evaluasi AI sedang lambat/timeout. "
+            "Saya tetap menyimpan jawaban Anda. Silakan klik submit lagi atau lanjut ke pertanyaan berikutnya."
+        )
         return Intervention(
             action_id="MAINTAIN",
-            next_task_prompt="Continue. Describe your favorite meal.",
-            topic_core="Food", 
+            next_task_prompt="Continue.",
+            topic_core=None,
             constraints={"timer": 45},
-            ideal_response="I enjoy eating pasta because it is versatile and delicious.",
-            feedback_markdown="- Speak more confidently.\n- Avoid pauses.",
-            keywords=["Delicious", "Versatile", "Cuisine", "Texture", "Flavor"],
-            target_keywords=["culinary", "delectable", "gastronomy"]
+            ideal_response=(user_transcript or ""),
+            feedback_markdown=fallback_feedback,
+            keywords=None,
+            target_keywords=[]
+        )
+
+async def formulate_strategy_async(
+    state: AgentState, 
+    current_metrics: SignalMetrics, 
+    current_part: str = "PART_1",
+    context_override: str = None,
+    user_transcript: str = "",
+    chronic_issues: str = ""
+) -> Intervention:
+    """
+    Decides the next intervention based on the full User Session State (Async).
+    """
+    
+    # Calculate historical averages
+    avg_fluency, avg_coherence, avg_lexical, avg_grammar = 5.0, 5.0, 5.0, 5.0
+    if state.history:
+        f_vals = [h.metrics.fluency_wpm / 15 for h in state.history if h.metrics.fluency_wpm]
+        c_vals = [h.metrics.coherence_score * 9 for h in state.history if h.metrics.coherence_score]
+        l_vals = [h.metrics.lexical_diversity * 15 for h in state.history if h.metrics.lexical_diversity]
+        g_vals = [h.metrics.grammar_complexity * 40 for h in state.history if h.metrics.grammar_complexity]
+        if f_vals: avg_fluency = min(9, sum(f_vals) / len(f_vals))
+        if c_vals: avg_coherence = min(9, sum(c_vals) / len(c_vals))
+        if l_vals: avg_lexical = min(9, sum(l_vals) / len(l_vals))
+        if g_vals: avg_grammar = min(9, sum(g_vals) / len(g_vals))
+    
+    scores = {"Fluency": avg_fluency, "Coherence": avg_coherence, "Lexical": avg_lexical, "Grammar": avg_grammar}
+    lowest_area = min(scores, key=scores.get)
+
+    history_str = "\n".join([
+        f"- Attempt {h.attempt_id}: {h.outcome} (WPM: {h.metrics.fluency_wpm}, Coherence: {h.metrics.coherence_score})" 
+        for h in state.history[-3:]
+    ])
+
+    prompt_template = PromptTemplate(
+        template="""
+        You are an expert IELTS Speaking Examiner. 
+        CURRENT PART: {current_part}
+        GOAL: Assess the user's performance and provide detailed educational feedback.
+        USER PROFILE:
+        - Target Band: {target_band}
+        - Key Weakness: {weakness}
+        - CHRONIC ISSUES: {chronic_issues}
+        USER WEAKNESS PROFILE:
+        - Avg Fluency: {avg_fluency:.1f} | Avg Coherence: {avg_coherence:.1f}
+        - Avg Lexical: {avg_lexical:.1f} | Avg Grammar: {avg_grammar:.1f}
+        - LOWEST SCORE AREA: {lowest_area}
+        USER STATE:
+        - Stress Level: {stress_level:.2f}
+        EXTRA CONTEXT:
+        {context_override}
+        USER TRANSCRIPT:
+        {user_transcript}
+        CURRENT ATTEMPT METRICS:
+        - WPM: {wpm} | Coherence: {coherence}
+        - Lexical: {lexical_diversity} | Grammar: {grammar_complexity}
+        FEEDBACK: Be constructive. Provide a Band 9 'ideal_response'.
+        {format_instructions}
+        """,
+        input_variables=["stress_level", "wpm", "coherence", "lexical_diversity", "grammar_complexity", "current_part", "target_band", "weakness", "user_transcript", "avg_fluency", "avg_coherence", "avg_lexical", "avg_grammar", "lowest_area", "chronic_issues", "context_override"],
+        partial_variables={"format_instructions": parser.get_format_instructions()}
+    )
+
+    try:
+        formatted = prompt_template.format(
+            stress_level=state.stress_level,
+            wpm=current_metrics.fluency_wpm,
+            coherence=current_metrics.coherence_score,
+            lexical_diversity=current_metrics.lexical_diversity,
+            grammar_complexity=current_metrics.grammar_complexity,
+            current_part=current_part,
+            target_band=state.target_band,
+            weakness=state.weakness,
+            user_transcript=user_transcript or "No transcript.",
+            avg_fluency=avg_fluency,
+            avg_coherence=avg_coherence,
+            avg_lexical=avg_lexical,
+            avg_grammar=avg_grammar,
+            lowest_area=lowest_area,
+            chronic_issues=chronic_issues or "None.",
+            context_override=context_override or "None provided."
+        )
+        
+        response = await llm.ainvoke(formatted)
+        content = response.content.strip()
+        
+        json_match = re.search(r"```json\s*(.*?)\s*```", content, re.DOTALL)
+        if json_match:
+            content = json_match.group(1).strip()
+        else:
+            match = re.search(r"\{.*\}", content, re.DOTALL)
+            if match:
+                content = match.group(0)
+        
+        return parser.parse(content)
+        
+    except Exception as e:
+        print(f"ASYNC AGENT ERROR: {e}")
+        return Intervention(
+            action_id="MAINTAIN",
+            next_task_prompt="Continue.",
+            constraints={"timer": 45},
+            ideal_response=user_transcript or "",
+            feedback_markdown="Evaluasi AI tertunda karena trafik tinggi. Teruslah berlatih."
         )

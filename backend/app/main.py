@@ -36,9 +36,10 @@ class RateLimiter:
         if len(self.requests[client_id]) < self.limit:
             self.requests[client_id].append(now)
             return True
-            
-        # Optional: Periodic cleanup of all inactive clients to prevent memory leak
-        if len(self.requests) > 1000: # Simple threshold
+        
+        # Periodic cleanup of all inactive clients to prevent memory leak
+        # Must be before return False so it is actually reachable
+        if len(self.requests) > 1000:
             self.cleanup()
             
         return False
@@ -83,7 +84,10 @@ async def rate_limiting_middleware(request: Request, call_next):
         # Proxy-safe IP detection
         client_ip = request.headers.get("X-Forwarded-For") or request.client.host
         if not audio_limiter.is_allowed(client_ip):
-            raise HTTPException(status_code=429, detail="Rate limit exceeded. Try again in a minute.")
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Rate limit exceeded. Try again in a minute."}
+            )
     return await call_next(request)
 
 @app.exception_handler(Exception)
@@ -116,7 +120,7 @@ def health_check():
     return {"status": "system_active", "mode": "performance_optimized"}
 
 @app.post("/api/submit-audio")
-def process_audio_attempt(
+async def process_audio_attempt(
     file: UploadFile = File(...), 
     task_id: str = Form(...), 
     is_retry: bool = Form(False),
@@ -151,7 +155,7 @@ def process_audio_attempt(
         except ValueError:
             pass
 
-        intervention = process_user_attempt(
+        intervention = await process_user_attempt(
             file_path=temp_filename,
             task_id=task_id,
             db=db,

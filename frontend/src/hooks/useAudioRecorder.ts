@@ -40,14 +40,47 @@ export function useAudioRecorder() {
   }, []);
 
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording) {
-      stopTimeoutRef.current = setTimeout(() => {
-        mediaRecorderRef.current?.stop();
-        setIsRecording(false);
-        stopTimeoutRef.current = null;
-      }, 500);
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || !isRecording) return;
+
+    // Update UI immediately.
+    setIsRecording(false);
+
+    // Clear any existing stop timer.
+    if (stopTimeoutRef.current) {
+      clearTimeout(stopTimeoutRef.current);
+      stopTimeoutRef.current = null;
     }
-  }, [isRecording]);
+
+    try {
+      // Flush the last buffered chunk before stopping.
+      if (recorder.state === "recording") {
+        recorder.requestData();
+      }
+    } catch (err) {
+      console.error("MediaRecorder requestData error:", err);
+    }
+
+    try {
+      if (recorder.state !== "inactive") {
+        recorder.stop();
+      }
+    } catch (err) {
+      console.error("MediaRecorder stop error:", err);
+    }
+
+    // Fallback: if onstop doesn't fire, release mic and allow retry.
+    stopTimeoutRef.current = setTimeout(() => {
+      try {
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+        }
+      } catch (err) {
+        console.error("Error stopping mic stream:", err);
+      }
+      stopTimeoutRef.current = null;
+    }, 2500);
+  }, [isRecording, stream]);
 
   // CLEANUP: Ensure mic and timers are released on unmount
   useEffect(() => {

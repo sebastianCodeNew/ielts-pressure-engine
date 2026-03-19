@@ -115,8 +115,10 @@ export default function ExamSimulator() {
   const [examPart, setExamPart] = useState<"INTRO" | "PART_1" | "PART_2" | "PART_3" | "FINISHED">("INTRO");
   const [feedback, setFeedback] = useState<FeedbackData | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [stopping, setStopping] = useState(false);
   const processingRef = useRef(false);
   const startingRef = useRef(false);
+  const processedBlobRef = useRef<Blob | null>(null);
 
   // Educational Review Flow
   const [isReviewing, setIsReviewing] = useState(false);
@@ -127,8 +129,8 @@ export default function ExamSimulator() {
   const [isPlayingMirror, setIsPlayingMirror] = useState(false);
   const audioMirrorRef = useRef<HTMLAudioElement | null>(null);
 
-  // Vocabulary HUD State
-  const [wordBank, setWordBank] = useState<{ word: string; translation?: string }[]>([]);
+  // Checkpoint Words HUD State
+  const [wordBank, setWordBank] = useState<{ word: string; translation?: string; meaning?: string }[]>([]);
 
   // Prep Phase State (Part 2)
   const [isPrepPhase, setIsPrepPhase] = useState(false);
@@ -156,6 +158,19 @@ export default function ExamSimulator() {
         if (data.status === "COMPLETED") {
           setExamPart("FINISHED");
         } else {
+          if (data.checkpoint_words && data.checkpoint_words.length > 0) {
+            const words: string[] = data.checkpoint_words;
+            const tr: string[] = data.checkpoint_words_translated || [];
+            const mn: string[] = data.checkpoint_words_meanings || [];
+            setWordBank(words.map((w: string, i: number) => ({
+              word: w,
+              translation: tr[i],
+              meaning: mn[i]
+            })));
+          } else {
+            setWordBank([]);
+          }
+
           // Hardening Path: If we have an existing session, check if the last attempt needs review
           const history = await ApiClient.getDetailedHistory("default_user");
           const lastAttempt = history[0];
@@ -189,7 +204,10 @@ export default function ExamSimulator() {
         }
       }).catch(() => {
         localStorage.removeItem("ielts_exam_session_id");
+        startExam();
       });
+    } else {
+      startExam();
     }
   }, []);
 
@@ -222,6 +240,28 @@ export default function ExamSimulator() {
   }, [isRecording]);
 
   // --- HANDLERS ---
+  const handleStopRecording = () => {
+    setErrorStatus(null);
+    setStopping(true);
+    stopRecording();
+  };
+
+  // Watchdog: if user pressed Stop but we never get an audioBlob, don't get stuck.
+  useEffect(() => {
+    if (!stopping) return;
+    if (audioBlob) {
+      setStopping(false);
+      return;
+    }
+
+    const t = setTimeout(() => {
+      setStopping(false);
+      setErrorStatus("Recording didn’t finalize. Please try recording again.");
+      setAudioBlob(null);
+    }, 3500);
+    return () => clearTimeout(t);
+  }, [stopping, audioBlob, setAudioBlob]);
+
   const handleGetHint = async () => {
     if (!sessionId) return;
     try {
@@ -230,7 +270,7 @@ export default function ExamSimulator() {
       setShowHint(true);
     } catch (e) { 
       console.error(e); 
-      setErrorStatus("Gagal mengambil bantuan. Coba sesaat lagi.");
+      setErrorStatus("Failed to fetch hint. Please try again shortly.");
     }
   };
 
@@ -243,7 +283,27 @@ export default function ExamSimulator() {
       setExamPart("PART_1");
       const initialPrompt = session.current_prompt || "Welcome. Let's begin with Part 1. Can you tell me about your hometown?";
       setFeedback({ next_task_prompt: initialPrompt });
-      setWordBank(session.initial_keywords || []);
+      if (session.checkpoint_words && session.checkpoint_words.length > 0) {
+        const words: string[] = session.checkpoint_words;
+        const tr: string[] = session.checkpoint_words_translated || [];
+        const mn: string[] = session.checkpoint_words_meanings || [];
+        setWordBank(words.map((w: string, i: number) => ({
+          word: w,
+          translation: tr[i],
+          meaning: mn[i]
+        })));
+      } else if (session.initial_keywords && session.initial_keywords.length > 0) {
+        const words: string[] = session.initial_keywords;
+        const tr: string[] = session.initial_keywords_translated || [];
+        const mn: string[] = session.initial_keywords_meanings || [];
+        setWordBank(words.map((w: string, i: number) => ({
+          word: w,
+          translation: tr[i],
+          meaning: mn[i]
+        })));
+      } else {
+        setWordBank([]);
+      }
       speak(initialPrompt);
     } catch (e) {
       console.error(e);
@@ -291,8 +351,18 @@ export default function ExamSimulator() {
       localStorage.removeItem("pending_part2_prep");
       setIsPrepPhase(true);
       setPrepTimer(60);
+      setFeedback((prev) => ({
+        ...(prev || {}),
+        next_task_prompt: pendingNextPrompt || prev?.next_task_prompt,
+        next_task_prompt_translated: prev?.next_task_prompt_translated,
+      } as FeedbackData));
       speak("You now have one minute to prepare your talk. You can make some notes if you wish. I'll tell you when to start.");
     } else if (pendingNextPrompt) {
+      setFeedback((prev) => ({
+        ...(prev || {}),
+        next_task_prompt: pendingNextPrompt,
+        next_task_prompt_translated: prev?.next_task_prompt_translated,
+      } as FeedbackData));
       speak(pendingNextPrompt);
       setPendingNextPrompt(null);
     }
@@ -300,25 +370,35 @@ export default function ExamSimulator() {
 
   // --- SUBMISSION EFFECT ---
   useEffect(() => {
-    if (audioBlob && sessionId && !processingRef.current) {
+    if (audioBlob && sessionId && !processingRef.current && processedBlobRef.current !== audioBlob) {
       const submit = async () => {
+        processedBlobRef.current = audioBlob;
         processingRef.current = true;
         setProcessing(true);
         setErrorStatus(null);
         try {
+          if (audioBlob.size < 1500) {
+            throw new Error("Audio too short or empty. Please record for at least 2-3 seconds and try again.");
+          }
+
           const data = await ApiClient.submitExamAudio(sessionId, audioBlob, isRetaking);
           setFeedback(data);
           setIsRetaking(false);
-          
-          if (data.target_keywords && data.target_keywords.length > 0) {
-            setWordBank(data.target_keywords.map(w => ({ word: w })));
-          }
-          if (data.realtime_word_bank && data.realtime_word_bank.length > 0) {
+
+          // Prefer checkpoint words if provided
+          if (data.checkpoint_words && data.checkpoint_words.length > 0) {
+            const words = data.checkpoint_words;
+            const tr = data.checkpoint_words_translated || [];
+            const mn = data.checkpoint_words_meanings || [];
+            setWordBank(words.map((w, i) => ({ word: w, translation: tr[i], meaning: mn[i] })));
+          } else if (data.realtime_word_bank && data.realtime_word_bank.length > 0) {
             const paired = data.realtime_word_bank.map((word, i) => ({
               word,
               translation: data.realtime_word_bank_translated?.[i]
             }));
             setWordBank(paired);
+          } else if (data.target_keywords && data.target_keywords.length > 0) {
+            setWordBank(data.target_keywords.map(w => ({ word: w })));
           }
 
           const session = await ApiClient.getExamStatus(sessionId);
@@ -344,6 +424,7 @@ export default function ExamSimulator() {
           setErrorStatus(e.message || "Failed to submit response. Please try again.");
         } finally {
           setProcessing(false);
+          setStopping(false);
           processingRef.current = false;
           setAudioBlob(null);
         }
@@ -567,7 +648,7 @@ export default function ExamSimulator() {
               </div>
               <div className="text-2xl font-medium text-zinc-100 leading-relaxed min-h-[80px]">
                 {isPrepPhase
-                  ? "Sila perhatikan kartu soal di bawah. Anda punya 1 menit persiapan."
+                  ? "Please look at the task card below. You have 1 minute to prepare."
                   : (feedback?.next_task_prompt || "Please describe the room you are in right now.").split('\n\nYou should say:')[0]}
               </div>
 
@@ -669,15 +750,29 @@ export default function ExamSimulator() {
             <div className="bg-zinc-900/40 border border-zinc-800 p-6 rounded-3xl animate-in fade-in slide-in-from-top-4 duration-700">
               <div className="flex items-center gap-2 mb-4">
                 <Lightbulb size={16} className="text-yellow-500" />
-                <span className="text-xs font-black uppercase tracking-widest text-zinc-500">Try Using These Words</span>
+                <span className="text-xs font-black uppercase tracking-widest text-zinc-500">Checkpoint Words (Required)</span>
               </div>
               <div className="flex flex-wrap gap-3">
                 {wordBank.map((item, idx) => (
-                  <div key={idx} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl transition-all hover:scale-105 cursor-default group flex flex-col items-center">
+                  <div
+                    key={idx}
+                    className={`px-4 py-2 border rounded-xl transition-all hover:scale-105 cursor-default group flex flex-col items-center ${
+                      (feedback?.checkpoint_words_hit || feedback?.keywords_hit || []).some(
+                        (u) => u.toLowerCase() === item.word.toLowerCase(),
+                      )
+                        ? "bg-emerald-900/30 border-emerald-700/60"
+                        : "bg-zinc-800 hover:bg-zinc-700 border-zinc-700"
+                    }`}
+                  >
                     <span className="text-sm font-bold text-zinc-300 group-hover:text-white uppercase tracking-tight">{item.word}</span>
                     {item.translation && (
                       <span className="text-[10px] text-zinc-500 font-medium italic border-t border-zinc-700/50 mt-1 pt-1 w-full text-center">
                         {item.translation}
+                      </span>
+                    )}
+                    {item.meaning && (
+                      <span className="text-[10px] text-zinc-500 font-medium mt-1 w-full text-center">
+                        {item.meaning}
                       </span>
                     )}
                   </div>
@@ -715,7 +810,8 @@ export default function ExamSimulator() {
               </button>
             ) : (
               <button
-                onClick={stopRecording}
+                disabled={processing || stopping}
+                onClick={handleStopRecording}
                 className="group w-24 h-24 bg-zinc-100 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95"
               >
                 <Square size={32} className="text-zinc-950" />
@@ -727,6 +823,8 @@ export default function ExamSimulator() {
                 ? "Use this time to plan your answer"
                 : isRecording
                   ? "Listening... Speak clearly"
+                  : stopping
+                    ? "Finalizing recording..."
                   : isSpeaking
                     ? "Examiner is speaking..."
                     : isRetaking

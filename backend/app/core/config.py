@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     DEEPINFRA_BASE_URL: str = "https://api.deepinfra.com/v1/openai"
     
     # Models
-    EVALUATOR_MODEL: str = "meta-llama/Llama-3.3-70B-Instruct"
+    EVALUATOR_MODEL: str = "meta-llama/Llama-3.2-3B-Instruct"
     TRANSLATOR_MODEL: str = "meta-llama/Llama-3.2-3B-Instruct"
     
     # Database

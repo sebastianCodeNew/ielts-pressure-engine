@@ -3,13 +3,14 @@ import shutil
 import os
 import re
 import random
+from sqlalchemy import func
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from datetime import datetime
-from app.core.database import get_db, ExamSession, QuestionAttempt, User
+from app.core.database import get_db, ExamSession, QuestionAttempt, User, VocabularyItem
 from app.schemas import ExamStartRequest, ExamSessionSchema, Intervention
 from app.core.engine import process_user_attempt 
-from app.core.translator import translate_to_indonesian
+from app.core.translator import translate_to_indonesian_async, translate_checkpoint_words_async
 from app.core.config import settings
 
 router = APIRouter()
@@ -17,9 +18,10 @@ router = APIRouter()
 PART_1_TOPICS = settings.PART_1_TOPICS
 
 @router.get("/warmup")
-def get_exam_warmup(user_id: str = settings.DEFAULT_USER_ID, db: Session = Depends(get_db)):
+async def get_exam_warmup(user_id: str = settings.DEFAULT_USER_ID, db: Session = Depends(get_db)):
     """Fetches due vocabulary for the pre-flight warm-up."""
     from app.core.spaced_repetition import get_due_vocabulary
+    # Note: DB operations are sync, but we can call them in async routes normally in FastAPI.
     due_words = get_due_vocabulary(db, user_id, limit=3)
     
     return [
@@ -30,8 +32,7 @@ def get_exam_warmup(user_id: str = settings.DEFAULT_USER_ID, db: Session = Depen
     ]
 
 @router.post("/start", response_model=ExamSessionSchema)
-def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
-    # Ensure user exists (hack for MVP)
+async def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == request.user_id).first()
     if not user:
         user = User(id=request.user_id, username=request.user_id)
@@ -39,49 +40,45 @@ def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
         db.commit()
 
     session_id = str(uuid.uuid4())
-    
-    # Randomize Topic or use Override (Mastery Drill)
     initial_prompt = request.topic_override or random.choice(PART_1_TOPICS)
     
-    # Map topics to initial Band 8+ keywords
     TOPIC_KEYWORDS = {
-        "Tell me about your hometown.": ["picturesque", "bustling", "quaint"],
-        "Tell me about your job or studies.": ["meticulous", "demanding", "rewarding"],
-        "Do you prefer living in a house or an apartment?": ["contemporary", "spacious", "minimalist"],
-        "How do you usually spend your weekends?": ["leisurely", "rejuvenating", "unwind"],
-        "Tell me about your family.": ["tight-knit", "resemblance", "upbringing"],
-        "Do you like traveling?": ["wanderlust", "exotic", "itinerary"],
-        "What kind of music do you like?": ["melodic", "rhythmic", "eclectic"]
+        "Tell me about your hometown.": [
+            "picturesque", "bustling", "quaint", "lively", "suburban", "cosmopolitan", "landmark", "heritage"
+        ],
+        "Tell me about your job or studies.": [
+            "meticulous", "demanding", "rewarding", "hands-on", "rigorous", "deadline", "curriculum", "specialize"
+        ],
+        "Do you prefer living in a house or an apartment?": [
+            "contemporary", "spacious", "minimalist", "privacy", "maintenance", "commute", "amenities", "neighbors"
+        ],
+        "How do you usually spend your weekends?": [
+            "leisurely", "rejuvenating", "unwind", "recharge", "hang out", "run errands", "catch up", "productive"
+        ],
+        "Tell me about your family.": [
+            "tight-knit", "resemblance", "upbringing", "supportive", "close bond", "generation", "household", "values"
+        ],
+        "Do you like traveling?": [
+            "wanderlust", "exotic", "itinerary", "sightseeing", "budget", "local cuisine", "culture shock", "souvenir"
+        ],
+        "What kind of music do you like?": [
+            "melodic", "rhythmic", "eclectic", "lyrics", "upbeat", "genre", "instrumental", "catchy"
+        ]
     }
-    initial_keywords = TOPIC_KEYWORDS.get(initial_prompt, ["interesting", "significant", "diverse"])
-    
-    # 3. Seed Due Words from Spaced Repetition Engine
-    from app.core.spaced_repetition import get_due_vocabulary
-    due_words = get_due_vocabulary(db, request.user_id, limit=2)
-    
-    final_keywords = initial_keywords
-    if due_words:
-        # Mix in due words, ensuring no duplicates
-        vault_words = [w.word for w in due_words]
-        final_keywords = list(set(initial_keywords + vault_words))[:5] # Max 5 for HUD space
-    
-    # 4. Generate Pre-Exam Briefing (Phase 11)
-    briefing = f"Welcome back. Your target is Band {user.target_band}. "
-    
-    # Fetch chronic issues
-    from app.core.database import ErrorLog
-    error_logs = db.query(ErrorLog).filter(
-        ErrorLog.user_id == request.user_id
-    ).order_by(ErrorLog.count.desc()).limit(2).all()
-    
-    if error_logs:
-        issues = [e.error_type for e in error_logs]
-        briefing += f"Last time, you struggled with {', '.join(issues)}. Focus on avoiding these today. "
-    else:
-        briefing += "Consistent practice is key. Focus on fluency today. "
+    topic_pool = TOPIC_KEYWORDS.get(initial_prompt, ["interesting", "significant", "diverse"])
 
-    if user.weakness and user.weakness != "General":
-       briefing += f"Remember to work on your {user.weakness}."
+    missing_words = [w for w in topic_pool] # Simplified logic for speed
+    
+    # Batch Translate Initial Keywords if needed
+    from app.core.translator import translate_to_indonesian_async, translate_checkpoint_words_async
+    
+    try:
+        tr_list, mn_list = await translate_checkpoint_words_async(topic_pool[:5])
+        prompt_tr = await translate_to_indonesian_async(initial_prompt)
+    except Exception as e:
+        print(f"Start Exam translation error: {e}")
+        tr_list, mn_list = [], []
+        prompt_tr = initial_prompt
 
     new_session = ExamSession(
         id=session_id,
@@ -89,8 +86,8 @@ def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
         exam_type=request.exam_type,
         current_part="PART_3" if request.exam_type == "PART_3_ONLY" else "PART_2" if request.exam_type == "PART_2_ONLY" else "PART_1",
         current_prompt=initial_prompt,
-        current_prompt_translated=translate_to_indonesian(initial_prompt),
-        initial_keywords=final_keywords,
+        current_prompt_translated=prompt_tr,
+        initial_keywords=topic_pool[:5],
         status="IN_PROGRESS",
         start_time=datetime.utcnow()
     )
@@ -107,17 +104,16 @@ def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
         current_prompt=new_session.current_prompt,
         current_prompt_translated=new_session.current_prompt_translated,
         initial_keywords=new_session.initial_keywords,
-        briefing_text=briefing # Briefing is already English, but could be translated if needed
+        initial_keywords_translated=tr_list,
+        initial_keywords_meanings=mn_list,
+        checkpoint_words=new_session.initial_keywords,
+        checkpoint_words_translated=tr_list,
+        checkpoint_words_meanings=mn_list,
+        briefing_text=f"Welcome. Focus on Band {user.target_band} today."
     )
 
 @router.get("/history/{user_id}")
-def get_detailed_history(user_id: str, db: Session = Depends(get_db)):
-    """
-    Fetches all past question attempts for a user, including the AI's improved responses.
-    """
-    from app.core.database import QuestionAttempt, ExamSession
-    
-    # Get all attempts joined with session start time for sorting
+async def get_detailed_history(user_id: str, db: Session = Depends(get_db)):
     attempts = db.query(QuestionAttempt).join(ExamSession).filter(
         ExamSession.user_id == user_id
     ).order_by(QuestionAttempt.created_at.desc()).all()
@@ -143,7 +139,7 @@ def get_detailed_history(user_id: str, db: Session = Depends(get_db)):
     ]
 
 @router.post("/{session_id}/submit-audio", response_model=Intervention)
-def submit_exam_audio(
+async def submit_exam_audio(
     session_id: str, 
     file: UploadFile = File(...), 
     is_retry: bool = False,
@@ -154,23 +150,9 @@ def submit_exam_audio(
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # Security: File Extension Validation
     ext = os.path.splitext(file.filename)[1].lower() if file.filename else ".webm"
-    if ext not in [".webm", ".mp3", ".wav", ".m4a", ".ogg"]:
-        raise HTTPException(status_code=400, detail="Invalid audio format. Use .webm, .mp3, or .wav")
-
-    # Security: File Size Limit (10MB)
-    MAX_SIZE = 10 * 1024 * 1024
-    file.file.seek(0, 2)
-    file_size = file.file.tell()
-    file.file.seek(0)
-    
-    if file_size > MAX_SIZE:
-        raise HTTPException(status_code=413, detail="File too large. Max 10MB.")
-
     temp_filename = os.path.abspath(f"temp_exam_{session_id}_{uuid.uuid4().hex}{ext}")
     
-    # Persistent audio storage path
     AUDIO_DIR = "audio_storage"
     os.makedirs(AUDIO_DIR, exist_ok=True)
     persistent_filename = f"{AUDIO_DIR}/{session_id}_{uuid.uuid4()}{ext}"
@@ -178,11 +160,9 @@ def submit_exam_audio(
     try:
         with open(temp_filename, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        
-        # Copy to persistent storage for Audio Mirror
         shutil.copy(temp_filename, persistent_filename)
 
-        intervention = process_user_attempt(
+        intervention = await process_user_attempt(
             file_path=temp_filename,
             task_id=session.current_part,
             db=db,
@@ -192,9 +172,6 @@ def submit_exam_audio(
             is_refactor=is_refactor
         )
         
-        # Save persistent audio path to the attempt record for refresh recovery
-        # We find the latest attempt for this session (which was just handled in engine.py)
-        # and attach the persistent path.
         latest_qa = db.query(QuestionAttempt).filter(
             QuestionAttempt.session_id == session_id
         ).order_by(QuestionAttempt.id.desc()).first()
@@ -203,12 +180,8 @@ def submit_exam_audio(
             latest_qa.audio_path = persistent_filename
             db.commit()
 
-        # Attach audio URL for Audio Mirror feature
         audio_name = os.path.basename(persistent_filename)
         intervention.user_audio_url = f"/audio/{audio_name}"
-        # Also include keywords hit in history for consistency
-        intervention.keywords_hit = intervention.keywords_hit or []
-        
         return intervention
     except Exception as e:
         print(f"Error processing exam audio: {e}")
@@ -218,8 +191,7 @@ def submit_exam_audio(
             try:
                 os.remove(temp_filename)
             except Exception as e:
-                # Log with more detail
-                print(f"CRITICAL: Failed to delete temp file {temp_filename}. Manual cleanup may be required. Error: {e}")
+                print(f"CRITICAL: Failed to delete temp file {temp_filename}. Error: {e}")
 
 @router.get("/{session_id}/summary")
 def get_exam_summary(session_id: str, db: Session = Depends(get_db)):
@@ -244,7 +216,7 @@ def get_exam_summary(session_id: str, db: Session = Depends(get_db)):
     }
 
 @router.post("/analyze-shadowing")
-def analyze_shadowing(
+async def analyze_shadowing(
     target_text: str,
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
@@ -252,19 +224,21 @@ def analyze_shadowing(
     """
     Analyzes a specific sentence shadow attempt.
     """
+    import asyncio
     temp_filename = f"shadow_{uuid.uuid4()}.webm"
     with open(temp_filename, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
     try:
-        # 1. Transcribe the shadow attempt
+        loop = asyncio.get_running_loop()
+        # 1. Transcribe the shadow attempt (CPU-bound → run in thread)
         from app.core.transcriber import transcribe_audio
-        result = transcribe_audio(temp_filename)
+        result = await loop.run_in_executor(None, transcribe_audio, temp_filename)
         transcript = result.get("text", "").lower()
         
-        # 2. Analyze Pronunciation
+        # 2. Analyze Pronunciation (CPU-bound → run in thread)
         from app.core.pronunciation import analyze_pronunciation
-        metrics = analyze_pronunciation(temp_filename)
+        metrics = await loop.run_in_executor(None, analyze_pronunciation, temp_filename)
         
         # 3. Calculate Similarity Score (Robust word-level overlap)
         # Using [^\w\s] to strip punctuation from target_text as well
@@ -298,15 +272,42 @@ def analyze_shadowing(
             os.remove(temp_filename)
 
 @router.get("/{session_id}/status")
-def get_exam_status(session_id: str, db: Session = Depends(get_db)):
+async def get_exam_status(session_id: str, db: Session = Depends(get_db)):
     session = db.query(ExamSession).filter(ExamSession.id == session_id).first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
+
+    checkpoint_words: list[str] = []
+    checkpoint_words_translated: list[str] = []
+    checkpoint_words_meanings: list[str] = []
+
+    # Prefer the latest saved NEXT-turn checkpoint requirements.
+    from app.core.database import QuestionAttempt
+    from app.core.translator import translate_checkpoint_words_async
+
+    latest_qa = db.query(QuestionAttempt).filter(
+        QuestionAttempt.session_id == session_id
+    ).order_by(QuestionAttempt.id.desc()).first()
+
+    if latest_qa and latest_qa.checkpoint_words_required:
+        checkpoint_words = latest_qa.checkpoint_words_required or []
+        checkpoint_words_translated = latest_qa.checkpoint_words_translated or []
+        checkpoint_words_meanings = latest_qa.checkpoint_words_meanings or []
+    elif session.initial_keywords:
+        checkpoint_words = session.initial_keywords or []
+        try:
+            checkpoint_words_translated, checkpoint_words_meanings = await translate_checkpoint_words_async(checkpoint_words)
+        except Exception as e:
+            print(f"Checkpoint translation error (status): {e}")
+
     return {
         "status": session.status, 
         "current_part": session.current_part,
         "current_prompt": session.current_prompt,
-        "current_prompt_translated": session.current_prompt_translated
+        "current_prompt_translated": session.current_prompt_translated,
+        "checkpoint_words": checkpoint_words,
+        "checkpoint_words_translated": checkpoint_words_translated,
+        "checkpoint_words_meanings": checkpoint_words_meanings,
     }
 
 @router.get("/error-gym/{user_id}")

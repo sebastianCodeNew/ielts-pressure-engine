@@ -3,14 +3,20 @@ import re
 from datetime import datetime
 from app.schemas import UserAttempt, Intervention, DetailedScores, SignalMetrics
 from app.core.transcriber import transcribe_audio
-from app.core.evaluator import extract_signals
-from app.core.agent import formulate_strategy
 from app.core.state import AgentState, update_state
 from app.core.database import SessionModel, ExamSession, QuestionAttempt, User, VocabularyItem
 from app.core.pronunciation import analyze_pronunciation
+import asyncio
+from app.core.translator import (
+    translate_checkpoint_words_async, 
+    translate_to_indonesian_async,
+    batch_translate_to_indonesian_async
+)
 from app.core.config import settings
+from app.core.evaluator import extract_signals_async
+from app.core.agent import formulate_strategy_async
 
-def process_user_attempt(
+async def process_user_attempt(
     file_path: str, 
     task_id: str, 
     db: Session, 
@@ -20,14 +26,13 @@ def process_user_attempt(
     is_refactor: bool = False
 ) -> Intervention:
     """
-    Orchestrates the full loop: 
+    Orchestrates the full loop (Async/Parallel): 
     Audio -> Text -> Analysis -> Strategy -> State Update
     """
     
-    # 1. LOAD STATE FROM DB
-    current_part = "PART_1" # Default
+    # 1. LOAD STATE FROM DB (Keep sync for now as DB operations are fast)
+    current_part = "PART_1"
     current_prompt = settings.INITIAL_PROMPT
-    
     chronic_issues_str = ""
 
     if is_exam_mode:
@@ -38,12 +43,10 @@ def process_user_attempt(
         current_part = exam_session.current_part
         current_prompt = exam_session.current_prompt or "General topic"
         
-        # Load User Profile
         user = db.query(User).filter(User.id == exam_session.user_id).first()
         target_band = user.target_band if user else "7.5"
         weakness = user.weakness if user else "General"
 
-        # PHASE 11: PERSISTENT MEMORY
         from app.core.database import ErrorLog
         error_logs = db.query(ErrorLog).filter(
             ErrorLog.user_id == exam_session.user_id
@@ -53,30 +56,27 @@ def process_user_attempt(
             issues = [f"{e.error_type} ({e.count}x)" for e in error_logs]
             chronic_issues_str = ", ".join(issues)
 
-        # Load History for Adaptation
         from app.core.state import AttemptResult
         past_attempts = db.query(QuestionAttempt).filter(
             QuestionAttempt.session_id == session_id
         ).order_by(QuestionAttempt.id.asc()).all()
         
-        history = []
-        for p in past_attempts:
-            history.append(AttemptResult(
-                attempt_id=str(p.id),
-                prompt=p.question_text,
-                transcript=p.transcript or "",
-                metrics=SignalMetrics(
-                    fluency_wpm=p.wpm or 0.0,
-                    hesitation_ratio=p.hesitation_ratio or 0.0,
-                    grammar_error_count=0,
-                    filler_count=0,
-                    coherence_score=p.coherence_score or 0.0,
-                    lexical_diversity=p.lexical_diversity or 0.0,
-                    grammar_complexity=p.grammar_complexity or 0.0,
-                    pronunciation_score=p.pronunciation_score or 0.0
-                ),
-                outcome='PASS'
-            ))
+        history = [AttemptResult(
+            attempt_id=str(p.id),
+            prompt=p.question_text,
+            transcript=p.transcript or "",
+            metrics=SignalMetrics(
+                fluency_wpm=p.wpm or 0.0,
+                hesitation_ratio=p.hesitation_ratio or 0.0,
+                grammar_error_count=0,
+                filler_count=0,
+                coherence_score=p.coherence_score or 0.0,
+                lexical_diversity=p.lexical_diversity or 0.0,
+                grammar_complexity=p.grammar_complexity or 0.0,
+                pronunciation_score=p.pronunciation_score or 0.0
+            ),
+            outcome='PASS'
+        ) for p in past_attempts]
 
         current_state = AgentState(
             session_id=session_id,
@@ -89,20 +89,25 @@ def process_user_attempt(
             weakness=weakness
         )
     else:
-        # Legacy/Testing mode support
         current_state = AgentState(session_id=session_id, stress_level=0.5, consecutive_failures=0, fluency_trend="stable")
         current_prompt = "Describe the room you are in right now."
     
-    # 2. TRANSCRIBE
+    # 2. START PARALLEL STAGE 1: Transcription + Prompt Translation
     print(f"--- Processing Attempt (ExamMode={is_exam_mode}, Prompt='{current_prompt}') ---")
-    transcription_error = False
-    try:
-        transcript_data = transcribe_audio(file_path)
-        print(f"DEBUG: Transcript -> {transcript_data['text']}")
-    except Exception as e:
-        print(f"TRANSCRIPTION ERROR: {e}")
-        transcript_data = {"text": "[TRANSRIPTION_FAILED]", "duration": 0.0, "language": "en"}
-        transcription_error = True
+    
+    # Whisper is sync, so we run it in a thread to not block the event loop
+    loop = asyncio.get_running_loop()
+    transcription_task = loop.run_in_executor(None, transcribe_audio, file_path)
+    
+    # Prompt translation (optional but good to overlap)
+    prompt_tr_task = translate_to_indonesian_async(current_prompt)
+    
+    # Wait for transcription to finish before we can do signals
+    transcript_data = await transcription_task
+    current_prompt_tr = await prompt_tr_task
+    
+    print(f"DEBUG: Transcript -> {transcript_data['text']}")
+    transcription_error = transcript_data.get("error", False)
 
     # 3. ANALYZE (Linguistic)
     attempt = UserAttempt(
@@ -110,24 +115,24 @@ def process_user_attempt(
         transcript=transcript_data['text'],
         audio_duration=transcript_data['duration']
     )
-    signals = extract_signals(attempt, current_prompt_text=current_prompt)
     
-    # 4. PRONUNCIATION ANALYSIS
-    try:
-        pron_results = analyze_pronunciation(file_path)
-        signals.pronunciation_score = pron_results.get("pronunciation_score", 0.0)
-        signals.prosody_score = pron_results.get("prosody", 0.0)
-        signals.confidence_score = pron_results.get("confidence_score", 0.0)
-    except Exception as e:
-        print(f"PRONUNCIATION ANALYSIS ERROR: {e}")
-        signals.pronunciation_score = 0.0
-        signals.prosody_score = 0.0
-        signals.confidence_score = 0.0
+    # 4. START PARALLEL STAGE 2: Signals + Pronunciation + Transcript Translation
+    signals_task = extract_signals_async(attempt, current_prompt_text=current_prompt)
+    pron_task = loop.run_in_executor(None, analyze_pronunciation, file_path)
+    transcript_tr_task = translate_to_indonesian_async(attempt.transcript)
     
-    # Context override for Part 3 bridges
-    context_msg = None
+    signals = await signals_task
+    pron_results = await pron_task
+    transcript_tr = await transcript_tr_task
     
-    intervention = formulate_strategy(
+    signals.pronunciation_score = pron_results.get("pronunciation_score", 0.0)
+    signals.prosody_score = pron_results.get("prosody", 0.0)
+    signals.confidence_score = pron_results.get("confidence_score", 0.0)
+    
+    # 5. FORMULATE STRATEGY (Major LLM call)
+    context_msg = f"CURRENT_QUESTION: {current_prompt}"
+    
+    intervention = await formulate_strategy_async(
         current_state, 
         signals, 
         current_part=current_part if is_exam_mode else None,
@@ -137,33 +142,42 @@ def process_user_attempt(
     )
     intervention.user_transcript = attempt.transcript
     intervention.confidence_score = signals.confidence_score
+    intervention.user_transcript_translated = transcript_tr
     
     if transcription_error or not transcript_data['text'].strip() or len(transcript_data['text'].split()) < 2:
         intervention.feedback_markdown = "⚠️ **Microphone Error**: Saya tidak bisa mendengar suara Anda dengan jelas. Tolong pastikan mic aktif dan coba lagi."
         intervention.action_id = "FORCE_RETRY"
-        # Skip costly analysis if no audio
         if not transcript_data['text'].strip() or len(transcript_data['text'].split()) < 2:
             return intervention
     
     # 6. POPULATE RADAR METRICS & UPDATE STATE
     intervention.radar_metrics = {
-        "fluency": round(1.0 + (signals.fluency_wpm / 200.0) * 8.0, 1), # Max 200 WPM
+        "fluency": round(1.0 + (signals.fluency_wpm / 200.0) * 8.0, 1),
         "lexical": round(1.0 + signals.lexical_diversity * 8.0, 1),
         "grammar": round(1.0 + signals.grammar_complexity * 8.0, 1),
         "pronunciation": round(1.0 + signals.pronunciation_score * 8.0, 1)
     }
 
+    # 7. BATCH TRANSLATIONS (End of pipeline)
+    # Collect all English output that needs translation
+    segments_to_translate = [
+        intervention.feedback_markdown,
+        intervention.ideal_response
+    ]
+    # Checkpoint words translation already handled if requested or we can batch it here
+    
+    tr_results = await batch_translate_to_indonesian_async(segments_to_translate)
+    intervention.feedback_translated = tr_results[0]
+    intervention.ideal_response_translated = tr_results[1]
+
     if is_exam_mode:
-        # Update Emotional/Cognitive state for the NEXT turn
         outcome = 'FAIL' if intervention.action_id == 'FAIL' else 'PASS'
         new_state = update_state(current_state, attempt, signals, outcome, current_prompt)
         
-        # Persist to ExamSession for adaptation next turn
         exam_session.stress_level = new_state.stress_level
         exam_session.fluency_trend = new_state.fluency_trend
         exam_session.consecutive_failures = new_state.consecutive_failures
         
-        # Load or create new attempt
         new_qa = None
         if is_retry:
             new_qa = db.query(QuestionAttempt).filter(
@@ -175,12 +189,12 @@ def process_user_attempt(
             new_qa = QuestionAttempt(session_id=session_id, part=current_part)
             db.add(new_qa)
         
-        # KEY HARDENING: Flush to assign ID and status before keyword analysis
         db.flush()
 
-        # Update metadata
         new_qa.question_text = current_prompt
+        new_qa.question_translated = current_prompt_tr
         new_qa.transcript = attempt.transcript
+        new_qa.transcript_translated = transcript_tr
         new_qa.duration_seconds = attempt.audio_duration
         new_qa.wpm = signals.fluency_wpm
         new_qa.coherence_score = signals.coherence_score
@@ -189,38 +203,11 @@ def process_user_attempt(
         new_qa.grammar_complexity = signals.grammar_complexity
         new_qa.pronunciation_score = signals.pronunciation_score
         new_qa.feedback_markdown = intervention.feedback_markdown
+        new_qa.feedback_translated = intervention.feedback_translated
         new_qa.improved_response = intervention.ideal_response
+        new_qa.improved_response_translated = intervention.ideal_response_translated
         
-        # New: Persist Translations (wrapped in try/except to prevent timeout crashes)
-        if current_prompt:
-            try:
-                new_qa.question_translated = translate_to_indonesian(current_prompt)
-            except Exception as e:
-                print(f"Translation error (question): {e}")
-                new_qa.question_translated = None
-        
-        if attempt.transcript:
-            try:
-                new_qa.transcript_translated = translate_to_indonesian(attempt.transcript)
-                intervention.user_transcript_translated = new_qa.transcript_translated
-            except Exception as e:
-                print(f"Translation error (transcript): {e}")
-            
-        if intervention.feedback_markdown:
-            try:
-                new_qa.feedback_translated = translate_to_indonesian(intervention.feedback_markdown)
-                intervention.feedback_translated = new_qa.feedback_translated
-            except Exception as e:
-                print(f"Translation error (feedback): {e}")
-            
-        if intervention.ideal_response:
-            try:
-                new_qa.improved_response_translated = translate_to_indonesian(intervention.ideal_response)
-                intervention.ideal_response_translated = new_qa.improved_response_translated
-            except Exception as e:
-                print(f"Translation error (ideal response): {e}")
-        
-        # Keyword Hit Detection
+        # Keyword + Checkpoint Word Detection (Keep sync for now)
         last_qa = None
         if is_retry:
              # If retrying, we want the attempt BEFORE the current one
@@ -235,70 +222,156 @@ def process_user_attempt(
                 QuestionAttempt.id != new_qa.id
             ).order_by(QuestionAttempt.id.desc()).first()
         
-        if last_qa and last_qa.target_keywords and attempt.transcript:
-            lower_ts = attempt.transcript.lower()
-            hits = []
-            for kw in last_qa.target_keywords:
-                if re.search(rf"\b{re.escape(kw.lower())}\b", lower_ts):
-                    hits.append(kw)
-            intervention.keywords_hit = hits
-            # Persist Keyword Hits
-            new_qa.keywords_hit = hits
-            
-            # --- AUTO-SAVE TO WORD BANK ---
+        # Determine which checkpoint words were REQUIRED for THIS turn
+        required_checkpoint_words: list[str] = []
+        required_checkpoint_words_translated: list[str] = []
+        required_checkpoint_words_meanings: list[str] = []
+
+        if last_qa and last_qa.checkpoint_words_required:
+            required_checkpoint_words = last_qa.checkpoint_words_required or []
+            required_checkpoint_words_translated = last_qa.checkpoint_words_translated or []
+            required_checkpoint_words_meanings = last_qa.checkpoint_words_meanings or []
+        elif not last_qa and exam_session.initial_keywords:
+            # First turn uses initial keywords as checkpoint words
+            required_checkpoint_words = exam_session.initial_keywords or []
+            # Translate once here (also persisted into QA rows below)
+            try:
+                required_checkpoint_words_translated, required_checkpoint_words_meanings = await translate_checkpoint_words_async(required_checkpoint_words)
+            except Exception as e:
+                print(f"Checkpoint translation error (initial): {e}")
+
+        # Compute hits for THIS turn
+        lower_ts = (attempt.transcript or "").lower()
+        checkpoint_hits: list[str] = []
+        if required_checkpoint_words and attempt.transcript:
+            for w in required_checkpoint_words:
+                if re.search(rf"\b{re.escape(w.lower())}\b", lower_ts):
+                    checkpoint_hits.append(w)
+
+        # For backwards compatibility, we keep keywords_hit aligned with checkpoint hits
+        intervention.keywords_hit = checkpoint_hits
+        new_qa.keywords_hit = checkpoint_hits
+
+        # Persist checkpoint compliance for analytics (THIS turn)
+        # Note: the required checkpoint words for THIS turn live on the previous QA row.
+        new_qa.checkpoint_words_hit = checkpoint_hits
+        new_qa.checkpoint_compliance_score = (len(checkpoint_hits) / len(required_checkpoint_words)) if required_checkpoint_words else 1.0
+
+        # Also expose checkpoint results on the API response (THIS turn)
+        intervention.checkpoint_words_hit = checkpoint_hits
+        intervention.checkpoint_compliance_score = new_qa.checkpoint_compliance_score
+
+        # --- AUTO-SAVE TO WORD BANK ---
+        if is_exam_mode and checkpoint_hits:
             from app.core.database import VocabularyItem
-            for word in hits:
-                # Check if it already exists for this user
+            for word in checkpoint_hits:
                 existing_vocab = db.query(VocabularyItem).filter(
                     VocabularyItem.user_id == exam_session.user_id,
                     VocabularyItem.word == word
                 ).first()
                 if not existing_vocab:
-                    # Generic definition for now, or we could generate one
                     vocab_item = VocabularyItem(
                         user_id=exam_session.user_id,
                         word=word,
-                        word_translated=translate_to_indonesian(word),
+                        word_translated=await translate_to_indonesian_async(word),
                         definition="Used correctly in session.",
                         definition_translated="Digunakan dengan benar dalam sesi.",
                         context_sentence=attempt.transcript,
                         source_type="EXAM_HIT"
                     )
                     db.add(vocab_item)
-        elif not last_qa and exam_session.initial_keywords and attempt.transcript:
-            # Check against initial keywords for first turn
-            lower_ts = attempt.transcript.lower()
-            hits = []
-            for kw in exam_session.initial_keywords:
-                if re.search(rf"\b{re.escape(kw.lower())}\b", lower_ts):
-                    hits.append(kw)
-            intervention.keywords_hit = hits
-            # Persist Keyword Hits
-            new_qa.keywords_hit = hits
-            
-            # --- AUTO-SAVE TO WORD BANK ---
-            from app.core.database import VocabularyItem
-            for word in hits:
-                existing_vocab = db.query(VocabularyItem).filter(
-                    VocabularyItem.user_id == exam_session.user_id,
-                    VocabularyItem.word == word
-                ).first()
-                if not existing_vocab:
-                    vocab_item = VocabularyItem(
-                        user_id=exam_session.user_id,
-                        word=word,
-                        word_translated=translate_to_indonesian(word),
-                        definition="Used correctly in initial turn.",
-                        definition_translated="Digunakan dengan benar di turn pertama.",
-                        context_sentence=attempt.transcript,
-                        source_type="EXAM_HIT"
-                    )
-                    db.add(vocab_item)
-        else:
-            intervention.keywords_hit = []
 
-        # Save current keywords for the NEXT turn
+        # Generate NEXT turn checkpoint words
+        next_checkpoint_words: list[str] = []
+        if intervention.realtime_word_bank:
+            pool = list(dict.fromkeys(intervention.realtime_word_bank))
+            import random
+            next_checkpoint_words = random.sample(pool, k=min(3, len(pool)))
+        elif intervention.target_keywords:
+            pool = list(dict.fromkeys(intervention.target_keywords or []))
+            import random
+            next_checkpoint_words = random.sample(pool, k=min(3, len(pool)))
+
+        cp_tr: list[str] = []
+        cp_mn: list[str] = []
+        if next_checkpoint_words:
+            # Store checkpoint word translations/meanings in DB for consistency
+            existing_vocab = db.query(VocabularyItem).filter(
+                VocabularyItem.user_id == exam_session.user_id,
+                VocabularyItem.word.in_(next_checkpoint_words),
+            ).all()
+            vocab_map = {v.word.lower(): v for v in existing_vocab}
+
+            missing_words = [w for w in next_checkpoint_words if w.lower() not in vocab_map]
+            if missing_words:
+                try:
+                    tr_list, mn_list = await translate_checkpoint_words_async(missing_words)
+                except Exception as e:
+                    print(f"Checkpoint translation error (next): {e}")
+                    tr_list, mn_list = [], []
+
+                for i, w in enumerate(missing_words):
+                    tr = tr_list[i] if i < len(tr_list) else await translate_to_indonesian_async(w)
+                    mn = mn_list[i] if i < len(mn_list) else "Makna sederhana tidak tersedia."
+                    v = VocabularyItem(
+                        user_id=exam_session.user_id,
+                        word=w,
+                        word_translated=tr,
+                        definition="IELTS checkpoint word.",
+                        definition_translated=mn,
+                        context_sentence=intervention.next_task_prompt,
+                        source_type="CHECKPOINT_SEED",
+                    )
+                    db.add(v)
+                    vocab_map[w.lower()] = v
+
+                db.flush()
+
+            cp_tr = [
+                (vocab_map.get(w.lower()).word_translated if vocab_map.get(w.lower()) else await translate_to_indonesian_async(w))
+                for w in next_checkpoint_words
+            ]
+            cp_mn = [
+                (vocab_map.get(w.lower()).definition_translated if vocab_map.get(w.lower()) else "Makna sederhana tidak tersedia.")
+                for w in next_checkpoint_words
+            ]
+
+        intervention.checkpoint_words = next_checkpoint_words
+        intervention.checkpoint_words_translated = cp_tr
+        intervention.checkpoint_words_meanings = cp_mn
+
+        # Save checkpoint words for the NEXT turn on this QA
+        new_qa.checkpoint_words_required = next_checkpoint_words
+        new_qa.checkpoint_words_translated = cp_tr
+        new_qa.checkpoint_words_meanings = cp_mn
+
+        # Save current keywords for the NEXT turn (legacy support)
         new_qa.target_keywords = intervention.target_keywords
+
+        # Enforce mandatory checkpoint words (skip if retry/refactor or transcription failed)
+        if required_checkpoint_words and attempt.transcript and attempt.transcript != "[TRANSCRIPTION_FAILED]":
+            missing = [w for w in required_checkpoint_words if w not in checkpoint_hits]
+            if missing:
+                intervention.action_id = "FORCE_RETRY"
+                intervention.refactor_mission = (
+                    "Checkpoint Words wajib dipakai. Ulangi jawaban, dan gunakan kata ini: "
+                    + ", ".join(missing)
+                    + "."
+                )
+                # Re-send the CURRENT checkpoint requirement so UI can show it during retry
+                intervention.checkpoint_words = required_checkpoint_words
+                intervention.checkpoint_words_translated = required_checkpoint_words_translated
+                intervention.checkpoint_words_meanings = required_checkpoint_words_meanings
+                # Persist the same requirement so retries don't accidentally advance the checkpoint
+                new_qa.checkpoint_words_required = required_checkpoint_words
+                new_qa.checkpoint_words_translated = required_checkpoint_words_translated
+                new_qa.checkpoint_words_meanings = required_checkpoint_words_meanings
+                # Keep the same question
+                intervention.next_task_prompt = current_prompt
+                exam_session.current_prompt = current_prompt
+                db.commit()
+                intervention.stress_level = current_state.stress_level
+                return intervention
         
         # Micro-Skill Error Tracking
         from app.core.error_taxonomy import classify_errors
@@ -334,7 +407,7 @@ def process_user_attempt(
             QuestionAttempt.session_id == session_id,
             QuestionAttempt.part == current_part,
             QuestionAttempt.transcript.isnot(None),
-            QuestionAttempt.transcript != "[TRANSRIPTION_FAILED]"
+            QuestionAttempt.transcript != "[TRANSCRIPTION_FAILED]"
         ).scalar()
         
         if part_count >= 3 and current_part == "PART_1":
@@ -359,7 +432,7 @@ def process_user_attempt(
             ).order_by(QuestionAttempt.id.desc()).first()
             p2_context = part2_attempt.transcript if part2_attempt else ""
             
-            intervention = formulate_strategy(
+            intervention = await formulate_strategy_async(
                 current_state, 
                 signals, 
                 current_part="PART_3",
@@ -412,10 +485,15 @@ def process_user_attempt(
             else:
                 exam_session.current_prompt = intervention.next_task_prompt
 
+        # Normal path: persist the authoritative next prompt so the NEXT attempt is evaluated
+        # against the same question shown in the UI.
+        if intervention.next_task_prompt and exam_session.current_prompt not in ["Exam Completed"]:
+            exam_session.current_prompt = intervention.next_task_prompt
+
         # FINAL STEP: Ensure the NEXT prompt is translated (handling transitions)
         if intervention.next_task_prompt:
             try:
-                exam_session.current_prompt_translated = translate_to_indonesian(intervention.next_task_prompt)
+                exam_session.current_prompt_translated = await translate_to_indonesian_async(intervention.next_task_prompt)
                 intervention.next_task_prompt_translated = exam_session.current_prompt_translated
             except Exception as e:
                 print(f"Translation error (next prompt): {e}")

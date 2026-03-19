@@ -23,6 +23,7 @@ import ReactMarkdown from "react-markdown";
 import AudioWaveform from "@/components/AudioWaveform";
 import { ApiClient } from "@/lib/api";
 import { WarmUp } from "@/components/WarmUp";
+import { SmartDrill } from "@/components/SmartDrill";
 import { SmartDiff } from "@/components/SmartDiff";
 import { FlowGauge } from "@/components/FlowGauge";
 
@@ -51,6 +52,13 @@ interface FeedbackData {
   quiz_correct_index?: number;
   // v4.0 Fields - Radar Chart
   radar_metrics?: Record<string, number>;
+}
+
+import { redirect } from "next/navigation";
+
+export default function RootRedirect() {
+  redirect("/exam");
+  return null;
 }
 
 export function TrainingCockpit() {
@@ -163,7 +171,15 @@ export function TrainingCockpit() {
     pronunciation: number;
   }>({ fluency: 0, lexical: 0, grammar: 0, pronunciation: 0 });
 
+  // v5.0 Interactive Learning State
+  const [showDrillModal, setShowDrillModal] = useState(false);
+  const [drillErrorType, setDrillErrorType] = useState<string>("Subject-Verb Agreement");
+  const [masteryXP, setMasteryXP] = useState(1250); // Example starting XP
+  const masteryLevel = Math.floor(masteryXP / 1000) + 1;
+  const xpInLevel = masteryXP % 1000;
+
   const hasNudgedRef = useRef(false);
+  const hasStartedRef = useRef(false);
 
   // Auto-Vocal Nudge Logic
   useEffect(() => {
@@ -204,6 +220,7 @@ export function TrainingCockpit() {
       .catch((e) => console.error(e));
   }, []);
 
+
   const resumeSession = async (sid: string) => {
     try {
       const status = await ApiClient.getExamStatus(sid);
@@ -229,6 +246,22 @@ export function TrainingCockpit() {
   };
 
   const searchParams = useSearchParams();
+  
+  // AUTO-START LOGIC (Phase 12)
+  useEffect(() => {
+    if (typeof window === "undefined" || hasStartedRef.current) return;
+    
+    const sid = searchParams.get("sessionId") || localStorage.getItem("ielts_exam_session_id");
+    
+    if (examPart === "INTRO") {
+      hasStartedRef.current = true;
+      if (sid) {
+        resumeSession(sid);
+      } else {
+        startExam();
+      }
+    }
+  }, [examPart, searchParams]);
   useEffect(() => {
     const sid = searchParams.get("sessionId");
     if (sid && !sessionId) {
@@ -334,7 +367,6 @@ export function TrainingCockpit() {
             sessionId,
             currentBlob,
             submissionIntent === "RETRY",
-            submissionIntent === "REFACTOR"
           );
           
           setSubmissionIntent("NORMAL"); // Reset intent
@@ -353,6 +385,7 @@ export function TrainingCockpit() {
             setCelebrationKeywords(data.keywords_hit);
             setUsedKeywords((prev) => [...new Set([...prev, ...(data.keywords_hit || [])])]);
             setShowCelebration(true);
+            setMasteryXP(prev => prev + (data.keywords_hit?.length || 0) * 50); // Significant XP for keywords
             setTimeout(() => setShowCelebration(false), 4000);
           }
 
@@ -742,6 +775,23 @@ export function TrainingCockpit() {
             </span>
           </div>
 
+          {/* MASTERY XP BAR */}
+          <div className="flex items-center gap-3 bg-zinc-900/50 px-4 py-1.5 rounded-full border border-zinc-800">
+             <div className="flex flex-col items-start min-w-[60px]">
+                <span className="text-[8px] font-black text-emerald-500 uppercase leading-none">Level {masteryLevel}</span>
+                <span className="text-[10px] font-bold text-white leading-none mt-1">Mastery</span>
+             </div>
+             <div className="w-32 h-1.5 bg-zinc-800 rounded-full overflow-hidden relative">
+                <div 
+                  className="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] transition-all duration-1000"
+                  style={{ width: `${(xpInLevel / 1000) * 100}%` }}
+                />
+             </div>
+             <span className="text-[10px] font-black text-zinc-500 tabular-nums">
+               {xpInLevel}/1k
+             </span>
+          </div>
+
           {/* PRESSURE GAUGE */}
           <div className="flex items-center gap-3 bg-zinc-900/50 px-4 py-1.5 rounded-full border border-zinc-800">
             <div className="flex flex-col items-center">
@@ -832,8 +882,25 @@ export function TrainingCockpit() {
 
         {/* MICRO-WINS RADAR (v4.0) */}
         <div className="absolute top-8 right-8 w-40 opacity-70 hover:opacity-100 transition-opacity">
-          <MicroWinsRadar scores={microWins} />
+          <MicroWinsRadar scores={microWins} targetScore={parseFloat(targetBand)} />
         </div>
+
+        {/* COACH INSIGHT HUD (v5.0) */}
+        {feedback && (
+          <div className="absolute top-24 right-8 w-48 animate-in slide-in-from-right duration-700">
+            <div className="bg-indigo-600/10 border border-indigo-500/20 backdrop-blur-xl p-4 rounded-2xl shadow-xl">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-5 h-5 bg-indigo-500 rounded-md flex items-center justify-center">
+                  <Wand2 size={12} className="text-white" />
+                </div>
+                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Coach Tip</span>
+              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed font-medium">
+                {feedback.reasoning || "Focus on using complex connectors to bridge your ideas naturally."}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* MAIN INTERACTION ZONE */}
         <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-8 space-y-12">
@@ -1400,7 +1467,7 @@ export function TrainingCockpit() {
                     </p>
 
                     {isGateLocked && (
-                      <div className="flex gap-2">
+                      <div className="flex flex-col gap-2">
                         <button
                           disabled={isVerifyingGate}
                           onClick={() => {
@@ -1416,15 +1483,35 @@ export function TrainingCockpit() {
                           )}
                           {isVerifyingGate
                             ? "Recording... Say it correctly!"
-                            : "Record Fit to Unlock"}
+                            : "Record Fix to Unlock"}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDrillErrorType("Subject-Verb Agreement"); // Default or detected
+                            setShowDrillModal(true);
+                          }}
+                          className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg font-bold text-[10px] uppercase tracking-widest transition-all"
+                        >
+                          Practice with Smart Drill
                         </button>
                       </div>
                     )}
 
                     {feedback.reasoning && !isGateLocked && (
-                      <p className="mt-2 text-[9px] text-zinc-500 font-bold uppercase tracking-tight flex items-center gap-1">
-                        💡 {feedback.reasoning}
-                      </p>
+                      <div className="mt-2 flex items-center justify-between">
+                        <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-tight flex items-center gap-1">
+                          💡 {feedback.reasoning}
+                        </p>
+                        <button
+                          onClick={() => {
+                            setDrillErrorType("Subject-Verb Agreement");
+                            setShowDrillModal(true);
+                          }}
+                          className="text-[9px] bg-indigo-500/10 text-indigo-400 px-2 py-1 rounded hover:bg-indigo-500/20 transition-all font-black uppercase tracking-widest"
+                        >
+                          🔥 Learn This Skill
+                        </button>
+                      </div>
                     )}
                   </div>
                 )}
@@ -1733,6 +1820,20 @@ export function TrainingCockpit() {
           onClose={() => setShowQuiz(false)}
         />
       )}
+
+      {/* SMART DRILL MODAL (v5.0) */}
+      {showDrillModal && (
+        <div className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300">
+           <SmartDrill 
+             errorType={drillErrorType}
+             onComplete={(score) => {
+               setShowDrillModal(false);
+               // Optional: Show a small "Skill Up" toast
+             }}
+             onExit={() => setShowDrillModal(false)}
+           />
+        </div>
+      )}
     </div>
   );
 }
@@ -1740,8 +1841,10 @@ export function TrainingCockpit() {
 // Micro-Wins Radar Chart (v4.0)
 function MicroWinsRadar({
   scores,
+  targetScore = 7.5
 }: {
   scores: { fluency: number; lexical: number; grammar: number; pronunciation: number };
+  targetScore?: number;
 }) {
   const labels = ["Fluency", "Lexical", "Grammar", "Pronunciation"];
   const values = [scores.fluency, scores.lexical, scores.grammar, scores.pronunciation];
@@ -1774,6 +1877,14 @@ function MicroWinsRadar({
             strokeWidth="1"
           />
         ))}
+        {/* Target Reference Circle */}
+        <polygon
+          points={[0, 1, 2, 3].map((i) => getPoint(targetScore, i)).join(" ")}
+          fill="none"
+          stroke="rgba(239, 68, 68, 0.4)"
+          strokeWidth="1.5"
+          strokeDasharray="4,2"
+        />
         {/* Axes */}
         {[0, 1, 2, 3].map((i) => (
           <line
@@ -1930,10 +2041,3 @@ function PartBadge({
   );
 }
 
-export default function TrainingCockpitPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0d0d12] flex items-center justify-center text-zinc-500 font-bold">Synchronizing Session...</div>}>
-      <TrainingCockpit />
-    </Suspense>
-  );
-}

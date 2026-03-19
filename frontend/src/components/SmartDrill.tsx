@@ -101,66 +101,130 @@ export function SmartDrill({ errorType, onComplete, onExit }: SmartDrillProps) {
   if (!currentDrill) return <div className="p-8 text-center">Loading Drills...</div>;
 
   return (
-    <div className="bg-[#18181b] p-8 rounded-3xl border border-zinc-800 max-w-xl w-full mx-auto relative overflow-hidden">
+    <div className="bg-[#18181b] p-8 rounded-3xl border border-zinc-700 max-w-xl w-full mx-auto relative overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
         {/* Progress Bar */}
-        <div className="absolute top-0 left-0 w-full h-1 bg-zinc-800">
+        <div className="absolute top-0 left-0 w-full h-1.5 bg-zinc-800">
             <div 
-                className="h-full bg-emerald-500 transition-all duration-500"
+                className={`h-full transition-all duration-500 ${status === "SUCCESS" ? "bg-emerald-400" : "bg-blue-500"}`}
                 style={{ width: `${((currentIndex) / drillSet.length) * 100}%` }}
             />
         </div>
 
-        <div className="flex justify-between items-center mb-8">
-            <h3 className="text-sm font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-                <RefreshCw size={16} /> Rapid Fire: {errorType}
-            </h3>
-            <button onClick={onExit} className="text-zinc-600 hover:text-white transition-colors">Exit</button>
+        <div className="flex justify-between items-center mb-10">
+            <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-emerald-500/10 text-emerald-500 rounded-lg flex items-center justify-center">
+                   <RefreshCw size={16} />
+                </div>
+                <div>
+                   <h3 className="text-xs font-black text-white uppercase tracking-widest">
+                       Rapid Fire: {errorType}
+                   </h3>
+                   <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-tighter">
+                       Step {currentIndex + 1} of {drillSet.length}
+                   </p>
+                </div>
+            </div>
+            <button 
+              onClick={onExit} 
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-900 text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all"
+            >
+              <XCircle size={20} />
+            </button>
         </div>
 
-        <div className="text-center space-y-6">
-             <div className="text-2xl font-medium text-white break-words leading-relaxed">
-                 {currentDrill.prompt.split('_').map((part, i, arr) => (
-                    <span key={i}>
-                        {part}
-                        {i < arr.length - 1 && (
-                            <span className="inline-block w-12 border-b-2 border-emerald-500 mx-1">{/* Blank */}</span>
-                        )}
-                    </span>
-                 ))}
+        <div className="text-center space-y-8">
+             <div className="bg-black/20 p-6 rounded-2xl border border-zinc-800/50">
+               <div className="text-2xl font-medium text-white break-words leading-relaxed font-serif">
+                   {currentDrill.prompt.split('_').map((part, i, arr) => (
+                      <span key={i}>
+                          {part}
+                          {i < arr.length - 1 && (
+                              <span className="inline-block w-16 border-b-2 border-emerald-500 mx-1">{/* Blank */}</span>
+                          )}
+                      </span>
+                   ))}
+               </div>
              </div>
              
-             <p className="text-sm text-zinc-500 italic">Target: "{currentDrill.target}"</p>
-
-             {/* Feedback Status */}
-             <div className="h-8 flex justify-center items-center">
-                 {status === "SUCCESS" && <span className="text-emerald-500 font-bold flex items-center gap-2 animate-in zoom-in"><CheckCircle size={16}/> Correct!</span>}
-                 {status === "FAIL" && <span className="text-red-500 font-bold flex items-center gap-2 animate-in shake"><XCircle size={16}/> Try Again</span>}
-                 {status === "PROCESSING" && <span className="text-zinc-500 animate-pulse">Analyzing...</span>}
+             <div className="flex flex-col items-center gap-2">
+               <p className="text-xs text-zinc-500 uppercase font-black tracking-widest">Target Phrasing</p>
+               <p className="text-zinc-300 text-sm font-bold italic bg-zinc-900 px-4 py-2 rounded-lg border border-zinc-800">
+                 "{currentDrill.target}"
+               </p>
              </div>
 
-             <div className="flex justify-center pt-4">
+             {/* Feedback Status */}
+             <div className="h-10 flex justify-center items-center">
+                 {status === "SUCCESS" && (
+                   <div className="flex flex-col items-center gap-1 animate-in zoom-in">
+                     <span className="text-emerald-500 font-bold flex items-center gap-2">
+                       <CheckCircle size={18}/> Correct!
+                     </span>
+                     <span className="text-[10px] text-emerald-500/60 font-black uppercase tracking-widest">{feedback}</span>
+                   </div>
+                 )}
+                 {status === "FAIL" && (
+                   <div className="flex flex-col items-center gap-1 animate-in shake">
+                     <span className="text-red-500 font-bold flex items-center gap-2">
+                       <XCircle size={18}/> Try Again
+                     </span>
+                     <span className="text-[10px] text-red-500/60 font-black uppercase tracking-widest">Focus on the grammar!</span>
+                   </div>
+                 )}
+                 {status === "PROCESSING" && (
+                   <div className="flex flex-col items-center gap-2">
+                     <div className="w-4 h-4 border-2 border-zinc-500 border-t-transparent rounded-full animate-spin" />
+                     <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest animate-pulse">Analyzing Voice...</span>
+                   </div>
+                 )}
+                 {status === "IDLE" && (
+                   <span className="text-[10px] text-zinc-600 font-black uppercase tracking-widest transition-opacity duration-300">
+                     Ready for your response
+                   </span>
+                 )}
+             </div>
+
+             <div className="flex justify-center pt-2">
                  <button
                     onMouseDown={() => {
+                        if (status === "PROCESSING" || status === "SUCCESS") return;
                         setStatus("RECORDING");
                         startRecording();
                     }}
-                    onMouseUp={() => stopRecording()}
-                    onMouseLeave={() => isRecording && stopRecording()}
+                    onMouseUp={() => {
+                      if (isRecording) stopRecording();
+                    }}
+                    onMouseLeave={() => {
+                      if (isRecording) stopRecording();
+                    }}
                     disabled={status === "PROCESSING" || status === "SUCCESS"}
-                    className={`w-24 h-24 rounded-full flex flex-col items-center justify-center gap-2 transition-all ${
+                    className={`w-28 h-28 rounded-full flex flex-col items-center justify-center gap-2 transition-all relative ${
                         isRecording 
-                        ? 'bg-red-600 scale-110 shadow-[0_0_30px_rgba(220,38,38,0.5)]' 
+                        ? 'bg-red-600 scale-110 shadow-[0_0_40px_rgba(220,38,38,0.6)]' 
                         : status === "SUCCESS" 
-                            ? 'bg-emerald-500 cursor-default'
+                            ? 'bg-emerald-500 cursor-default shadow-[0_0_30px_rgba(16,185,129,0.4)]'
                             : 'bg-zinc-800 hover:bg-zinc-700 hover:scale-105 border border-zinc-700'
                     }`}
                  >
-                    <Mic2 size={32} className={isRecording ? "text-white animate-pulse" : "text-zinc-400"} />
-                    <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">
-                        {isRecording ? "Listening" : "Hold"}
+                    {isRecording && (
+                      <div className="absolute inset-0 rounded-full border-4 border-white/20 animate-ping" />
+                    )}
+                    
+                    {status === "SUCCESS" ? (
+                      <Trophy size={40} className="text-white" />
+                    ) : (
+                      <Mic2 size={36} className={isRecording ? "text-white" : "text-zinc-100"} />
+                    )}
+                    
+                    <span className="text-[10px] font-black uppercase text-white/70 tracking-widest">
+                        {isRecording ? "Listening" : status === "SUCCESS" ? "Passed" : "Hold to Speak"}
                     </span>
                  </button>
              </div>
+             
+             <p className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest">
+               Hint: {currentDrill.hint}
+             </p>
         </div>
     </div>
   );

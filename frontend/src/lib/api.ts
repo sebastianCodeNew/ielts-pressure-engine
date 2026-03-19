@@ -5,13 +5,23 @@ const API_BASE_URL =
 const DEFAULT_USER_ID = process.env.NEXT_PUBLIC_DEFAULT_USER_ID || "default_user";
 
 export class ApiClient {
+  private static pendingRequests = new Set<string>();
+
   private static async fetchWithRetry(
     url: string,
     options: RequestInit,
     retries: number = 3,
   ): Promise<Response> {
     try {
-      const response = await fetch(url, options);
+      const controller = new AbortController();
+      const timeoutMs = 120000;
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
       if (response.status === 429 && retries > 0) {
         // Rate limited - wait and retry
         const wait = response.headers.get("Retry-After")
@@ -26,6 +36,9 @@ export class ApiClient {
       }
       return response;
     } catch (err) {
+      if ((err as any)?.name === "AbortError") {
+        throw new Error("Request timeout. The server took too long to respond. Please try again.");
+      }
       if (retries > 0) {
         await new Promise((r) => setTimeout(r, 1000));
         return this.fetchWithRetry(url, options, retries - 1);
@@ -81,20 +94,30 @@ export class ApiClient {
     sessionId: string,
     blob: Blob,
     isRetry: boolean = false,
-    isRefactor: boolean = false
   ): Promise<Intervention> {
-    const formData = new FormData();
-    formData.append("file", blob, "recording.webm");
+    const lockKey = `${sessionId}_submit`;
+    if (this.pendingRequests.has(lockKey)) {
+      console.warn("Blocking duplicate submission for session", sessionId);
+      throw new Error("Submission already in progress.");
+    }
 
-    const res = await this.fetchWithRetry(
-      `${API_BASE_URL}/v1/exams/${sessionId}/submit-audio?is_retry=${isRetry}&is_refactor=${isRefactor}`,
-      {
-        method: "POST",
-        body: formData,
-      },
-    );
-    if (!res.ok) throw new Error(`Exam API Error: ${res.statusText}`);
-    return res.json();
+    this.pendingRequests.add(lockKey);
+    try {
+      const formData = new FormData();
+      formData.append("file", blob, "response.webm");
+
+      const response = await this.fetchWithRetry(
+        `${API_BASE_URL}/v1/exams/${sessionId}/submit-audio?is_retry=${isRetry}`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+      if (!response.ok) throw new Error(`Exam API Error: ${response.statusText}`);
+      return response.json();
+    } finally {
+      this.pendingRequests.delete(lockKey);
+    }
   }
 
   static async translateText(text: string): Promise<TranslationResponse> {

@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine, Column, String, Integer, Float, Boolean, JSON, ForeignKey, DateTime, text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 from datetime import datetime
 from app.core.config import settings
 
@@ -91,6 +90,12 @@ class QuestionAttempt(Base):
     
     target_keywords = Column(JSON, nullable=True) # The keywords suggested for the NEXT turn
     keywords_hit = Column(JSON, nullable=True) # The keywords hit in THIS turn
+
+    checkpoint_words_required = Column(JSON, nullable=True)  # Mandatory checkpoint words required for the NEXT turn
+    checkpoint_words_translated = Column(JSON, nullable=True)  # Indonesian translations (same order)
+    checkpoint_words_meanings = Column(JSON, nullable=True)  # Short Indonesian meanings (same order)
+    checkpoint_words_hit = Column(JSON, nullable=True)  # Checkpoint words hit in THIS turn
+    checkpoint_compliance_score = Column(Float, nullable=True)  # 0.0 - 1.0
     
     created_at = Column(DateTime, default=datetime.utcnow)
     session = relationship("ExamSession", back_populates="attempts")
@@ -175,11 +180,19 @@ def init_db():
             "question_translated": "TEXT",
             "transcript_translated": "TEXT",
             "target_keywords": "JSON",
-            "keywords_hit": "JSON"
+            "keywords_hit": "JSON",
+            "checkpoint_words_required": "JSON",
+            "checkpoint_words_translated": "JSON",
+            "checkpoint_words_meanings": "JSON",
+            "checkpoint_words_hit": "JSON",
+            "checkpoint_compliance_score": "FLOAT"
         }
         for col, col_type in migrations_qa.items():
             if col not in cols_qa:
-                conn.execute(text(f"ALTER TABLE question_attempts ADD COLUMN {col} {col_type}"))
+                try:
+                    conn.execute(text(f"ALTER TABLE question_attempts ADD COLUMN {col} {col_type}"))
+                except Exception as e:
+                    print(f"Migration skipped (question_attempts.{col}): {e}")
         
         # 2. Exam Sessions
         cols_es = get_columns(conn, "exam_sessions")
@@ -191,14 +204,23 @@ def init_db():
         }
         for col, col_type in migrations_es.items():
             if col not in cols_es:
-                conn.execute(text(f"ALTER TABLE exam_sessions ADD COLUMN {col} {col_type}"))
+                try:
+                    conn.execute(text(f"ALTER TABLE exam_sessions ADD COLUMN {col} {col_type}"))
+                except Exception as e:
+                    print(f"Migration skipped (exam_sessions.{col}): {e}")
         
         # 3. Users
         cols_u = get_columns(conn, "users")
         if "target_band" not in cols_u:
-            conn.execute(text("ALTER TABLE users ADD COLUMN target_band VARCHAR DEFAULT '6.5'"))
+            try:
+                conn.execute(text("ALTER TABLE users ADD COLUMN target_band VARCHAR DEFAULT '6.5'"))
+            except Exception as e:
+                print(f"Migration skipped (users.target_band): {e}")
         if "weakness" not in cols_u:
-            conn.execute(text("ALTER TABLE users ADD COLUMN weakness VARCHAR DEFAULT 'General'"))
+            try:
+                conn.execute(text("ALTER TABLE users ADD COLUMN weakness VARCHAR DEFAULT 'General'"))
+            except Exception as e:
+                print(f"Migration skipped (users.weakness): {e}")
         
         # 4. Vocabulary (Spaced Repetition)
         cols_v = get_columns(conn, "vocabulary_items")
@@ -212,7 +234,10 @@ def init_db():
         }
         for col, col_type in migrations_v.items():
             if col not in cols_v:
-                conn.execute(text(f"ALTER TABLE vocabulary_items ADD COLUMN {col} {col_type}"))
+                try:
+                    conn.execute(text(f"ALTER TABLE vocabulary_items ADD COLUMN {col} {col_type}"))
+                except Exception as e:
+                    print(f"Migration skipped (vocabulary_items.{col}): {e}")
             
         conn.commit()
     print("--- Database Schema Verified & Migrated ---")

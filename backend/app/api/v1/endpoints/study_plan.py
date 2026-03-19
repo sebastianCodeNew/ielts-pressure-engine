@@ -16,6 +16,7 @@ llm = ChatOpenAI(
     api_key=os.getenv("DEEPINFRA_API_KEY"),
     model="meta-llama/Llama-3.2-3B-Instruct",
     temperature=0.3,
+    timeout=60,
 )
 
 @router.get("/", response_model=StudyPlan)

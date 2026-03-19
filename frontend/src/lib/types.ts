@@ -26,6 +26,7 @@ export interface Intervention {
   feedback_markdown?: string;
   correction_drill?: string;
   user_transcript?: string;
+  refactor_mission?: string;
   reasoning?: string;
   keywords?: string[];
   target_keywords?: string[];
@@ -49,6 +50,13 @@ export interface Intervention {
   realtime_word_bank?: string[];
   realtime_word_bank_translated?: string[];
   confidence_score?: number;
+
+  // Checkpoint Words (Exam - Mandatory)
+  checkpoint_words?: string[];
+  checkpoint_words_translated?: string[];
+  checkpoint_words_meanings?: string[];
+  checkpoint_words_hit?: string[];
+  checkpoint_compliance_score?: number;
 
   // v5.1 Translation Fields
   next_task_prompt_translated?: string;
