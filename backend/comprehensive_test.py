@@ -86,14 +86,10 @@ class IELTSTester:
             # Create empty audio file
             empty_audio = BytesIO(b"")
             
-            files = {"audio_file": ("empty.wav", empty_audio, "audio/wav")}
-            data = {
-                "session_id": self.session_id,
-                "is_exam_mode": True
-            }
+            files = {"file": ("empty.webm", empty_audio, "audio/webm")}
             
-            response = requests.post(f"{self.base_url}/api/v1/exams/submit",
-                                   files=files, data=data, timeout=15)
+            response = requests.post(f"{self.base_url}/api/v1/exams/{self.session_id}/submit-audio",
+                                   files=files, timeout=15)
             
             if response.status_code == 200:
                 result = response.json()
@@ -140,7 +136,7 @@ class IELTSTester:
         """Test database integrity and relationships"""
         try:
             # Check if we can query user stats
-            response = requests.get(f"{self.base_url}/api/v1/users/{self.test_user_id}/stats",
+            response = requests.get(f"{self.base_url}/api/v1/users/me/stats",
                                   timeout=10)
             
             if response.status_code == 200:
@@ -243,7 +239,7 @@ class IELTSTester:
         try:
             # Make multiple requests to check for memory growth
             for i in range(5):
-                response = requests.get(f"{self.base_url}/api/v1/users/{self.test_user_id}/stats",
+                response = requests.get(f"{self.base_url}/api/v1/users/me/stats",
                                       timeout=5)
                 if response.status_code != 200:
                     self.log_result("Memory Usage Test", "FAIL", f"Request {i+1} failed")

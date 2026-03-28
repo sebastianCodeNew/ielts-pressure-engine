@@ -114,19 +114,19 @@ def get_weakness_report(user_id: str = "default_user", db: Session = Depends(get
             "total_attempts": 0
         }
     
-    # Calculate averages (normalized to 0-9 scale)
-    avg_fluency = sum((a.wpm or 0) / 15 for a in all_attempts) / len(all_attempts)
-    avg_coherence = sum((a.coherence_score or 0) * 9 for a in all_attempts) / len(all_attempts)
-    avg_lexical = sum((a.lexical_diversity or 0) * 15 for a in all_attempts) / len(all_attempts)
-    avg_grammar = sum((a.grammar_complexity or 0) * 40 for a in all_attempts) / len(all_attempts)
-    avg_pronunciation = sum((a.pronunciation_score or 0) * 9 for a in all_attempts) / len(all_attempts)
+    # Calculate averages (normalized to standardized 0-9 scale)
+    avg_fluency = sum((a.wpm or 0) / 18.0 for a in all_attempts) / len(all_attempts)
+    avg_coherence = sum((a.coherence_score or 0) * 9.0 for a in all_attempts) / len(all_attempts)
+    avg_lexical = sum((a.lexical_diversity or 0) * 14.0 for a in all_attempts) / len(all_attempts)
+    avg_grammar = sum((a.grammar_complexity or 0) * 35.0 for a in all_attempts) / len(all_attempts)
+    avg_pronunciation = sum((a.pronunciation_score or 0) * 9.0 for a in all_attempts) / len(all_attempts)
     
     skill_averages = {
-        "Fluency": min(9, avg_fluency),
-        "Coherence": min(9, avg_coherence),
-        "Lexical": min(9, avg_lexical),
-        "Grammar": min(9, avg_grammar),
-        "Pronunciation": min(9, avg_pronunciation)
+        "Fluency": round(min(9, max(1, avg_fluency)), 1),
+        "Coherence": round(min(9, max(1, avg_coherence)), 1),
+        "Lexical": round(min(9, max(1, avg_lexical)), 1),
+        "Grammar": round(min(9, max(1, avg_grammar)), 1),
+        "Pronunciation": round(min(9, max(1, avg_pronunciation)), 1)
     }
     
     lowest_area = min(skill_averages, key=skill_averages.get)

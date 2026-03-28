@@ -24,16 +24,11 @@ class ErrorGymSession(BaseModel):
     drills: List[ErrorDrill] = Field(description="List of 3-5 correction drills")
     focus_area: str = Field(description="The primary error type being addressed")
 
-def generate_error_gym_drills(error_type: str, error_count: int = 3) -> ErrorGymSession:
+from app.core.logger import logger
+
+async def generate_error_gym_drills(error_type: str, error_count: int = 3) -> ErrorGymSession:
     """
-    Generate targeted correction drills based on a specific error type.
-    
-    Args:
-        error_type: The type of grammar/vocabulary error (e.g., "Subject-Verb Agreement")
-        error_count: Number of drills to generate
-        
-    Returns:
-        ErrorGymSession with AI-generated drills
+    Generate targeted correction drills based on a specific error type (Async).
     """
     parser = PydanticOutputParser(pydantic_object=ErrorGymSession)
     
@@ -60,12 +55,13 @@ Make the sentences relevant to IELTS speaking topics (Part 1: everyday life, Par
     chain = prompt | llm | parser
     
     try:
-        result = chain.invoke({
+        result = await chain.ainvoke({
             "error_type": error_type,
             "count": min(error_count, 5)  # Cap at 5 drills
         })
         return result
     except Exception as e:
+        logger.error(f"Error Gym generation failed: {e}", exc_info=True)
         # Fallback to hardcoded drills if AI generation fails
         return ErrorGymSession(
             focus_area=error_type,

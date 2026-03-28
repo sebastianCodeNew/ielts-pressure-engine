@@ -131,10 +131,13 @@ class VocabularyCreate(BaseModel):
 class VocabularyItemSchema(BaseModel):
     id: int
     word: str
+    word_translated: Optional[str] = None
     definition: str
+    definition_translated: Optional[str] = None
     context_sentence: Optional[str] = None
     mastery_level: int
     last_reviewed_at: datetime
+    next_review_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 

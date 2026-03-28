@@ -65,6 +65,16 @@ audio_limiter = RateLimiter(limit=settings.RATE_LIMIT_COUNT, window=settings.RAT
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # 1. INITIAL ASSET SAFETY (v16.0 - Structural Hardening)
+    os.makedirs(settings.AUDIO_STORAGE_DIR, exist_ok=True)
+    logger.info(f"--- Audio Storage Initialized: {settings.AUDIO_STORAGE_DIR} ---")
+
+    # 1b. ENVIRONMENT HEALTH CHECK (v6.0/v15.0)
+    if not settings.DEEPINFRA_API_KEY or settings.DEEPINFRA_API_KEY == "your_api_key_here":
+        logger.warning("CRITICAL: DEEPINFRA_API_KEY is missing or using default. AI features will fail!")
+    else:
+        logger.info("Environment Check: AI API Key found.")
+
     from app.core.cleanup import cleanup_old_audio
     
     # Run initial cleanup
@@ -81,29 +91,56 @@ async def lifespan(app: FastAPI):
 
     cleanup_task = asyncio.create_task(schedule_cleanup())
     
+    from app.core.cache import init_cache_db
     init_cache_db()
     init_db()
     logger.info("--- Databases Loaded & Migrated ---")
     
     yield
     
-    # 3. GRACEFUL SHUTDOWN (v10.0/v12.0)
+    # 3. GRACEFUL SHUTDOWN (v10.0/v12.0/v16.0)
     logger.info("--- Shutting down: Cleaning up resources ---")
     cleanup_task.cancel()
-    db_engine.dispose()
-    close_cache_connection()
+    # Safely dispose of main engine connection
+    if db_engine:
+        db_engine.dispose()
     logger.info("--- Shutdown Complete ---")
 
 app = FastAPI(title="IELTS Pressure Engine", lifespan=lifespan)
 
-# CORS (Tightened v9.0)
+# --- GLOBAL RESILIENCE MIDDLEWARE (v16.0) ---
+@app.middleware("http")
+async def global_exception_handler_middleware(request: Request, call_next):
+    # 1. ENFORCE PHYSICAL SIZE LIMIT (v16.0 - Structural Hardening)
+    content_length = request.headers.get("Content-Length")
+    if content_length and int(content_length) > settings.MAX_AUDIO_SIZE_BYTES:
+        logger.error(f"Payload Too Large: {content_length} bytes from {request.client.host}")
+        return JSONResponse(
+            status_code=413,
+            content={
+                "detail": f"File is too large ({int(content_length) // 1024 // 1024}MB). Max limit is {settings.MAX_AUDIO_SIZE_BYTES // 1024 // 1024}MB.",
+                "code": "ERR_PAYLOAD_TOO_LARGE"
+            }
+        )
+
+    try:
+        return await call_next(request)
+    except Exception as e:
+        # Full stack trace logged for production observability
+        logger.error(f"FATAL UNHANDLED ERROR for {request.url.path}: {e}", exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "Internal Server Error",
+                "code": "ERR_SYSTEM_CRASH",
+                "message": "The system encountered an unexpected error. Please try again soon."
+            }
+        )
+
+# CORS (Restored flexibility for local machine dev v16.0)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000", 
-        "http://127.0.0.1:3000",
-        "http://localhost:5173", # Vite default
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -114,7 +151,7 @@ app.add_middleware(
 async def rate_limiting_middleware(request: Request, call_next):
     if "/submit-audio" in request.url.path:
         # Proxy-safe IP detection
-        client_ip = request.headers.get("X-Forwarded-For") or request.client.host
+        client_ip = request.headers.get("X-Forwarded-For") or (request.client.host if request.client else "unknown")
         if not audio_limiter.is_allowed(client_ip):
             return JSONResponse(
                 status_code=429,

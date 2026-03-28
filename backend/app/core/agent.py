@@ -1,4 +1,5 @@
 import os
+from app.core.logger import logger
 import json
 import re
 from langchain_openai import ChatOpenAI
@@ -43,6 +44,11 @@ prompt_template = PromptTemplate(
     - If {lowest_area} is "Lexical": Ask about topics requiring specialized vocabulary.
     - If {lowest_area} is "Grammar": Ask hypothetical or conditional questions.
     - If {lowest_area} is "Fluency": Ask simpler, faster-paced questions.
+
+    NEW: SOCRATIC PROBING MANDATE (v5.0):
+    - If `is_probing` is requested in `context_override`, or if the user is in "Stable" mode with low stress, you MUST probe deeper.
+    - Instead of a new topic, ask "Why?", "How?", or "Could you give an example of that?" based on their previous response.
+    - Your `is_probing` output field must be `true` in this case.
 
 
     USER STATE:
@@ -176,48 +182,72 @@ prompt_template = PromptTemplate(
     }
 )
 
-def formulate_strategy(
-    state: AgentState, 
-    current_metrics: SignalMetrics, 
-    current_part: str = "PART_1",
-    context_override: str = None,
-    user_transcript: str = "",
-    chronic_issues: str = ""
-) -> Intervention:
-    """
-    Decides the next intervention based on the full User Session State.
-    """
-   def _extract_and_parse_intervention(content: str, state_stress: float) -> Intervention:
+def _extract_and_parse_intervention(content: str, state_stress: float, current_metrics: SignalMetrics = None) -> Intervention:
     """
     Helper to extract JSON from LLM response and parse/validate as Intervention.
+    v16.0: Now accepts current_metrics for intelligent fallback scoring.
     """
-    # 1. Robust JSON Extraction
-    json_match = re.search(r"```json\s*(.*?)\s*```", content, re.DOTALL)
-    if json_match:
-        content = json_match.group(1).strip()
+    # 1. OPTIMIZED JSON EXTRACTION (v16.0 - Markdown Resistant)
+    if "```" in content:
+        # Try to find content within any markdown block
+        match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', content)
+        if match:
+            content = match.group(1)
     else:
-        match = re.search(r"\{.*\}", content, re.DOTALL)
+        # Fallback to general brace-matching for conversational preamble
+        match = re.search(r'\{[\s\S]*\}', content)
         if match:
             content = match.group(0)
     
     # 2. Parse Output
     try:
-        return parser.parse(content)
+        data = parser.parse(content)
+        # Handle cases where parser gives a dict directly
+        if isinstance(data, dict):
+            return Intervention(**data)
+        return data
     except Exception as parse_err:
-        print(f"DEBUG: Pydantic parsing failed: {parse_err}")
+        logger.error(f"Pydantic parsing failed: {parse_err}. Trying raw json loads.")
         try:
             raw_data = json.loads(content)
         except Exception as json_err:
-            print(f"DEBUG: json.loads failed: {json_err}")
-            raise
+            logger.error(f"json.loads failed: {json_err}. Using absolute safe fallback.")
+            raw_data = {}
         
+        # FULL SCHEMA FALLBACK (v16.0 - No feature loss)
+        # Intelligently calculate scores if metrics are available
+        fallback_metrics = {
+            "Fluency": 5.0, "Coherence": 5.0, "Lexical": 5.0, "Grammar": 5.0, "Pronunciation": 5.0
+        }
+        if current_metrics:
+            fallback_metrics = {
+                "Fluency": round(min(max(current_metrics.fluency_wpm / 18.0, 1.0), 9.0), 1),
+                "Coherence": round(min(max(current_metrics.coherence_score * 9.0, 1.0), 9.0), 1),
+                "Lexical": round(min(max(current_metrics.lexical_diversity * 14.0, 1.0), 9.0), 1),
+                "Grammar": round(min(max(current_metrics.grammar_complexity * 35.0, 1.0), 9.0), 1),
+                "Pronunciation": round(min(max((getattr(current_metrics, 'pronunciation_score', 0.5) or 0.5) * 9.0, 1.0), 9.0), 1)
+            }
+
         safe_data = {
             "action_id": raw_data.get("action_id", "MAINTAIN"),
-            "next_task_prompt": raw_data.get("next_task_prompt", "Continue speaking."),
+            "next_task_prompt": raw_data.get("next_task_prompt", "Thank you. Please continue speaking."),
+            "next_task_prompt_translated": raw_data.get("next_task_prompt_translated", "Terima kasih. Lanjutkan bicara."),
+            "topic_core": raw_data.get("topic_core", "General"),
             "constraints": raw_data.get("constraints", {"timer": 45}),
             "ideal_response": raw_data.get("ideal_response", ""),
-            "feedback_markdown": raw_data.get("feedback_markdown", "Well done, keep going."),
-            "stress_level": raw_data.get("stress_level", state_stress)
+            "ideal_response_translated": raw_data.get("ideal_response_translated", ""),
+            "feedback_markdown": raw_data.get("feedback_markdown", "Very well done, keep up your performance."),
+            "feedback_translated": raw_data.get("feedback_translated", "Bagus sekali, pertahankan performa Anda."),
+            "target_keywords": raw_data.get("target_keywords", []),
+            "realtime_word_bank": raw_data.get("realtime_word_bank", []),
+            "checkpoint_words": raw_data.get("checkpoint_words", []),
+            "checkpoint_words_translated": raw_data.get("checkpoint_words_translated", []),
+            "checkpoint_words_meanings": raw_data.get("checkpoint_words_meanings", []),
+            "correction_drill": raw_data.get("correction_drill", ""),
+            "reasoning": raw_data.get("reasoning", "IELTS Band 7+ criteria focus."),
+            "is_probing": raw_data.get("is_probing", False),
+            "stress_level": raw_data.get("stress_level", state_stress),
+            "radar_metrics": raw_data.get("radar_metrics", fallback_metrics)
         }
         return Intervention(**safe_data)
 
@@ -279,7 +309,7 @@ def formulate_strategy(
         )
         
         response = llm.invoke(formatted_prompt)
-        intervention = _extract_and_parse_intervention(response.content, state.stress_level)
+        intervention = _extract_and_parse_intervention(response.content, state.stress_level, current_metrics)
 
         if transcription_failed:
             intervention.ideal_response = ""
@@ -289,7 +319,7 @@ def formulate_strategy(
         return intervention
         
     except Exception as e:
-        print(f"AGENT ERROR: {e}")
+        logger.error(f"AGENT ERROR: {e}", exc_info=True)
         return Intervention(
             action_id="MAINTAIN",
             next_task_prompt="Continue.",
@@ -304,7 +334,7 @@ def formulate_strategy(
     retry=retry_if_exception_type(Exception),
     reraise=True
 )
-async def formulate_strategy_async(
+async def _formulate_strategy_async_inner(
     state: AgentState, 
     current_metrics: SignalMetrics, 
     current_part: str = "PART_1",
@@ -313,7 +343,7 @@ async def formulate_strategy_async(
     chronic_issues: str = ""
 ) -> Intervention:
     """
-    Decides the next intervention (Async).
+    Inner function with retry logic. Called by the public wrapper.
     """
     avg_fluency, avg_coherence, avg_lexical, avg_grammar = 5.0, 5.0, 5.0, 5.0
     if state.history:
@@ -360,7 +390,7 @@ async def formulate_strategy_async(
     )
     
     response = await llm.ainvoke(formatted)
-    intervention = _extract_and_parse_intervention(response.content, state.stress_level)
+    intervention = _extract_and_parse_intervention(response.content, state.stress_level, current_metrics)
 
     if transcription_failed:
         intervention.ideal_response = ""
@@ -368,3 +398,31 @@ async def formulate_strategy_async(
         intervention.quiz_question = None
 
     return intervention
+
+
+async def formulate_strategy_async(
+    state: AgentState, 
+    current_metrics: SignalMetrics, 
+    current_part: str = "PART_1",
+    context_override: str = None,
+    user_transcript: str = "",
+    chronic_issues: str = ""
+) -> Intervention:
+    """
+    Public wrapper: calls the retrying inner function and catches total failure
+    to return a safe fallback Intervention instead of a 500 error.
+    """
+    try:
+        return await _formulate_strategy_async_inner(
+            state, current_metrics, current_part,
+            context_override, user_transcript, chronic_issues
+        )
+    except Exception as e:
+        logger.error(f"AGENT ERROR (all retries exhausted): {e}", exc_info=True)
+        return Intervention(
+            action_id="MAINTAIN",
+            next_task_prompt="Continue.",
+            constraints={"timer": 45},
+            feedback_markdown="⚠️ **AI Evaluator Timeout**: Evaluasi AI sedang lambat. Silakan lanjut.",
+            target_keywords=[]
+        )

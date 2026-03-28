@@ -1,23 +1,45 @@
 import numpy as np
 import librosa
 from typing import Dict
-from app.core.transcriber import whisper_lock
+from app.core.transcriber import whisper_lock, FFMPEG_AVAILABLE
 from app.core.logger import logger
 
 def analyze_pronunciation(audio_path: str) -> Dict[str, float]:
     """
     Extracts acoustic features related to pronunciation clarity and fluency.
     """
+    if not FFMPEG_AVAILABLE:
+        return {
+            "pronunciation_score": 0.0,
+            "clarity": 0.0,
+            "consistency": 0.0,
+            "prosody": 0.0,
+            "confidence_score": 0.0,
+            "avg_zcr": 0.0,
+            "error": "FFmpeg not available for decoding"
+        }
+
     try:
         y, sr = None, None
         
-        # 1. OPTIMIZED DECODER (v9.0) - Use faster-whisper as primary for speed and accuracy
+        # 1. OPTIMIZED DECODER (v9.0)
         try:
+            from app.core.transcriber import get_whisper_model
             from faster_whisper.audio import decode_audio
-            with whisper_lock:
-                # Decodes and resamples in one C++ pass
-                y = decode_audio(audio_path, sampling_rate=22050)
-            sr = 22050
+            
+            # Retrieve or Load model (Thread-safe)
+            whisper_model = get_whisper_model()
+            
+            # Acquire lock with safety timeout (v12.0)
+            lock_acquired = whisper_lock.acquire(timeout=120)
+            if lock_acquired:
+                try:
+                    # Decodes and resamples in one C++ pass using our shared model's infrastructure
+                    y = decode_audio(audio_path, sampling_rate=22050)
+                finally:
+                    whisper_lock.release()
+            else:
+                logger.error("Pronunciation lock timeout. Skipping advanced decoding.")
         except Exception as e:
             logger.error(f"Faster-whisper primary decoder failed: {e}. Falling back to librosa.")
 
@@ -30,7 +52,15 @@ def analyze_pronunciation(audio_path: str) -> Dict[str, float]:
                     y, sr = librosa.load(audio_path, sr=22050)
                 except Exception as e:
                     logger.error(f"Librosa load failed: {e}")
-                    return {"pronunciation_score": 0.0, "error": "Audio decode failed"}
+                    return {
+                        "pronunciation_score": 0.0,
+                        "clarity": 0.0,
+                        "consistency": 0.0,
+                        "prosody": 0.0,
+                        "confidence_score": 0.0,
+                        "avg_zcr": 0.0,
+                        "error": "Audio decode failed"
+                    }
         
         if y is None or len(y) < 2048:
             return {
@@ -79,4 +109,12 @@ def analyze_pronunciation(audio_path: str) -> Dict[str, float]:
         }
     except Exception as e:
         logger.error(f"PRONUNCIATION ERROR: {e}", exc_info=True)
-        return {"pronunciation_score": 0.0, "error": str(e)}
+        return {
+            "pronunciation_score": 0.0,
+            "clarity": 0.0,
+            "consistency": 0.0,
+            "prosody": 0.0,
+            "confidence_score": 0.0,
+            "avg_zcr": 0.0,
+            "error": str(e)
+        }

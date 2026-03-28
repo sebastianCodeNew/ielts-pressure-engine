@@ -14,8 +14,9 @@ async def get_embedding_async(text: str) -> List[float]:
     if not text or not isinstance(text, str):
         return [0.0] * 768
         
+    from app.core.logger import logger
     if not DEEPINFRA_KEY:
-        print("WARNING: DEEPINFRA_API_KEY is missing. Returning zero vector.")
+        logger.warning("DEEPINFRA_API_KEY is missing. Returning zero vector.")
         return [0.0] * 768
 
     headers = {
@@ -34,14 +35,14 @@ async def get_embedding_async(text: str) -> List[float]:
             response = await client.post(f"{BASE_URL}/embeddings", json=payload, headers=headers)
             
             if response.status_code != 200:
-                print(f"Embedding API Error: {response.text}")
+                logger.error(f"Embedding API Error: {response.text}")
                 return [0.0] * 768
 
             data = response.json()
             return data["data"][0]["embedding"]
             
     except Exception as e:
-        print(f"Embedding Network Error (Async): {e}")
+        logger.error(f"Embedding Network Error (Async): {e}", exc_info=True)
         return [0.0] * 768
 
 async def calculate_coherence_async(target_prompt: str, user_response: str) -> float:

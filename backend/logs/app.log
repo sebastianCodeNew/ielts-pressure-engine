@@ -1,0 +1,701 @@
+[2026-03-28 15:24:41] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:24:41] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:24:47] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:25:11] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:28:06] [ERROR] [ielts_engine] - GLOBAL EXCEPTION: 1 validation error for Intervention
+constraints
+  Field required [type=missing, input_value={'action_id': 'MAINTAIN',...or at least 3 seconds.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Roaming\uv\python\cpython-3.12.12-windows-x86_64-none\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\main.py", line 123, in rate_limiting_middleware
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 355, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 243, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 168, in submit_exam_audio
+    return Intervention(
+           ^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\pydantic\main.py", line 250, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Intervention
+constraints
+  Field required [type=missing, input_value={'action_id': 'MAINTAIN',...or at least 3 seconds.'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+[2026-03-28 15:29:09] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:29:09] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:29:10] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:29:10] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:29:11] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:29:11] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:29:15] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:29:15] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:29:17] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:29:17] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:38:30] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:38:30] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:38:30] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:38:30] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:38:32] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:38:32] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:38:32] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:38:32] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:38:38] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:38:38] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:38:40] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:38:40] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:38:45] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:38:45] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:38:45] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:38:45] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:38:47] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:38:47] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:38:47] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:38:52] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:38:52] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:38:54] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:38:54] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:38:59] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:38:59] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:38:59] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:38:59] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:39:01] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:39:01] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:39:01] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:39:01] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:39:07] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:39:07] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:39:09] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:39:09] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:39:28] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:39:28] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:39:28] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:39:28] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:40:45] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:40:45] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:40:45] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:40:45] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:40:51] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:40:51] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:40:54] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:40:54] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:48:14] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:48:14] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:48:14] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:48:14] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:48:17] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:48:17] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:48:17] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:48:17] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:48:22] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:48:22] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:48:24] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:48:24] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:48:26] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:48:26] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:48:26] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:48:26] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:48:31] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:48:31] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:48:32] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:48:33] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:49:24] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:49:24] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:49:25] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:49:25] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:49:26] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:49:26] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:49:27] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:49:27] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:49:32] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:49:32] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:49:34] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:49:34] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:50:07] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:50:07] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:50:07] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:50:07] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:50:09] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:50:09] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:50:09] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:50:09] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:50:14] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:50:15] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:50:16] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:50:16] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:50:21] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:50:21] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:50:21] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:50:21] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:50:23] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:50:23] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:50:23] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:50:23] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:50:28] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:50:28] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:50:30] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:50:30] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:50:38] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:50:38] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:50:38] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:50:38] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:50:39] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:50:39] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:50:39] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:50:39] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:50:44] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:50:44] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:50:45] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:50:45] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:50:47] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:50:47] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:50:47] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:50:47] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:50:49] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:50:49] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:50:49] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:50:49] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:50:53] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:50:53] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:50:54] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:50:55] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:50:59] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:50:59] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:50:59] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:50:59] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:51:00] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:51:00] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:51:00] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:51:00] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:51:05] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:51:05] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:51:06] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:51:06] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:55:26] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:55:26] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:55:27] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:55:27] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:55:28] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:55:28] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:55:29] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:55:29] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:55:32] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:55:33] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:55:34] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 15:55:34] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 15:55:34] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 15:55:34] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:55:35] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 15:55:35] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 15:55:35] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 15:55:35] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:56:22] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:56:22] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:56:23] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:56:23] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:56:24] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:56:24] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:56:24] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:56:24] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:56:29] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:56:29] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:56:30] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 15:56:30] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 15:56:30] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 15:56:30] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:56:31] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 15:56:31] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 15:56:31] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 15:56:31] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:57:46] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:57:46] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:57:46] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:57:46] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:57:48] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:57:48] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:57:48] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:57:48] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:57:54] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:57:54] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:57:55] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 15:57:55] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 15:57:55] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 15:57:55] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:57:55] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 15:57:55] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 15:57:55] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 15:57:55] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:58:05] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:58:05] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:58:05] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:58:05] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:58:07] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:58:07] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:58:07] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:58:07] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:58:13] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:58:13] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:58:15] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 15:58:15] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 15:58:15] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 15:58:15] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:58:15] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 15:58:15] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 15:58:15] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 15:58:15] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:58:17] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:58:17] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:58:17] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:58:17] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:58:18] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:58:18] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:58:19] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:58:19] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:58:24] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:58:24] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:58:25] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 15:58:25] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 15:58:25] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 15:58:25] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:58:26] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 15:58:26] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 15:58:26] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 15:58:26] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:58:30] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:58:30] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:58:31] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:58:31] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:58:32] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:58:32] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:58:34] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:58:34] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:58:35] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:58:37] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 15:58:37] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 15:58:37] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 15:58:37] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:58:38] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:58:40] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 15:58:40] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 15:58:40] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 15:58:40] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:58:42] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:58:42] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:58:42] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:58:42] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:58:44] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:58:44] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:58:44] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:58:44] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:58:50] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:58:52] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 15:58:52] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 15:58:52] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 15:58:52] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:58:52] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 15:58:52] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 15:58:52] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 15:58:52] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:58:54] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:58:54] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:58:55] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:58:55] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:58:56] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:58:56] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:58:56] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:58:56] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:59:01] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:59:01] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:59:04] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 15:59:04] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 15:59:04] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 15:59:04] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:59:04] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 15:59:04] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 15:59:04] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 15:59:04] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:59:09] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:59:09] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:59:09] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 15:59:09] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 15:59:10] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:59:10] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:59:10] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 15:59:10] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 15:59:15] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:59:15] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 15:59:17] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 15:59:17] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 15:59:17] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 15:59:17] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 15:59:17] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 15:59:17] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 15:59:17] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 15:59:17] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:03:14] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:03:14] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:03:14] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:03:14] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:03:16] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:03:16] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:03:16] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:03:16] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:03:22] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:03:22] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:03:23] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:03:23] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:03:23] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:03:23] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:03:23] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:03:23] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:03:23] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:03:23] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:03:25] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:03:25] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:03:25] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:03:25] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:03:29] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:03:29] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:03:31] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:03:31] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:03:31] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:03:31] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:03:31] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:03:31] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:03:31] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:03:31] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:04:29] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:04:29] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:04:30] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:04:30] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:04:31] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:04:31] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:04:32] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:04:32] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:04:35] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:04:37] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:04:37] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:04:37] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:04:37] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:04:37] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:04:38] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:04:38] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:04:38] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:04:38] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:04:39] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:04:39] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:04:40] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:04:40] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:04:41] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:04:41] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:04:45] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:04:46] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:04:46] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:04:46] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:04:46] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:04:46] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:04:47] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:04:47] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:04:47] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:04:47] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:09:48] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:09:48] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:09:49] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:09:49] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:09:50] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:09:50] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:09:51] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:09:51] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:09:54] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:09:55] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:09:56] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:09:56] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:09:56] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:09:56] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:09:57] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:09:57] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:09:57] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:09:57] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:09:57] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:09:57] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:09:59] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:09:59] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:09:59] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:09:59] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:10:03] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:10:04] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:10:05] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:10:05] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:10:05] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:10:05] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:10:05] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:10:05] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:10:05] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:10:05] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:10:06] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:10:06] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:10:07] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:10:07] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:10:07] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:10:07] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:10:12] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:10:12] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:10:14] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:10:14] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:10:14] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:10:14] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:10:14] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:10:14] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:10:14] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:10:14] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:10:42] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:10:42] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:10:44] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:10:44] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:10:45] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:10:45] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:10:46] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:10:46] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:10:48] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:10:50] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:10:50] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:10:50] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:10:50] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:10:51] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:10:52] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:10:52] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:10:52] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:10:52] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:12:52] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:12:52] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:12:53] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:12:53] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:12:54] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:12:54] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:12:54] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:12:55] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:12:58] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:12:59] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:13:00] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:13:00] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:13:00] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:13:00] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:13:01] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:13:01] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:13:01] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:13:01] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:13:02] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:13:02] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:13:02] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:13:02] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:13:03] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:13:03] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:13:04] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:13:04] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:13:08] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:13:08] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:13:09] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:13:09] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:13:09] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:13:09] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:13:10] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:13:10] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:13:10] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:13:10] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:13:11] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:13:11] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:13:11] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:13:11] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:13:12] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:13:12] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:13:13] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:13:13] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:13:17] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:13:18] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:13:19] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:13:19] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:13:19] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:13:19] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:13:21] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:13:21] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:13:21] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:13:21] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:13:22] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:13:22] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:13:25] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:13:27] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:13:27] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:13:27] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:13:27] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:13:27] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:13:28] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:13:28] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:13:28] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:13:28] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:16:41] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:16:41] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:16:42] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:16:42] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:16:43] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:16:43] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:16:44] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:16:44] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:16:48] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:16:49] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:16:50] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:16:50] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:16:50] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:16:50] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:16:51] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:16:51] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:16:51] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:16:51] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:17:06] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:17:06] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:17:07] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:17:07] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:17:08] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:17:08] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:17:08] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:17:08] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:17:13] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:17:13] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:17:14] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:17:14] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:17:14] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:17:14] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:17:14] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:17:14] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:17:14] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:17:14] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:19:16] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:19:16] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:19:16] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:19:16] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:19:18] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:19:18] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:19:18] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:19:18] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:19:22] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:19:22] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:19:24] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:19:24] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:19:24] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:19:24] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:19:24] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:19:24] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:19:24] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:19:24] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:23:42] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:23:42] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:23:44] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:23:44] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:23:44] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:23:44] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:23:45] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:23:45] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:23:48] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:23:50] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:23:50] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:23:50] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:23:50] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:23:50] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:23:51] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:23:51] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:23:51] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:23:51] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:24:18] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:24:18] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:24:19] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 16:24:19] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-28 16:24:20] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:24:20] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:24:20] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:24:20] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:24:24] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:24:25] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:24:26] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:24:26] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:24:26] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:24:26] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:24:27] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:24:27] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:24:27] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:24:27] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:24:28] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:24:28] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:24:29] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 16:24:29] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 16:24:32] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:24:33] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 16:24:34] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:24:34] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:24:34] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:24:34] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 16:24:35] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 16:24:35] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 16:24:35] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 16:24:35] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 19:59:54] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 19:59:54] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 19:59:57] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 19:59:59] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-28 19:59:59] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 19:59:59] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 19:59:59] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 19:59:59] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 20:00:06] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-03-28 20:00:06] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-28 20:00:09] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-03-28 20:00:10] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-28 20:00:10] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-28 20:00:10] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-28 20:00:10] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-28 20:00:10] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-28 20:00:10] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-28 20:00:10] [INFO] [ielts_engine] - --- Shutdown Complete ---

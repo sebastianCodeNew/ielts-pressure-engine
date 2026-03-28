@@ -8,9 +8,23 @@ async def extract_signals_async(attempt: UserAttempt, current_prompt_text: str =
     """
     transcript = attempt.transcript or ""
     
+    # 0. Short-circuit for failures or silence (v14.0 - Failure Safe)
+    if not transcript or transcript.strip() == "" or "[TRANSCRIPTION_FAILED]" in transcript:
+        return SignalMetrics(
+            fluency_wpm=0.0,
+            hesitation_ratio=1.0,
+            grammar_error_count=0,
+            filler_count=0,
+            coherence_score=0.0,
+            lexical_diversity=0.0,
+            grammar_complexity=0.0,
+            is_complete=False
+        )
+
     # 1. Mechanical Analysis
     word_count = len(transcript.split()) if transcript else 0
     wpm = (word_count / (attempt.audio_duration / 60)) if attempt.audio_duration > 0 else 0
+    wpm = min(400.0, float(wpm))  # Cap WPM to human bounds in case of timestamp glitches
 
     # Advanced Filler Detection (v7.0)
     fillers = re.findall(
@@ -67,7 +81,8 @@ async def extract_signals_async(attempt: UserAttempt, current_prompt_text: str =
     # Clause density calculation: rewarding connectors appearing between word sequences
     grammar_complexity = len(connectors) / word_count if word_count > 0 else 0
 
-    print(f"DEBUG: Signals (Async) -> WPM: {wpm:.1f}, LexDiv: {lexical_diversity:.2f}, Coherence: {coherence:.2f}")
+    from app.core.logger import logger
+    logger.info(f"Signals (Async) -> WPM: {wpm:.1f}, LexDiv: {lexical_diversity:.2f}, Coherence: {coherence:.2f}")
 
     return SignalMetrics(
         fluency_wpm=round(wpm, 2),

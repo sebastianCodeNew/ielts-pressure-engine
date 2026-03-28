@@ -41,13 +41,13 @@ ERROR_PATTERNS = {
         r"\bthey does\b|\bhe have\b|\bshe have\b"
     ],
     ErrorType.ARTICLE_USAGE: [
-        r"article",
+        r"\barticle(s)?\b",
         r"missing.{0,10}(a|an|the)",
         r"incorrect.{0,10}(a|an|the)",
         r"definite|indefinite"
     ],
     ErrorType.TENSE_CONSISTENCY: [
-        r"tense",
+        r"\btense(s)?\b",
         r"past.{0,10}present",
         r"present.{0,10}past",
         r"verb.{0,10}form"

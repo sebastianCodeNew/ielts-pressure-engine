@@ -87,8 +87,13 @@ def update_state(state: AgentState, attempt: UserAttempt, metrics: SignalMetrics
     new_stress = calculate_stress(new_history)
     new_trend = determine_trend(new_history)
     
-    # 4. Update Counters
-    new_failures = state.consecutive_failures + 1 if outcome == 'FAIL' else 0
+    # 4. Update Counters (Only reset on PASS, preserve on RETRY)
+    if outcome == 'FAIL':
+        new_failures = state.consecutive_failures + 1
+    elif outcome == 'RETRY' or outcome == 'FORCE_RETRY':
+        new_failures = state.consecutive_failures
+    else:
+        new_failures = 0
     
     return state.model_copy(update={
         "history": new_history,

@@ -1,3 +1,6 @@
+import re
+import json
+from app.core.logger import logger
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db, ExamSession
@@ -44,11 +47,10 @@ def get_hint(session_id: str, db: Session = Depends(get_db)):
             if match:
                 content = match.group(0)
         
-        import json
         return json.loads(content)
         
     except Exception as e:
-        print(f"Hint generation failed: {e}")
+        logger.error(f"Hint generation failed: {e}", exc_info=True)
         return {
             "vocabulary": ["Interesting", "Challenging", "Experience"],
             "starter": "That is an interesting question...",

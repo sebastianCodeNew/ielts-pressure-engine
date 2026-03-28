@@ -58,7 +58,7 @@ export class ApiClient {
 
   static async getDetailedHistory(userId: string = DEFAULT_USER_ID): Promise<any[]> {
     const res = await this.fetchWithRetry(
-      `${API_BASE_URL}/v1/exams/history/${userId}`,
+      `${API_BASE_URL}/v1/exams/history`,
       { method: "GET" },
     );
     if (!res.ok) throw new Error("Failed to fetch detailed history");
@@ -253,7 +253,7 @@ export class ApiClient {
     }>;
     message?: string;
   }> {
-    const res = await this.fetchWithRetry(`${API_BASE_URL}/v1/exams/error-gym/${userId}`, {
+    const res = await this.fetchWithRetry(`${API_BASE_URL}/v1/exams/error-gym`, {
       method: "GET",
     });
     if (!res.ok) throw new Error("Failed to fetch Error Gym drills");

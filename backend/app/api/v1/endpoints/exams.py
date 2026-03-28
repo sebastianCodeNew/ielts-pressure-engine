@@ -1,5 +1,7 @@
 import uuid
 import shutil
+import asyncio
+from app.core.logger import logger
 import os
 import re
 import random
@@ -8,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from datetime import datetime
 from app.core.database import get_db, ExamSession, QuestionAttempt, User, VocabularyItem
-from app.schemas import ExamStartRequest, ExamSessionSchema, Intervention
+from app.schemas import ExamStartRequest, ExamSessionSchema, Intervention, ExamSummary
 from app.core.engine import process_user_attempt 
 from app.core.translator import translate_to_indonesian_async, translate_checkpoint_words_async
 from app.core.config import settings
@@ -78,7 +80,7 @@ async def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
         tr_list, mn_list = await translate_checkpoint_words_async(topic_pool[:5])
         prompt_tr = await translate_to_indonesian_async(initial_prompt)
     except Exception as e:
-        print(f"Start Exam translation error: {e}")
+        logger.error(f"Start Exam translation error: {e}", exc_info=True)
         tr_list, mn_list = [], []
         prompt_tr = initial_prompt
 
@@ -168,7 +170,8 @@ async def submit_exam_audio(
         return Intervention(
             action_id="MAINTAIN",
             next_task_prompt="Please try again with a longer recording.",
-            feedback_markdown="⚠️ **Audio too short**. Please record for at least 3 seconds."
+            feedback_markdown="⚠️ **Audio too short**. Please record for at least 3 seconds.",
+            constraints={"timer": 45}
         )
 
     temp_filename = os.path.abspath(f"temp_exam_{session_id}_{uuid.uuid4().hex}{ext}")
@@ -204,7 +207,7 @@ async def submit_exam_audio(
         intervention.user_audio_url = f"/audio/{audio_name}"
         return intervention
     except Exception as e:
-        print(f"Error processing exam audio: {e}")
+        logger.error(f"Error processing exam audio: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Error processing audio submission")
     finally:
         if os.path.exists(temp_filename):
@@ -213,11 +216,29 @@ async def submit_exam_audio(
             except Exception as e:
                 print(f"CRITICAL: Failed to delete temp file {temp_filename}. Error: {e}")
 
-@router.get("/{session_id}/summary")
+@router.get("/{session_id}/summary", response_model=ExamSummary)
 def get_exam_summary(session_id: str, db: Session = Depends(get_db)):
     session = db.query(ExamSession).filter(ExamSession.id == session_id).first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Simple dynamic analytics
+    metrics = {
+        "Fluency": session.fluency_score or 0.0,
+        "Coherence": session.coherence_score or 0.0,
+        "Lexical": session.lexical_resource_score or 0.0,
+        "Grammar": session.grammatical_range_score or 0.0,
+        "Pronunciation": session.pronunciation_score or 0.0
+    }
+    lowest_area = min(metrics, key=metrics.get)
+    
+    advice_map = {
+        "Fluency": "Fokus pada kecepatan bicara (WPM) dan kurangi pause panjang untuk skor lebih tinggi.",
+        "Coherence": "Gunakan kata hubung seperti 'However' atau 'Additionally' agar jawaban lebih logis.",
+        "Lexical": "Coba gunakan kosakata yang lebih spesifik. Cek 'Vocabulary Lab' untuk referensi.",
+        "Grammar": "Perhatikan struktur kalimat kompleks dan kesesuaian subjek-kata kerja.",
+        "Pronunciation": "Latih intonasi dan kejelasan pengucapan kata kunci."
+    }
     
     return {
         "session_id": session_id,
@@ -225,14 +246,18 @@ def get_exam_summary(session_id: str, db: Session = Depends(get_db)):
         "topic_prompt": session.current_prompt,
         "initial_keywords": session.initial_keywords,
         "breakdown": {
-            "fluency": session.fluency_score or 0.0,
-            "coherence": session.coherence_score or 0.0,
-            "lexical_resource": session.lexical_resource_score or 0.0,
-            "grammatical_range": session.grammatical_range_score or 0.0,
-            "pronunciation": session.pronunciation_score or 0.0
+            "fluency": metrics["Fluency"],
+            "coherence": metrics["Coherence"],
+            "lexical_resource": metrics["Lexical"],
+            "grammatical_range": metrics["Grammar"],
+            "pronunciation": metrics["Pronunciation"]
         },
-        "feedback": "Great job completing the exam! Focus on your grammatical range to reach a higher band.",
-        "recommendations": ["Practice complex sentences", "Review vocabulary in the Lab"]
+        "feedback": f"Sesi selesai! Area yang paling butuh perhatian adalah {lowest_area}. {advice_map[lowest_area]}",
+        "recommendations": [
+            f"Latih micro-skill {lowest_area}",
+            "Review hasil rekaman di history",
+            "Gunakan Vocabulary Lab untuk kata baru"
+        ]
     }
 
 @router.post("/analyze-shadowing")
@@ -246,41 +271,60 @@ async def analyze_shadowing(
     """
     import asyncio
     temp_filename = f"shadow_{uuid.uuid4()}.webm"
-    with open(temp_filename, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
     
     try:
+        with open(temp_filename, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
         loop = asyncio.get_running_loop()
         # 1. Transcribe the shadow attempt (CPU-bound → run in thread)
         from app.core.transcriber import transcribe_audio
+        from app.core.transcript_processor import post_process_transcript
         result = await loop.run_in_executor(None, transcribe_audio, temp_filename)
-        transcript = result.get("text", "").lower()
+        transcript = result.get("text", "")
+        
+        # 1b. Clean transcript (v15.0 - apply same pipeline as exam mode)
+        transcript = post_process_transcript(transcript)
+        transcript = transcript.lower() if transcript else ""
         
         # 2. Analyze Pronunciation (CPU-bound → run in thread)
         from app.core.pronunciation import analyze_pronunciation
         metrics = await loop.run_in_executor(None, analyze_pronunciation, temp_filename)
         
-        # 3. Calculate Similarity Score (Robust word-level overlap)
-        # Using [^\w\s] to strip punctuation from target_text as well
-        clean_target = re.sub(r'[^\w\s]', '', target_text.lower())
-        target_words = [w for w in clean_target.split() if w]
+        # 3. Calculate Similarity Score (Frequency-aware, punctuation-insensitive word overlap)
+        from collections import Counter
+        target_words = re.findall(r'\b\w+\b', target_text.lower())
+        target_counts = Counter(target_words)
         
-        clean_shadow = re.sub(r'[^\w\s]', '', transcript.lower())
-        shadow_words = set(clean_shadow.split())
+        shadow_words = re.findall(r'\b\w+\b', transcript.lower())
+        shadow_counts = Counter(shadow_words)
         
         if not target_words:
             similarity = 1.0
         else:
-            overlap = sum(1 for w in target_words if w in shadow_words)
+            # Count matches based on minimum frequency in target vs shadow
+            overlap = 0
+            for word, count in target_counts.items():
+                overlap += min(count, shadow_counts.get(word, 0))
             similarity = overlap / len(target_words)
             
         # 4. Combine into a "Mastery Score"
-        # 50% Similarity, 50% Pronunciation Clarity
         clarity = metrics.get("pronunciation_score", 0.0)
         mastery_score = (similarity * 0.5 + clarity * 0.5)
         
+        # 5. Indonesian Translations (v15.0)
+        transcript_tr = ""
+        target_tr = ""
+        try:
+            transcript_tr = await translate_to_indonesian_async(transcript) if transcript else ""
+            target_tr = await translate_to_indonesian_async(target_text)
+        except Exception as e:
+            logger.error(f"Shadowing translation error: {e}", exc_info=True)
+        
         return {
             "transcript": transcript,
+            "transcript_translated": transcript_tr,
+            "target_text_translated": target_tr,
             "mastery_score": round(mastery_score, 2),
             "similarity": round(similarity, 2),
             "clarity": clarity,
@@ -288,8 +332,22 @@ async def analyze_shadowing(
         }
         
     finally:
+        # v16.0: Hardened cleanup for Windows file-locking resilience
         if os.path.exists(temp_filename):
-            os.remove(temp_filename)
+            try:
+                os.remove(temp_filename)
+                logger.debug(f"Shadowing temp file {temp_filename} removed.")
+            except PermissionError:
+                # On Windows, sometimes FFmpeg or the engine still holds the handle for a split second
+                logger.warning(f"File {temp_filename} is locked. Retrying cleanup in 1s...")
+                import time
+                try: 
+                    time.sleep(1)
+                    os.remove(temp_filename)
+                except Exception:
+                    logger.error(f"Failed to remove locked shadowing file {temp_filename}. Manual cleanup required.")
+            except Exception as e:
+                logger.error(f"Shadowing cleanup error: {e}")
 
 @router.get("/{session_id}/status")
 async def get_exam_status(session_id: str, db: Session = Depends(get_db)):
@@ -318,7 +376,7 @@ async def get_exam_status(session_id: str, db: Session = Depends(get_db)):
         try:
             checkpoint_words_translated, checkpoint_words_meanings = await translate_checkpoint_words_async(checkpoint_words)
         except Exception as e:
-            print(f"Checkpoint translation error (status): {e}")
+            logger.error(f"Checkpoint translation error (status): {e}", exc_info=True)
 
     return {
         "status": session.status, 
@@ -331,7 +389,7 @@ async def get_exam_status(session_id: str, db: Session = Depends(get_db)):
     }
 
 @router.get("/error-gym")
-def get_error_gym(db: Session = Depends(get_db)):
+async def get_error_gym(db: Session = Depends(get_db)):
     """
     Fetches targeted remediation drills for the user's most frequent error.
     """
@@ -343,5 +401,5 @@ def get_error_gym(db: Session = Depends(get_db)):
         return {"message": "No chronic errors identified yet. Keep practicing!", "drills": []}
     
     error_type = top_errors[0]["error_type"]
-    session = generate_error_gym_drills(error_type)
+    session = await generate_error_gym_drills(error_type)
     return session

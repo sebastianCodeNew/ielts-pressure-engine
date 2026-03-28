@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from app.core.logger import logger
 from sqlalchemy.orm import Session
 from app.core.database import get_db, QuestionAttempt, ExamSession
 from app.schemas import StudyPlan, StudyPlanItem
@@ -78,7 +79,7 @@ def generate_study_plan(user_id: str = "default_user", db: Session = Depends(get
             plan=items
         )
     except Exception as e:
-        print(f"STUDY PLAN ERROR: {e}")
+        logger.error(f"STUDY PLAN ERROR: {e}", exc_info=True)
         # Fallback plan
         return StudyPlan(
             user_id=user_id,

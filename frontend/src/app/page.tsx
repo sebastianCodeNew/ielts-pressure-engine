@@ -249,6 +249,48 @@ export function TrainingCockpit() {
 
     } catch (e) {
       console.error("Failed to resume session:", e);
+      // v15.0: Don't auto-start a new exam on resume failure — let user decide
+      setLastError("Session resume failed. Starting a fresh exam...");
+      startExam();
+    } finally {
+      setResuming(false);
+    }
+  };
+
+  // v15.0: Robust session restoration with checkpoint context
+  const resumeSessionSafe = async (sid: string) => {
+    stopRecording();
+    setResuming(true);
+    try {
+      const status = await ApiClient.getExamStatus(sid);
+      
+      // Guard: If session is already completed, don't resume it
+      if (status.status === "COMPLETED") {
+        localStorage.removeItem("ielts_exam_session_id");
+        startExam();
+        return;
+      }
+      
+      const summary = await ApiClient.getExamSummary(sid);
+      
+      setSessionId(sid);
+      setExamPart(status.current_part as any);
+      setPart2Phase("IDLE");
+      
+      const prompt = status.current_prompt || summary.topic_prompt || "Continue the session.";
+      setFeedback({ next_task_prompt: prompt });
+      speak(prompt);
+      
+      // Restore checkpoint/keyword context from status or summary
+      if (status.checkpoint_words?.length) {
+        setActiveMission(status.checkpoint_words);
+      } else if (summary.initial_keywords) {
+        setActiveMission(summary.initial_keywords);
+      }
+      
+    } catch (e) {
+      console.error("Failed to resume session (safe):", e);
+      localStorage.removeItem("ielts_exam_session_id");
       startExam();
     } finally {
       setResuming(false);
@@ -257,7 +299,7 @@ export function TrainingCockpit() {
 
   const searchParams = useSearchParams();
   
-  // AUTO-START LOGIC (Phase 12)
+  // AUTO-START LOGIC (Phase 12, hardened v15.0)
   useEffect(() => {
     if (typeof window === "undefined" || hasStartedRef.current) return;
     
@@ -266,7 +308,7 @@ export function TrainingCockpit() {
     if (examPart === "INTRO") {
       hasStartedRef.current = true;
       if (sid) {
-        resumeSession(sid);
+        resumeSessionSafe(sid);
       } else {
         startExam();
       }
@@ -275,7 +317,7 @@ export function TrainingCockpit() {
   useEffect(() => {
     const sid = searchParams.get("sessionId");
     if (sid && !sessionId) {
-      resumeSession(sid);
+      resumeSessionSafe(sid);
     }
   }, [searchParams, sessionId]);
 

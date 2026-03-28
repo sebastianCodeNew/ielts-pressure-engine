@@ -1,45 +1,49 @@
 import os
-from langchain_openai import ChatOpenAI
+import asyncio
 from langchain_core.messages import SystemMessage
 
 from app.core.config import settings
+from app.core.llm import get_llm
+from app.core.logger import logger
 
-# Reuse the same cheap/fast model
-llm = ChatOpenAI(
-    base_url=settings.DEEPINFRA_BASE_URL,
-    api_key=settings.DEEPINFRA_API_KEY,
-    model=settings.TRANSLATOR_MODEL,
-    temperature=0.0, # We want exact translation, not creativity
-    timeout=60,
-)
+# Reuse the same cheap/fast model but centralized
+llm = get_llm(model_name=settings.TRANSLATOR_MODEL, temperature=0.0, timeout=60)
 
-async def translate_to_indonesian_async(text_en: str) -> str:
+# Global semaphore to limit concurrent translation requests to prevent rate limiting/timeouts
+# (v16.0 - Resiliency Hardening)
+translation_semaphore = asyncio.Semaphore(5)
+
+async def translate_to_indonesian_async(text: str) -> str:
     """
-    Translates English text to natural spoken Indonesian (Async).
+    Translates English text to Indonesian using the designated LLM (Async).
+    Now with Graceful Passthrough if the API is unreachable.
     """
-    if not text_en:
+    if not text or not text.strip():
         return ""
-    prompt = f"""
-    Task: Translate this English text to Indonesian.
-    Style: Educational, Supportive, Natural.
-    Input: "{text_en}"
     
-    Rules:
-    - Output ONLY the Indonesian translation.
-    - No explanations.
-    - No "Here is the translation".
-    """
-    
-    try:
-        response = await llm.ainvoke([SystemMessage(content=prompt)])
-        return response.content.strip().replace('"', '')
-    except Exception as e:
-        print(f"Translation Error (Async EN->ID): {e}")
-        return "Gagal memuat terjemahan."
+    from app.core.cache import get_cached_translation, save_translation_to_cache
+    cached = get_cached_translation(text)
+    if cached:
+        return cached
+
+    # RESILIENT WRAPPER: If AI fails, return original text instead of crashing everything
+    async with translation_semaphore:
+        try:
+            prompt = f"Translate the following IELTS-related text to natural, conversational Indonesian. Output ONLY the translation: {text}"
+            response = await llm.ainvoke([SystemMessage(content=prompt)])
+            translated = response.content.strip().replace('"', '')
+            
+            # Update cache
+            save_translation_to_cache(text, translated)
+            return translated
+        except Exception as e:
+            logger.error(f"Translation failure for '{text[:20]}...': {e}. Returning original.")
+            return text
 
 async def batch_translate_to_indonesian_async(texts: list[str]) -> list[str]:
     """
-    Translates multiple English segments to Indonesian in a single LLM call.
+    Translates multiple English segments to Indonesian using chunking for stability.
+    (v16.0 - Resiliency Hardening)
     """
     if not texts:
         return []
@@ -49,41 +53,47 @@ async def batch_translate_to_indonesian_async(texts: list[str]) -> list[str]:
     if not valid_items:
         return ["" for _ in texts]
 
-    joined = "\n---\n".join([f"ID_{i}: {t}" for i, t in valid_items])
-    prompt = f"""
-    Task: Translate the following English segments to Indonesian.
-    Style: Natural, Professional.
+    # Chunk items to prevent prompt overflow/hallucination on large batches
+    CHUNK_SIZE = 10
+    chunks = [valid_items[i:i + CHUNK_SIZE] for i in range(0, len(valid_items), CHUNK_SIZE)]
     
-    Segments:
-    {joined}
-
-    Rules:
-    - Maintain the ID prefix (e.g., ID_0: [Terjemahan])
-    - Output ONLY the IDs and their translations.
-    - One segment per line.
-    """
-
     results = ["" for _ in texts]
-    try:
-        response = await llm.ainvoke([SystemMessage(content=prompt)])
-        lines = response.content.strip().splitlines()
+    
+    for chunk in chunks:
+        joined = "\n---\n".join([f"ID_{i}: {t}" for i, t in chunk])
+        prompt = f"""
+        Task: Translate the following English segments to Indonesian.
+        Style: Natural, Professional.
         
-        parsed = {}
-        for line in lines:
-            if ": " in line:
-                id_part, content = line.split(": ", 1)
-                idx = int(id_part.replace("ID_", ""))
-                parsed[idx] = content.strip().replace('"', '')
-        
-        for i, _ in enumerate(texts):
-            results[i] = parsed.get(i, "")
-            
-    except Exception as e:
-        print(f"Batch Translation Error: {e}")
-        # Final fallback: individual async calls
-        import asyncio
-        tasks = [translate_to_indonesian_async(t) for t in texts]
-        results = await asyncio.gather(*tasks)
+        Segments:
+        {joined}
+
+        Rules:
+        - Maintain the ID prefix (e.g., ID_0: [Terjemahan])
+        - Output ONLY the IDs and their translations.
+        - One segment per line.
+        """
+
+        try:
+            async with translation_semaphore:
+                response = await llm.ainvoke([SystemMessage(content=prompt)])
+                lines = response.content.strip().splitlines()
+                
+                import re
+                for line in lines:
+                    match = re.search(r'ID_(\d+)[:\-]\s*(.*)', line)
+                    if match:
+                        idx = int(match.group(1))
+                        content = match.group(2).strip().replace('"', '')
+                        results[idx] = content
+        except Exception as e:
+            logger.error(f"Batch Chunk Translation Error: {e}", exc_info=True)
+            # Fallback to single calls for THIS chunk
+            for i, t in chunk:
+                if not results[i]:
+                    results[i] = await translate_to_indonesian_async(t)
+
+    return results
 
     return results
 
@@ -114,14 +124,16 @@ async def translate_checkpoint_words_async(words: list[str]) -> tuple[list[str],
         response = await llm.ainvoke([SystemMessage(content=prompt)])
         lines = [ln.strip() for ln in response.content.splitlines() if ln.strip()]
 
+        import re
         parsed: dict[str, tuple[str, str]] = {}
         for ln in lines:
-            parts = [p.strip() for p in ln.split("||")]
+            # Resilient split against || or | separators
+            parts = re.split(r'\|\||\|', ln)
             if len(parts) < 3:
                 continue
-            en = parts[0].strip('"').strip()
-            tr = parts[1].strip('"').strip()
-            mn = parts[2].strip('"').strip()
+            en = parts[0].strip(' "-')
+            tr = parts[1].strip(' "-')
+            mn = parts[2].strip(' "-')
             if en:
                 parsed[en.lower()] = (tr or "-", mn or "-")
 
@@ -136,9 +148,9 @@ async def translate_checkpoint_words_async(words: list[str]) -> tuple[list[str],
 
         return translations, meanings
     except Exception as e:
-        print(f"Checkpoint translation error (Async): {e}")
+        logger.error(f"Checkpoint translation error (Async): {e}", exc_info=True)
         import asyncio
         tasks = [translate_to_indonesian_async(w) for w in words]
         translations = await asyncio.gather(*tasks)
         meanings = ["Makna sederhana tidak tersedia." for _ in words]
-        return translations, meanings
+        return translations, meanings

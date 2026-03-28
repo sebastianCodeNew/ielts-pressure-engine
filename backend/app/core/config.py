@@ -40,7 +40,17 @@ class Settings(BaseSettings):
             with open(p2_path, "r") as f:
                 return json.load(f)["topics"]
         except Exception:
-            return []
+            # v16.0: Static fallback to prevent crashes if JSON is missing
+            return [
+                {
+                    "main_prompt": "Describe a place you have visited that you particularly liked.",
+                    "cues": ["Where it was", "Why you went there", "What you did there", "Explain why you liked it so much"]
+                },
+                {
+                    "main_prompt": "Describe a person you admire.",
+                    "cues": ["Who they are", "How you know them", "What they are like", "Explain why you admire them"]
+                }
+            ]
     MAX_AUDIO_SIZE_BYTES: int = 10 * 1024 * 1024  # 10MB
     ALLOWED_EXTENSIONS: list[str] = [".webm", ".mp3", ".wav", ".m4a", ".ogg"]
     RATE_LIMIT_COUNT: int = 10

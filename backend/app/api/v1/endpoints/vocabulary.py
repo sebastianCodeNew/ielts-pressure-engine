@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from app.core.database import get_db, VocabularyItem
+from app.core.config import settings
 from app.schemas import VocabularyItemSchema, VocabularyCreate
 from datetime import datetime
 from app.core.spaced_repetition import calculate_next_review
@@ -13,8 +14,10 @@ def get_vocabulary(db: Session = Depends(get_db)):
     user_id = settings.DEFAULT_USER_ID
     return db.query(VocabularyItem).filter(VocabularyItem.user_id == user_id).all()
 
+from app.core.translator import translate_to_indonesian_async
+
 @router.post("/", response_model=VocabularyItemSchema)
-def add_vocabulary(item: VocabularyCreate, db: Session = Depends(get_db)):
+async def add_vocabulary(item: VocabularyCreate, db: Session = Depends(get_db)):
     user_id = settings.DEFAULT_USER_ID
     # Normalize for consistency
     word_norm = item.word.strip().lower()
@@ -32,11 +35,22 @@ def add_vocabulary(item: VocabularyCreate, db: Session = Depends(get_db)):
         db.refresh(existing)
         return existing
 
+    # NEW: Automated translation for manual entries
+    try:
+        word_tr = await translate_to_indonesian_async(word_norm)
+        def_tr = await translate_to_indonesian_async(item.definition)
+    except Exception:
+        word_tr = None
+        def_tr = None
+
     db_item = VocabularyItem(
         user_id=user_id,
         word=word_norm,
+        word_translated=word_tr,
         definition=item.definition,
-        context_sentence=item.context_sentence
+        definition_translated=def_tr,
+        context_sentence=item.context_sentence,
+        source_type="MANUAL"
     )
     db.add(db_item)
     db.commit()
