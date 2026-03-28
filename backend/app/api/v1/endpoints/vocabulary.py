@@ -4,19 +4,25 @@ from typing import List
 from app.core.database import get_db, VocabularyItem
 from app.schemas import VocabularyItemSchema, VocabularyCreate
 from datetime import datetime
+from app.core.spaced_repetition import calculate_next_review
 
 router = APIRouter()
 
 @router.get("/", response_model=List[VocabularyItemSchema])
-def get_vocabulary(user_id: str = "default_user", db: Session = Depends(get_db)):
+def get_vocabulary(db: Session = Depends(get_db)):
+    user_id = settings.DEFAULT_USER_ID
     return db.query(VocabularyItem).filter(VocabularyItem.user_id == user_id).all()
 
 @router.post("/", response_model=VocabularyItemSchema)
-def add_vocabulary(item: VocabularyCreate, user_id: str = "default_user", db: Session = Depends(get_db)):
+def add_vocabulary(item: VocabularyCreate, db: Session = Depends(get_db)):
+    user_id = settings.DEFAULT_USER_ID
+    # Normalize for consistency
+    word_norm = item.word.strip().lower()
+
     # Check for duplicate
     existing = db.query(VocabularyItem).filter(
         VocabularyItem.user_id == user_id, 
-        VocabularyItem.word == item.word
+        VocabularyItem.word == word_norm
     ).first()
     
     if existing:
@@ -28,7 +34,7 @@ def add_vocabulary(item: VocabularyCreate, user_id: str = "default_user", db: Se
 
     db_item = VocabularyItem(
         user_id=user_id,
-        word=item.word,
+        word=word_norm,
         definition=item.definition,
         context_sentence=item.context_sentence
     )
@@ -37,8 +43,27 @@ def add_vocabulary(item: VocabularyCreate, user_id: str = "default_user", db: Se
     db.refresh(db_item)
     return db_item
 
+@router.patch("/{item_id}/review")
+def review_vocabulary(item_id: int, quality: int, db: Session = Depends(get_db)):
+    """
+    Updates a word using SM-2 logic based on user recall quality (0-5).
+    """
+    db_item = db.query(VocabularyItem).filter(VocabularyItem.id == item_id).first()
+    if not db_item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    if not 0 <= quality <= 5:
+        raise HTTPException(status_code=400, detail="Quality must be between 0 and 5")
+
+    # Connect to SM-2 Engine
+    calculate_next_review(db_item, quality)
+    
+    db.commit()
+    return {"status": "success", "next_review": db_item.next_review_at}
+
 @router.patch("/{item_id}/mastery")
-def update_mastery(item_id: int, level: int, db: Session = Depends(get_db)):
+def update_mastery_legacy(item_id: int, level: int, db: Session = Depends(get_db)):
+    """Legacy endpoint for direct mastery updates."""
     db_item = db.query(VocabularyItem).filter(VocabularyItem.id == item_id).first()
     if not db_item:
         raise HTTPException(status_code=404, detail="Item not found")

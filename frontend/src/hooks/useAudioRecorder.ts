@@ -4,11 +4,13 @@ export function useAudioRecorder() {
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const stopTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const startRecording = useCallback(async () => {
+    setError(null);
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       setStream(mediaStream);
@@ -34,8 +36,9 @@ export function useAudioRecorder() {
 
       mediaRecorderRef.current.start(200); 
       setIsRecording(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error accessing microphone:", err);
+      setError(err.message || "Could not access microphone.");
     }
   }, []);
 
@@ -94,5 +97,5 @@ export function useAudioRecorder() {
     };
   }, [stream]);
 
-  return { isRecording, startRecording, stopRecording, audioBlob, setAudioBlob, stream };
+  return { isRecording, startRecording, stopRecording, audioBlob, setAudioBlob, stream, error };
 }

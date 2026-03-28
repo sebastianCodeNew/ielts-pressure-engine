@@ -18,8 +18,9 @@ router = APIRouter()
 PART_1_TOPICS = settings.PART_1_TOPICS
 
 @router.get("/warmup")
-async def get_exam_warmup(user_id: str = settings.DEFAULT_USER_ID, db: Session = Depends(get_db)):
+async def get_exam_warmup(db: Session = Depends(get_db)):
     """Fetches due vocabulary for the pre-flight warm-up."""
+    user_id = settings.DEFAULT_USER_ID
     from app.core.spaced_repetition import get_due_vocabulary
     # Note: DB operations are sync, but we can call them in async routes normally in FastAPI.
     due_words = get_due_vocabulary(db, user_id, limit=3)
@@ -33,9 +34,10 @@ async def get_exam_warmup(user_id: str = settings.DEFAULT_USER_ID, db: Session =
 
 @router.post("/start", response_model=ExamSessionSchema)
 async def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == request.user_id).first()
+    user_id = settings.DEFAULT_USER_ID
+    user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        user = User(id=request.user_id, username=request.user_id)
+        user = User(id=user_id, username=user_id)
         db.add(user)
         db.commit()
 
@@ -82,7 +84,7 @@ async def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
 
     new_session = ExamSession(
         id=session_id,
-        user_id=request.user_id,
+        user_id=user_id,
         exam_type=request.exam_type,
         current_part="PART_3" if request.exam_type == "PART_3_ONLY" else "PART_2" if request.exam_type == "PART_2_ONLY" else "PART_1",
         current_prompt=initial_prompt,
@@ -109,11 +111,12 @@ async def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
         checkpoint_words=new_session.initial_keywords,
         checkpoint_words_translated=tr_list,
         checkpoint_words_meanings=mn_list,
-        briefing_text=f"Welcome. Focus on Band {user.target_band} today."
+        briefing_text="Welcome. We have set your target to Band 9.0 per your request to maximize performance."
     )
 
-@router.get("/history/{user_id}")
-async def get_detailed_history(user_id: str, db: Session = Depends(get_db)):
+@router.get("/history")
+async def get_detailed_history(db: Session = Depends(get_db)):
+    user_id = settings.DEFAULT_USER_ID
     attempts = db.query(QuestionAttempt).join(ExamSession).filter(
         ExamSession.user_id == user_id
     ).order_by(QuestionAttempt.created_at.desc()).all()
@@ -327,11 +330,12 @@ async def get_exam_status(session_id: str, db: Session = Depends(get_db)):
         "checkpoint_words_meanings": checkpoint_words_meanings,
     }
 
-@router.get("/error-gym/{user_id}")
-def get_error_gym(user_id: str, db: Session = Depends(get_db)):
+@router.get("/error-gym")
+def get_error_gym(db: Session = Depends(get_db)):
     """
     Fetches targeted remediation drills for the user's most frequent error.
     """
+    user_id = settings.DEFAULT_USER_ID
     from app.core.error_gym import get_top_errors_for_user, generate_error_gym_drills
     
     top_errors = get_top_errors_for_user(db, user_id, limit=1)

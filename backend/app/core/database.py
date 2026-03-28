@@ -30,23 +30,23 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
-    exam_sessions = relationship("ExamSession", back_populates="user")
-    vocabulary = relationship("VocabularyItem", back_populates="user")
-    achievements = relationship("UserAchievement", back_populates="user")
+    exam_sessions = relationship("ExamSession", back_populates="user", cascade="all, delete-orphan")
+    vocabulary = relationship("VocabularyItem", back_populates="user", cascade="all, delete-orphan")
+    achievements = relationship("UserAchievement", back_populates="user", cascade="all, delete-orphan")
     
     # Stats
     total_exams_taken = Column(Integer, default=0)
     average_band_score = Column(Float, default=0.0)
     
-    # Preferences
-    target_band = Column(String, default="6.5")
+    # Preferences (DEFAULT TO BAND 9 per User Request)
+    target_band = Column(String, default="9.0")
     weakness = Column(String, default="General")
 
 class ExamSession(Base):
     __tablename__ = "exam_sessions"
     
     id = Column(String, primary_key=True, index=True) 
-    user_id = Column(String, ForeignKey("users.id"))
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"))
     
     start_time = Column(DateTime, default=datetime.utcnow)
     end_time = Column(DateTime, nullable=True)
@@ -72,13 +72,13 @@ class ExamSession(Base):
     consecutive_failures = Column(Integer, default=0)
     
     user = relationship("User", back_populates="exam_sessions")
-    attempts = relationship("QuestionAttempt", back_populates="session")
+    attempts = relationship("QuestionAttempt", back_populates="session", cascade="all, delete-orphan")
 
 class QuestionAttempt(Base):
     __tablename__ = "question_attempts"
     
     id = Column(Integer, primary_key=True, index=True)
-    session_id = Column(String, ForeignKey("exam_sessions.id"))
+    session_id = Column(String, ForeignKey("exam_sessions.id", ondelete="CASCADE"))
     
     part = Column(String) 
     question_text = Column(String)
@@ -226,7 +226,7 @@ def init_db():
         cols_u = get_columns(conn, "users")
         if "target_band" not in cols_u:
             try:
-                conn.execute(text("ALTER TABLE users ADD COLUMN target_band VARCHAR DEFAULT '6.5'"))
+                conn.execute(text("ALTER TABLE users ADD COLUMN target_band VARCHAR DEFAULT '9.0'"))
             except Exception as e:
                 print(f"Migration skipped (users.target_band): {e}")
         if "weakness" not in cols_u:
@@ -235,7 +235,7 @@ def init_db():
             except Exception as e:
                 print(f"Migration skipped (users.weakness): {e}")
         
-        # 4. Vocabulary (Spaced Repetition)
+        # 4. Vocabulary (Spaced Repetition Reset v8.0)
         cols_v = get_columns(conn, "vocabulary_items")
         migrations_v = {
             "next_review_at": "DATETIME",
@@ -249,9 +249,30 @@ def init_db():
             if col not in cols_v:
                 try:
                     conn.execute(text(f"ALTER TABLE vocabulary_items ADD COLUMN {col} {col_type}"))
+                    # Populate defaults for existing rows to prevent NULL errors
+                    if col == "ease_factor":
+                        conn.execute(text("UPDATE vocabulary_items SET ease_factor = 2.5 WHERE ease_factor IS NULL"))
+                    if col == "interval_days":
+                        conn.execute(text("UPDATE vocabulary_items SET interval_days = 1 WHERE interval_days IS NULL"))
                 except Exception as e:
                     print(f"Migration skipped (vocabulary_items.{col}): {e}")
             
+        # 5. Achievements & Error Logs (v12.0)
+        cols_ach = get_columns(conn, "user_achievements")
+        if "achievement_code" not in cols_ach:
+            try:
+                conn.execute(text("ALTER TABLE user_achievements ADD COLUMN achievement_code TEXT"))
+            except Exception as e:
+                logger.error(f"Migration skipped (user_achievements): {e}")
+
+        cols_err = get_columns(conn, "error_logs")
+        if "error_type" not in cols_err:
+            try:
+                conn.execute(text("ALTER TABLE error_logs ADD COLUMN error_type TEXT"))
+                conn.execute(text("ALTER TABLE error_logs ADD COLUMN count INTEGER DEFAULT 1"))
+            except Exception as e:
+                logger.error(f"Migration skipped (error_logs): {e}")
+
         conn.commit()
     print("--- Database Schema Verified & Migrated ---")
 

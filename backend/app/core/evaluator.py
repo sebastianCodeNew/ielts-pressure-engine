@@ -12,8 +12,29 @@ async def extract_signals_async(attempt: UserAttempt, current_prompt_text: str =
     word_count = len(transcript.split()) if transcript else 0
     wpm = (word_count / (attempt.audio_duration / 60)) if attempt.audio_duration > 0 else 0
 
-    fillers = re.findall(r"\b(um|uh|er|ah|like|you know)\b", transcript.lower())
+    # Advanced Filler Detection (v7.0)
+    fillers = re.findall(
+        r"\b(um|uh|er|ah|like|you know|basically|actually|well|to be honest|as I was saying|what I mean is|sort of|kind of)\b", 
+        transcript.lower()
+    )
     filler_count = len(fillers)
+
+    # 1b. Redundancy Detection (v14.0 - Elite Band 8/9 Criteria)
+    REDUNDANCY_PATTERNS = [
+        r"\bin my opinion i think\b",
+        r"\bfor me personally\b",
+        r"\bi would like to talk about the topic of\b",
+        r"\bas i mentioned before\b.*\bas i mentioned before\b",
+        r"\bto be honest with you\b",
+        r"\bi want to say that\b",
+        r"\blet me tell you that\b",
+        r"\bwhat i want to say is\b",
+    ]
+    redundancy_count = sum(
+        len(re.findall(p, transcript.lower())) for p in REDUNDANCY_PATTERNS
+    )
+    # Penalty: each redundancy reduces effective lexical score later
+    redundancy_penalty = min(0.3, redundancy_count * 0.1)
 
     hesitation_score = 0.0
     if attempt.audio_duration > 3:
@@ -24,13 +45,27 @@ async def extract_signals_async(attempt: UserAttempt, current_prompt_text: str =
     # 2. Semantic Analysis (Async)
     coherence = await calculate_coherence_async(current_prompt_text, transcript)
     
-    # 3. Lexical Diversity
+    # 3. Lexical Diversity (v13.0 - Length Calibrated)
     unique_words = set(transcript.lower().split())
-    lexical_diversity = len(unique_words) / word_count if word_count > 0 else 0
+    # PENALTY: Very short responses (<15 words) have their diversity capped 
+    # to prevent "perfect" TTR scores for simple sentences.
+    ttr = len(unique_words) / word_count if word_count > 0 else 0
+    if word_count < 15:
+        lexical_diversity = ttr * (word_count / 15.0)
+    else:
+        lexical_diversity = ttr
     
-    # 4. Grammar Complexity
-    conjunctions = re.findall(r"\b(because|although|however|therefore|while|if|which|that)\b", transcript.lower())
-    grammar_complexity = len(conjunctions) / word_count if word_count > 0 else 0
+    # Apply redundancy penalty (v14.0)
+    lexical_diversity = max(0.0, lexical_diversity - redundancy_penalty)
+    
+    # 4. Grammar Complexity & Cohesion (v13.0 - Clause Density)
+    # Looking for connectors that typically link subordinate clauses
+    connectors = re.findall(
+        r"\b(because|although|however|therefore|while|if|which|that|furthermore|moreover|subsequently|consequently|nonetheless|nevertheless|despite|whereas)\b", 
+        transcript.lower()
+    )
+    # Clause density calculation: rewarding connectors appearing between word sequences
+    grammar_complexity = len(connectors) / word_count if word_count > 0 else 0
 
     print(f"DEBUG: Signals (Async) -> WPM: {wpm:.1f}, LexDiv: {lexical_diversity:.2f}, Coherence: {coherence:.2f}")
 
@@ -43,4 +78,4 @@ async def extract_signals_async(attempt: UserAttempt, current_prompt_text: str =
         lexical_diversity=round(lexical_diversity, 2),
         grammar_complexity=round(grammar_complexity, 2),
         is_complete=True
-    )
+    )

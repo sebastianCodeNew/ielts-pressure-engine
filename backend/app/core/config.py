@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_COUNT: int = 10
     RATE_LIMIT_WINDOW_SECONDS: int = 60
     AUDIO_CLEANUP_HOURS: int = 24
+    WHISPER_MODEL_SIZE: str = "medium.en"  # "small.en" or "base.en" for lower RAM
     
     # Adaptive Logic Thresholds
     STRESS_INCREASE_THRESHOLD: float = 0.7

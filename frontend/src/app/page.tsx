@@ -72,6 +72,7 @@ export function TrainingCockpit() {
     audioBlob,
     setAudioBlob,
     stream,
+    error: recorderError,
   } = useAudioRecorder();
 
   const { speak, isSpeaking } = useTTS();
@@ -130,6 +131,7 @@ export function TrainingCockpit() {
   const [shadowingIndex, setShadowingIndex] = useState<number | null>(null);
   const [shadowResults, setShadowResults] = useState<Record<number, any>>({});
   const [shadowProcessing, setShadowProcessing] = useState(false);
+  const [isProcessingAudio, setIsProcessingAudio] = useState(false);
 
   // AI Notepad State
   const [notes, setNotes] = useState("WHO/WHAT: \nWHEN/WHERE: \nFEELINGS: \nWHY IMPORTANT: ");
@@ -227,6 +229,7 @@ export function TrainingCockpit() {
 
 
   const resumeSession = async (sid: string) => {
+    stopRecording(); // v11.0: Explicit hardware reset
     setResuming(true);
     try {
       const status = await ApiClient.getExamStatus(sid);
@@ -431,6 +434,7 @@ export function TrainingCockpit() {
         console.error("Submission failed:", e);
       } finally {
         setProcessing(false);
+        setIsProcessingAudio(false); // v11.0
         processingRef.current = false;
       }
     };
@@ -438,14 +442,35 @@ export function TrainingCockpit() {
     runSubmission();
   }, [audioBlob, sessionId, speak, shadowingIndex, gateDrill, isVerifyingGate, submissionIntent, feedback?.ideal_response]);
 
-  // PART 2 PROTOCOL LOGIC
+  // PART 2 PROTOCOL LOGIC (v7.0 - Persisted)
   useEffect(() => {
     // 1. Detect Entry into Part 2
     if (examPart === "PART_2" && part2Phase === "IDLE") {
       if (!isSpeaking) {
+        // Check for persisted state first (survive refresh)
+        const savedPhase = localStorage.getItem("ielts_p2_phase");
+        const savedStart = localStorage.getItem("ielts_p2_start");
+        
+        if (savedPhase && savedStart && (savedPhase === "PREP" || savedPhase === "SPEAKING")) {
+          const elapsed = Math.floor((Date.now() - parseInt(savedStart)) / 1000);
+          const limit = savedPhase === "PREP" ? 60 : 120;
+          
+          if (elapsed < limit) {
+            setPart2Phase(savedPhase as any);
+            setTimer(limit - elapsed);
+            part2StartTimeRef.current = parseInt(savedStart);
+            if (savedPhase === "SPEAKING" && !isRecording) startRecording();
+            return;
+          }
+        }
+        
+        // Normal entry
         setPart2Phase("PREP");
         setTimer(60); 
-        part2StartTimeRef.current = Date.now();
+        const now = Date.now();
+        part2StartTimeRef.current = now;
+        localStorage.setItem("ielts_p2_phase", "PREP");
+        localStorage.setItem("ielts_p2_start", now.toString());
       }
     }
 
@@ -463,20 +488,25 @@ export function TrainingCockpit() {
           if (part2Phase === "PREP") {
             setPart2Phase("SPEAKING");
             setTimer(120);
-            part2StartTimeRef.current = Date.now();
+            const now = Date.now();
+            part2StartTimeRef.current = now;
+            localStorage.setItem("ielts_p2_phase", "SPEAKING");
+            localStorage.setItem("ielts_p2_start", now.toString());
             startRecording();
           } else {
             stopRecording();
             setPart2Phase("IDLE");
+            localStorage.removeItem("ielts_p2_phase");
+            localStorage.removeItem("ielts_p2_start");
           }
         }
-      }, 500); // Check every 500ms
+      }, 500);
     }
 
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [examPart, part2Phase, timer, startRecording, stopRecording, isSpeaking]);
+  }, [examPart, part2Phase, timer, startRecording, stopRecording, isSpeaking, isRecording]);
 
   // IDLE STATE
   if (examPart === "INTRO" || examPart === "FINISHED") {
@@ -838,6 +868,13 @@ export function TrainingCockpit() {
         </div>
       </div>
 
+      {/* ERROR HUD */}
+      {recorderError && (
+        <div className="w-full bg-red-600/90 text-white py-2 px-6 text-center text-xs font-black uppercase tracking-widest animate-in slide-in-from-top duration-300">
+          ⚠️ Hardware Error: {recorderError}. Please check your microphone permissions.
+        </div>
+      )}
+
       {/* MAIN COCKPIT AREA */}
       <div className="flex-1 flex flex-col relative">
         {/* BACKGROUND EXAMINER VISUAL (Presence Sphere) */}
@@ -1057,16 +1094,21 @@ export function TrainingCockpit() {
               </button>
             ) : (
               <button
-                disabled={processing}
+                disabled={processing || isProcessingAudio}
                 onClick={() => {
                   const now = Date.now();
                   if (now - lastToggleTime.current < 500) return;
                   lastToggleTime.current = now;
+                  setIsProcessingAudio(true); // v11.0
                   stopRecording();
                 }}
                 className="relative z-10 w-24 h-24 bg-zinc-100 hover:bg-white text-black rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
               >
-                <Square size={32} fill="currentColor" />
+                {isProcessingAudio ? (
+                   <div className="w-8 h-8 border-4 border-black/30 border-t-black rounded-full animate-spin" />
+                ) : (
+                   <Square size={32} fill="currentColor" />
+                )}
               </button>
             )}
           </div>
@@ -1676,9 +1718,10 @@ export function TrainingCockpit() {
                           <Play size={12} fill="currentColor" />
                         </button>
                         <button
-                          disabled={shadowProcessing}
+                          disabled={shadowProcessing || isProcessingAudio}
                           onClick={() => {
                             if (shadowingIndex === i) {
+                              setIsProcessingAudio(true);
                               stopRecording();
                             } else {
                               setShadowingIndex(i);
@@ -1687,7 +1730,7 @@ export function TrainingCockpit() {
                           }}
                           className={`p-2 rounded-lg transition-all ${shadowingIndex === i ? "bg-red-600 text-white animate-pulse" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
                         >
-                          {shadowProcessing && shadowingIndex === i ? (
+                          { (shadowProcessing || isProcessingAudio) && shadowingIndex === i ? (
                             <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                           ) : (
                             <Mic2 size={12} />

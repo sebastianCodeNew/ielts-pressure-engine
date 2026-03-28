@@ -2,6 +2,7 @@
 import shutil
 import os
 import time
+import random
 import uuid
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, UploadFile, File, Depends, Request, HTTPException, Form
@@ -16,6 +17,10 @@ from app.core.cache import init_db as init_cache_db
 from app.core.engine import process_user_attempt
 from app.core.config import settings
 from app.api.v1.api import api_router
+from app.core.logger import logger
+from app.core.database import engine as db_engine
+from app.core.cache import close_cache_connection
+import asyncio
 
 # --- RATE LIMITING ---
 class RateLimiter:
@@ -61,19 +66,44 @@ audio_limiter = RateLimiter(limit=settings.RATE_LIMIT_COUNT, window=settings.RAT
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     from app.core.cleanup import cleanup_old_audio
+    
+    # Run initial cleanup
     cleanup_old_audio(max_age_hours=settings.AUDIO_CLEANUP_HOURS)
+    
+    # 2. RECURRING CLEANUP (v10.0)
+    async def schedule_cleanup():
+        while True:
+            await asyncio.sleep(6 * 3600) # Every 6 hours
+            try:
+                cleanup_old_audio(max_age_hours=settings.AUDIO_CLEANUP_HOURS)
+            except Exception as e:
+                logger.error(f"Background cleanup failed: {e}")
+
+    cleanup_task = asyncio.create_task(schedule_cleanup())
     
     init_cache_db()
     init_db()
-    print("--- Databases Loaded & Migrated ---")
+    logger.info("--- Databases Loaded & Migrated ---")
+    
     yield
+    
+    # 3. GRACEFUL SHUTDOWN (v10.0/v12.0)
+    logger.info("--- Shutting down: Cleaning up resources ---")
+    cleanup_task.cancel()
+    db_engine.dispose()
+    close_cache_connection()
+    logger.info("--- Shutdown Complete ---")
 
 app = FastAPI(title="IELTS Pressure Engine", lifespan=lifespan)
 
-# CORS
+# CORS (Tightened v9.0)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000", 
+        "http://127.0.0.1:3000",
+        "http://localhost:5173", # Vite default
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -82,7 +112,7 @@ app.add_middleware(
 # Middleware for rate limiting audio endpoints
 @app.middleware("http")
 async def rate_limiting_middleware(request: Request, call_next):
-    if request.url.path.endswith("/submit-audio"):
+    if "/submit-audio" in request.url.path:
         # Proxy-safe IP detection
         client_ip = request.headers.get("X-Forwarded-For") or request.client.host
         if not audio_limiter.is_allowed(client_ip):
@@ -95,9 +125,7 @@ async def rate_limiting_middleware(request: Request, call_next):
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """Cleanly handles any unhandled server errors."""
-    print(f"GLOBAL EXCEPTION: {exc}")
-    import traceback
-    traceback.print_exc()
+    logger.error(f"GLOBAL EXCEPTION: {exc}", exc_info=True)
     
     return JSONResponse(
         status_code=500,

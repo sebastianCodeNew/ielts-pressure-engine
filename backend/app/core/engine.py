@@ -7,6 +7,8 @@ from app.core.state import AgentState, update_state
 from app.core.database import SessionModel, ExamSession, QuestionAttempt, User, VocabularyItem
 from app.core.pronunciation import analyze_pronunciation
 import asyncio
+from app.core.logger import logger
+from app.core.transcript_processor import post_process_transcript
 from app.core.translator import (
     translate_checkpoint_words_async, 
     translate_to_indonesian_async,
@@ -47,7 +49,8 @@ async def process_user_attempt(
         current_prompt = exam_session.current_prompt or "General topic"
         
         user = db.query(User).filter(User.id == exam_session.user_id).first()
-        target_band = user.target_band if user else "7.5"
+        # ENFORCE BAND 9 (v13.0 - User Request)
+        target_band = "9.0" 
         weakness = user.weakness if user else "General"
 
         from app.core.database import ErrorLog
@@ -109,8 +112,12 @@ async def process_user_attempt(
     transcript_data = await transcription_task
     current_prompt_tr = await prompt_tr_task
     
-    print(f"DEBUG: Transcript -> {transcript_data['text']}")
-    transcription_error = transcript_data.get("error", False)
+    # 2. TRANSCRIPTION POST-PROCESSING (v12.0)
+    transcript_text = transcript_data['text']
+    transcript_text = post_process_transcript(transcript_text)
+    transcript_data['text'] = transcript_text
+    
+    logger.info(f"DEBUG: Processed Transcript -> {transcript_text}")
 
     # 3. ANALYZE (Linguistic)
     attempt = UserAttempt(
@@ -119,7 +126,32 @@ async def process_user_attempt(
         audio_duration=transcript_data['duration']
     )
     
-    # 4. START PARALLEL STAGE 2: Signals + Pronunciation + Transcript Translation
+    # 3b. RECORD PERSISTENCE (v8.0) - Ensure record exists even if LLM fails
+    if is_exam_mode:
+        new_qa = None
+        if is_retry:
+            new_qa = db.query(QuestionAttempt).filter(
+                QuestionAttempt.session_id == session_id,
+                QuestionAttempt.part == current_part
+            ).order_by(QuestionAttempt.id.desc()).first()
+            
+        if not new_qa:
+            new_qa = QuestionAttempt(session_id=session_id, part=current_part)
+            db.add(new_qa)
+        
+        db.flush() 
+        new_qa.question_text = current_prompt
+        new_qa.transcript = attempt.transcript
+        new_qa.duration_seconds = attempt.audio_duration
+        db.commit() 
+
+    if transcription_error or not transcript_data['text'].strip() or len(transcript_data['text'].split()) < 2:
+        intervention.feedback_markdown = "⚠️ **Microphone Error**: Saya tidak bisa mendengar suara Anda dengan jelas. Tolong pastikan mic aktif dan coba lagi."
+        intervention.action_id = "FORCE_RETRY"
+        if not transcript_data['text'].strip() or len(transcript_data['text'].split()) < 2:
+            return intervention
+            
+    # 4. START PARALLEL STAGE 2 (v8.0 - Restored)
     signals_task = extract_signals_async(attempt, current_prompt_text=current_prompt)
     pron_task = loop.run_in_executor(None, analyze_pronunciation, file_path)
     transcript_tr_task = translate_to_indonesian_async(attempt.transcript)
@@ -146,13 +178,7 @@ async def process_user_attempt(
     intervention.user_transcript = attempt.transcript
     intervention.confidence_score = signals.confidence_score
     intervention.user_transcript_translated = transcript_tr
-    
-    if transcription_error or not transcript_data['text'].strip() or len(transcript_data['text'].split()) < 2:
-        intervention.feedback_markdown = "⚠️ **Microphone Error**: Saya tidak bisa mendengar suara Anda dengan jelas. Tolong pastikan mic aktif dan coba lagi."
-        intervention.action_id = "FORCE_RETRY"
-        if not transcript_data['text'].strip() or len(transcript_data['text'].split()) < 2:
-            return intervention
-    
+
     # 6. POPULATE RADAR METRICS & UPDATE STATE
     intervention.radar_metrics = {
         "fluency": round(1.0 + (signals.fluency_wpm / 200.0) * 8.0, 1),
@@ -509,7 +535,7 @@ async def process_user_attempt(
         db.commit()
     except Exception as e:
         db.rollback()
-        print(f"CRITICAL ENGINE ERROR: {e}")
+        logger.error(f"CRITICAL ENGINE ERROR: {e}", exc_info=True)
         # We don't re-raise here if we want to return the intervention 
         # (which might contain a FORCE_RETRY or MIC_ERROR already)
         # but for unexpected crashes, it's better to ensure rollback.

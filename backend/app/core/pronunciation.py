@@ -2,6 +2,7 @@ import numpy as np
 import librosa
 from typing import Dict
 from app.core.transcriber import whisper_lock
+from app.core.logger import logger
 
 def analyze_pronunciation(audio_path: str) -> Dict[str, float]:
     """
@@ -10,20 +11,17 @@ def analyze_pronunciation(audio_path: str) -> Dict[str, float]:
     try:
         y, sr = None, None
         
-        # Proactively check for .webm to avoid librosa warnings
-        if audio_path.endswith(".webm"):
-            try:
-                # Local import to avoid overhead if not used, but wrapped safely
-                from faster_whisper.audio import decode_audio
-                with whisper_lock:
-                    y = decode_audio(audio_path, sampling_rate=22050)
-                sr = 22050
-            except ImportError:
-                print("Faster-whisper not installed or audio module missing.")
-            except Exception as e:
-                print(f"Faster-whisper decoder failed for webm: {e}")
+        # 1. OPTIMIZED DECODER (v9.0) - Use faster-whisper as primary for speed and accuracy
+        try:
+            from faster_whisper.audio import decode_audio
+            with whisper_lock:
+                # Decodes and resamples in one C++ pass
+                y = decode_audio(audio_path, sampling_rate=22050)
+            sr = 22050
+        except Exception as e:
+            logger.error(f"Faster-whisper primary decoder failed: {e}. Falling back to librosa.")
 
-        # If not webm or if decoder failed, try librosa with silenced warnings
+        # 2. LEGACY FALLBACK (Slow)
         if y is None:
             import warnings
             with warnings.catch_warnings():
@@ -31,16 +29,8 @@ def analyze_pronunciation(audio_path: str) -> Dict[str, float]:
                 try:
                     y, sr = librosa.load(audio_path, sr=22050)
                 except Exception as e:
-                    print(f"Librosa load failed: {e}")
-                    # Final fallback try
-                    try:
-                        from faster_whisper.audio import decode_audio
-                        with whisper_lock:
-                            y = decode_audio(audio_path, sampling_rate=22050)
-                        sr = 22050
-                    except Exception as e2:
-                        print(f"Final audio decode fallback failed: {e2}")
-                        return {"pronunciation_score": 0.0, "error": "Audio decode failed"}
+                    logger.error(f"Librosa load failed: {e}")
+                    return {"pronunciation_score": 0.0, "error": "Audio decode failed"}
         
         if y is None or len(y) < 2048:
             return {
@@ -88,7 +78,5 @@ def analyze_pronunciation(audio_path: str) -> Dict[str, float]:
             "avg_zcr": round(float(avg_zcr), 4)
         }
     except Exception as e:
-        import traceback
-        print(f"PRONUNCIATION ERROR: {e}")
-        traceback.print_exc()
+        logger.error(f"PRONUNCIATION ERROR: {e}", exc_info=True)
         return {"pronunciation_score": 0.0, "error": str(e)}
