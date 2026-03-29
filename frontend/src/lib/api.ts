@@ -222,13 +222,16 @@ export class ApiClient {
     return res.json();
   }
 
-  static async analyzeShadowing(targetText: string, blob: Blob): Promise<any> {
+  static async analyzeShadowing(targetText: string, blob: Blob, skillId?: string): Promise<any> {
     const formData = new FormData();
     formData.append("file", blob, "shadow.webm");
     
-    // We pass target_text as a query param or part of form data? 
-    // In my backend I used it as a param.
-    const res = await this.fetchWithRetry(`${API_BASE_URL}/v1/exams/analyze-shadowing?target_text=${encodeURIComponent(targetText)}`, {
+    let url = `${API_BASE_URL}/v1/exams/analyze-shadowing?target_text=${encodeURIComponent(targetText)}`;
+    if (skillId) {
+      url += `&skill_id=${encodeURIComponent(skillId)}`;
+    }
+
+    const res = await this.fetchWithRetry(url, {
       method: "POST",
       body: formData,
     });

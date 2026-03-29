@@ -8,11 +8,21 @@ from app.core.config import settings
 whisper_lock = threading.Lock()
 _model = None
 
-# 1. HARDWARE DEPENDENCY CHECK (v8.0)
+# 1. HARDWARE DEPENDENCY CHECK (v8.0/v18.0)
 import shutil
-FFMPEG_AVAILABLE = shutil.which("ffmpeg") is not None
+FFMPEG_PATH = shutil.which("ffmpeg")
+if not FFMPEG_PATH:
+    # Fallback to discovered extension path on Windows
+    local_ff = r"C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe"
+    if os.path.exists(local_ff):
+        FFMPEG_PATH = local_ff
+        os.environ["PATH"] += os.pathsep + os.path.dirname(local_ff)
+
+FFMPEG_AVAILABLE = FFMPEG_PATH is not None
 if not FFMPEG_AVAILABLE:
     logger.error("CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.")
+else:
+    logger.info(f"--- FFmpeg detected: {FFMPEG_PATH} ---")
 
 def get_whisper_model():
     """Thread-safe singleton loader for the Whisper model (v16.0)"""

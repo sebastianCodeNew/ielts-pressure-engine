@@ -699,3 +699,111 @@ constraints
 [2026-03-28 20:00:10] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
 [2026-03-28 20:00:10] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
 [2026-03-28 20:00:10] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 09:55:58] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-29 09:56:04] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-29 09:58:26] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-29 09:58:27] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-29 09:58:28] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-29 09:58:28] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 09:58:28] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 09:58:29] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 09:58:29] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 09:58:29] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 09:58:29] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 09:58:29] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 09:58:29] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 09:58:29] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 09:58:29] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 09:58:29] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 09:58:29] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 09:58:30] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 09:58:30] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 09:58:30] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 09:58:30] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 09:58:30] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 09:58:30] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:00:13] [ERROR] [ielts_engine] - CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.
+[2026-03-29 10:00:15] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:00:15] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:00:15] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:00:15] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:00:15] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:00:15] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:00:30] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 82, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-29 10:02:01] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:02:01] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:02:01] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:02:01] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:02:01] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:02:01] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:02:01] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:02:01] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:02:03] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:02:04] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:02:04] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:02:04] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:02:06] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:02:06] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:02:06] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:02:06] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:02:06] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:02:06] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:02:07] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:02:07] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:02:07] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:02:07] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:02:07] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:02:07] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:02:07] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:02:07] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:02:07] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:02:07] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:02:07] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:02:07] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:02:07] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:02:07] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:02:07] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:02:07] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:02:07] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:02:07] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:39:59] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:39:59] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:39:59] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:39:59] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:39:59] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:39:59] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:40:06] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:40:06] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:40:06] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:40:09] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:40:09] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:40:09] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:40:09] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:40:09] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:40:09] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:40:09] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:40:09] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:40:09] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:40:09] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:40:09] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:40:09] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:40:09] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:40:09] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:40:09] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:40:09] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:40:09] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:40:09] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---

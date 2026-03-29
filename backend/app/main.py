@@ -13,13 +13,12 @@ from typing import Dict
 
 # Core Logic Imports
 from app.core.database import init_db, get_db
-from app.core.cache import init_db as init_cache_db
+from app.core.cache import init_cache_db
 from app.core.engine import process_user_attempt
 from app.core.config import settings
 from app.api.v1.api import api_router
 from app.core.logger import logger
 from app.core.database import engine as db_engine
-from app.core.cache import close_cache_connection
 import asyncio
 
 # --- RATE LIMITING ---
@@ -101,7 +100,7 @@ async def lifespan(app: FastAPI):
     # 3. GRACEFUL SHUTDOWN (v10.0/v12.0/v16.0)
     logger.info("--- Shutting down: Cleaning up resources ---")
     cleanup_task.cancel()
-    # Safely dispose of main engine connection
+    # Safely dispose of main engine
     if db_engine:
         db_engine.dispose()
     logger.info("--- Shutdown Complete ---")

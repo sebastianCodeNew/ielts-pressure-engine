@@ -1,4 +1,5 @@
 import uuid
+from typing import List, Optional
 import shutil
 import asyncio
 from app.core.logger import logger
@@ -6,7 +7,7 @@ import os
 import re
 import random
 from sqlalchemy import func
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy.orm import Session
 from datetime import datetime
 from app.core.database import get_db, ExamSession, QuestionAttempt, User, VocabularyItem
@@ -263,11 +264,13 @@ def get_exam_summary(session_id: str, db: Session = Depends(get_db)):
 @router.post("/analyze-shadowing")
 async def analyze_shadowing(
     target_text: str,
+    skill_id: Optional[str] = Query(None),
+    user_id: str = Query("default_user"),
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
     """
-    Analyzes a specific sentence shadow attempt.
+    Analyzes a specific sentence shadow attempt and persists progress if skill_id is provided.
     """
     import asyncio
     temp_filename = f"shadow_{uuid.uuid4()}.webm"
@@ -277,22 +280,21 @@ async def analyze_shadowing(
             shutil.copyfileobj(file.file, buffer)
 
         loop = asyncio.get_running_loop()
-        # 1. Transcribe the shadow attempt (CPU-bound → run in thread)
+        # 1. Transcribe the shadow attempt (CPU-bound)
         from app.core.transcriber import transcribe_audio
         from app.core.transcript_processor import post_process_transcript
         result = await loop.run_in_executor(None, transcribe_audio, temp_filename)
         transcript = result.get("text", "")
         
-        # 1b. Clean transcript (v15.0 - apply same pipeline as exam mode)
+        # 1b. Clean transcript (v15.0)
         transcript = post_process_transcript(transcript)
         transcript = transcript.lower() if transcript else ""
         
-        # 2. Analyze Pronunciation (CPU-bound → run in thread)
+        # 2. Analyze Pronunciation (CPU-bound)
         from app.core.pronunciation import analyze_pronunciation
         metrics = await loop.run_in_executor(None, analyze_pronunciation, temp_filename)
         
-        # 3. Calculate Similarity Score (Frequency-aware, punctuation-insensitive word overlap)
-        from collections import Counter
+        # 3. Calculate Similarity Score (v16.0 - regex word matching)
         target_words = re.findall(r'\b\w+\b', target_text.lower())
         target_counts = Counter(target_words)
         
@@ -302,7 +304,6 @@ async def analyze_shadowing(
         if not target_words:
             similarity = 1.0
         else:
-            # Count matches based on minimum frequency in target vs shadow
             overlap = 0
             for word, count in target_counts.items():
                 overlap += min(count, shadow_counts.get(word, 0))
@@ -311,15 +312,32 @@ async def analyze_shadowing(
         # 4. Combine into a "Mastery Score"
         clarity = metrics.get("pronunciation_score", 0.0)
         mastery_score = (similarity * 0.5 + clarity * 0.5)
+        is_passed = mastery_score > 0.7
+
+        # 5. PERSISTENCE BLOCK (v18.0 - Heal weaknesses during drills)
+        if is_passed and skill_id:
+            from app.core.database import ErrorLog
+            error_log = db.query(ErrorLog).filter(
+                ErrorLog.user_id == user_id,
+                ErrorLog.error_type == skill_id
+            ).first()
+            
+            if error_log:
+                # Decrement error count as the user is mastering the skill
+                error_log.count = max(0, error_log.count - 1)
+                error_log.last_seen = datetime.utcnow()
+                db.commit()
+                logger.info(f"Skill '{skill_id}' improved for user {user_id}. Remaining errors: {error_log.count}")
         
-        # 5. Indonesian Translations (v15.0)
+        # 6. Indonesian Translations (v15.0)
         transcript_tr = ""
         target_tr = ""
         try:
+            from app.core.translator import translate_to_indonesian_async
             transcript_tr = await translate_to_indonesian_async(transcript) if transcript else ""
             target_tr = await translate_to_indonesian_async(target_text)
         except Exception as e:
-            logger.error(f"Shadowing translation error: {e}", exc_info=True)
+            logger.error(f"Shadowing translation error: {e}")
         
         return {
             "transcript": transcript,
@@ -328,7 +346,7 @@ async def analyze_shadowing(
             "mastery_score": round(mastery_score, 2),
             "similarity": round(similarity, 2),
             "clarity": clarity,
-            "is_passed": mastery_score > 0.7
+            "is_passed": is_passed
         }
         
     finally:

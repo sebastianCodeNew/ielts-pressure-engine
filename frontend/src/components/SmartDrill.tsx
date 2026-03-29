@@ -65,7 +65,7 @@ export function SmartDrill({ errorType, onComplete, onExit }: SmartDrillProps) {
      setStatus("PROCESSING");
      try {
          // Use existing shadowing analyzer for simplicity
-         const result = await ApiClient.analyzeShadowing(currentDrill.target, audioBlob!);
+         const result = await ApiClient.analyzeShadowing(currentDrill.target, audioBlob!, errorType);
          
          if (!isMounted.current) return;
 
