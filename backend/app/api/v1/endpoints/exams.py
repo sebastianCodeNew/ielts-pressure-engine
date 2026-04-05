@@ -11,12 +11,17 @@ from sqlalchemy import func, text
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy.orm import Session
 from datetime import datetime
-from app.core.database import get_db, ExamSession, QuestionAttempt, User, VocabularyItem
+from app.core.database import get_db, ExamSession, QuestionAttempt, User, VocabularyItem, ErrorLog
 from app.schemas import ExamStartRequest, ExamSessionSchema, Intervention, ExamSummary
 from app.core.engine import process_user_attempt 
 from app.core.translator import translate_to_indonesian_async, translate_checkpoint_words_async
 from app.core.config import settings
 from app.core.scoring import WELCOME_BRIEFING, calculate_band_score, WPM_MULTIPLIER
+from app.core.spaced_repetition import get_due_vocabulary
+from app.core.error_gym import get_top_errors_for_user, generate_error_gym_drills
+from app.core.transcriber import transcribe_audio
+from app.core.transcript_processor import post_process_transcript
+from app.core.pronunciation import analyze_pronunciation
 
 router = APIRouter()
 
@@ -26,7 +31,6 @@ PART_1_TOPICS = settings.PART_1_TOPICS
 async def get_exam_warmup(db: Session = Depends(get_db)):
     """Fetches due vocabulary for the pre-flight warm-up."""
     user_id = settings.DEFAULT_USER_ID
-    from app.core.spaced_repetition import get_due_vocabulary
     # Note: DB operations are sync, but we can call them in async routes normally in FastAPI.
     due_words = get_due_vocabulary(db, user_id, limit=3)
     
@@ -77,8 +81,6 @@ async def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
     missing_words = [w for w in topic_pool] # Simplified logic for speed
     
     # Batch Translate Initial Keywords if needed
-    from app.core.translator import translate_to_indonesian_async, translate_checkpoint_words_async
-    
     try:
         tr_list, mn_list = await translate_checkpoint_words_async(topic_pool[:5])
         prompt_tr = await translate_to_indonesian_async(initial_prompt)
@@ -189,6 +191,8 @@ async def submit_exam_audio(
             constraints={"timer": 45}
         )
 
+    # Extract file extension from uploaded filename, default to .webm (frontend standard)
+    ext = os.path.splitext(file.filename or "response.webm")[1] or ".webm"
     temp_filename = os.path.abspath(f"temp_exam_{session_id}_{uuid.uuid4().hex}{ext}")
     persistent_filename = None
     
@@ -313,8 +317,6 @@ async def analyze_shadowing(
 
         loop = asyncio.get_running_loop()
         # 1. Transcribe the shadow attempt (CPU-bound)
-        from app.core.transcriber import transcribe_audio
-        from app.core.transcript_processor import post_process_transcript
         result = await loop.run_in_executor(None, transcribe_audio, temp_filename)
         transcript = result.get("text", "")
         
@@ -323,7 +325,6 @@ async def analyze_shadowing(
         transcript = transcript.lower() if transcript else ""
         
         # 2. Analyze Pronunciation (CPU-bound)
-        from app.core.pronunciation import analyze_pronunciation
         metrics = await loop.run_in_executor(None, analyze_pronunciation, temp_filename)
         
         # 3. Calculate Similarity Score (v16.0 - regex word matching)
@@ -348,7 +349,6 @@ async def analyze_shadowing(
 
         # 5. PERSISTENCE BLOCK (v18.0 - Heal weaknesses during drills)
         if is_passed and skill_id:
-            from app.core.database import ErrorLog
             error_log = db.query(ErrorLog).filter(
                 ErrorLog.user_id == user_id,
                 ErrorLog.error_type == skill_id
@@ -365,7 +365,6 @@ async def analyze_shadowing(
         transcript_tr = ""
         target_tr = ""
         try:
-            from app.core.translator import translate_to_indonesian_async
             transcript_tr = await translate_to_indonesian_async(transcript) if transcript else ""
             target_tr = await translate_to_indonesian_async(target_text)
         except Exception as e:
@@ -409,8 +408,6 @@ async def get_exam_status(session_id: str, db: Session = Depends(get_db)):
     checkpoint_words_meanings: list[str] = []
 
     # Prefer the latest saved NEXT-turn checkpoint requirements.
-    from app.core.database import QuestionAttempt
-    from app.core.translator import translate_checkpoint_words_async
 
     latest_qa = db.query(QuestionAttempt).filter(
         QuestionAttempt.session_id == session_id
@@ -443,7 +440,6 @@ async def get_error_gym(db: Session = Depends(get_db)):
     Fetches targeted remediation drills for the user's most frequent error.
     """
     user_id = settings.DEFAULT_USER_ID
-    from app.core.error_gym import get_top_errors_for_user, generate_error_gym_drills
     
     top_errors = get_top_errors_for_user(db, user_id, limit=1)
     if not top_errors:

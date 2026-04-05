@@ -6,8 +6,8 @@ import asyncio
 from datetime import datetime
 from app.schemas import UserAttempt, Intervention, DetailedScores, SignalMetrics
 from app.core.transcriber import transcribe_audio
-from app.core.state import AgentState, update_state
-from app.core.database import SessionModel, ExamSession, QuestionAttempt, User, VocabularyItem
+from app.core.state import AgentState, update_state, AttemptResult
+from app.core.database import SessionModel, ExamSession, QuestionAttempt, User, VocabularyItem, ErrorLog
 from app.core.pronunciation import analyze_pronunciation
 from app.core.logger import logger
 from app.core.transcript_processor import post_process_transcript
@@ -20,6 +20,7 @@ from app.core.config import settings
 from app.core.evaluator import extract_signals_async
 from app.core.agent import formulate_strategy_async
 from app.core.scoring import get_radar_metrics, calculate_band_score, WPM_MULTIPLIER, COHERENCE_MULTIPLIER, LEXICAL_MULTIPLIER, GRAMMAR_MULTIPLIER, PRONUNCIATION_MULTIPLIER
+from app.core.error_taxonomy import classify_errors
 
 # 1. CORE CONCURRENCY REGISTRY (v18.0 - Absolute Hardening)
 import weakref
@@ -74,7 +75,7 @@ async def process_user_attempt(
                 target_band = "9.0" 
                 weakness = user.weakness if user else "General"
 
-                from app.core.database import ErrorLog
+
                 error_logs = db.query(ErrorLog).filter(
                     ErrorLog.user_id == exam_session.user_id
                 ).order_by(ErrorLog.count.desc()).limit(3).all()
@@ -83,7 +84,7 @@ async def process_user_attempt(
                     issues = [f"{e.error_type} ({e.count}x)" for e in error_logs]
                     chronic_issues_str = ", ".join(issues)
 
-                from app.core.state import AttemptResult
+
                 past_attempts = db.query(QuestionAttempt).filter(
                     QuestionAttempt.session_id == session_id
                 ).order_by(QuestionAttempt.id.asc()).all()
@@ -447,10 +448,8 @@ async def process_user_attempt(
                         return intervention
                 
                 # Micro-Skill Error Tracking
-                from app.core.error_taxonomy import classify_errors
                 if intervention.feedback_markdown:
                     detected_errors = classify_errors(intervention.feedback_markdown)
-                    from app.core.database import ErrorLog
                     for error_type in detected_errors:
                         existing = db.query(ErrorLog).filter(
                             ErrorLog.user_id == exam_session.user_id,

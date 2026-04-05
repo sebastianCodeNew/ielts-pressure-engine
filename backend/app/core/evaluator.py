@@ -1,5 +1,6 @@
 from app.schemas import UserAttempt, SignalMetrics
 from app.core.semantic import calculate_coherence_async
+from app.core.logger import logger
 import re
 
 async def extract_signals_async(attempt: UserAttempt, current_prompt_text: str = "general topic") -> SignalMetrics:

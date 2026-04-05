@@ -21,7 +21,7 @@ def test_llm_factory():
 
     # Test 3: Timeout propagation
     llm_timeout = get_llm(timeout=30)
-    assert llm_timeout.timeout == 30
+    assert llm_timeout.request_timeout == 30
     print("✅ LLM timeout propagation verified.")
 
     print("\n🎉 LLM Factory verified successfully!")

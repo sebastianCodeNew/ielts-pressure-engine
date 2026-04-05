@@ -1,4 +1,5 @@
 import os
+import json
 from pydantic_settings import BaseSettings
 from typing import Optional
 
@@ -34,7 +35,6 @@ class Settings(BaseSettings):
     
     @property
     def PART_2_CUES(self) -> list[dict]:
-        import json
         p2_path = os.path.join(os.path.dirname(__file__), "p2_cues.json")
         try:
             with open(p2_path, "r") as f:

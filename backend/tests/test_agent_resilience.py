@@ -1,6 +1,7 @@
 import asyncio
 import os
 import sys
+import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
 
 # Add project root to path
@@ -10,6 +11,7 @@ from app.core.agent import formulate_strategy_async
 from app.core.state import AgentState
 from app.schemas import SignalMetrics, Intervention
 
+@pytest.mark.asyncio
 async def test_retry_logic():
     print("🚀 Testing LLM Retry Logic (Simulating 2 failures)...")
     

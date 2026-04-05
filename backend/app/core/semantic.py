@@ -1,7 +1,9 @@
 import httpx
+import asyncio
 import numpy as np
 from typing import List
 from app.core.config import settings
+from app.core.logger import logger
 
 # Load API Key from centralized config
 DEEPINFRA_KEY = settings.DEEPINFRA_API_KEY
@@ -13,8 +15,7 @@ async def get_embedding_async(text: str) -> List[float]:
     """
     if not text or not isinstance(text, str):
         return [0.0] * 768
-        
-    from app.core.logger import logger
+    
     if not DEEPINFRA_KEY:
         logger.warning("DEEPINFRA_API_KEY is missing. Returning zero vector.")
         return [0.0] * 768
@@ -49,8 +50,6 @@ async def calculate_coherence_async(target_prompt: str, user_response: str) -> f
     """
     Calculates the Cosine Similarity between two text vectors (Async).
     """
-    import asyncio
-    
     # Run both embeddings in parallel
     vec_a, vec_b = await asyncio.gather(
         get_embedding_async(target_prompt),

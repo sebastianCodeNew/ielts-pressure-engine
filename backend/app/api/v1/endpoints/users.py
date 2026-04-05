@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from app.core.database import get_db, User, ExamSession
+from collections import Counter
+from app.core.database import get_db, User, ExamSession, QuestionAttempt, ErrorLog
 from app.core.config import settings
 from typing import List
 
@@ -60,7 +62,6 @@ def get_user_history(user_id: str = settings.DEFAULT_USER_ID, db: Session = Depe
         } for s in sessions
     ]
 
-from pydantic import BaseModel
 
 class UserProfileUpdate(BaseModel):
     target_band: str
@@ -80,9 +81,6 @@ def update_user_profile(profile: UserProfileUpdate, user_id: str = settings.DEFA
 @router.get("/me/weakness-report")
 def get_weakness_report(user_id: str = settings.DEFAULT_USER_ID, db: Session = Depends(get_db)):
     """Comprehensive weakness analysis across all sessions."""
-    from app.core.database import QuestionAttempt
-    from collections import Counter
-    
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -147,7 +145,6 @@ def get_weakness_report(user_id: str = settings.DEFAULT_USER_ID, db: Session = D
                 error_keywords.append("Fluency Gaps")
     
     # Now use micro-skill ErrorLog for granular breakdown
-    from app.core.database import ErrorLog
     error_logs = db.query(ErrorLog).filter(
         ErrorLog.user_id == user_id
     ).order_by(ErrorLog.count.desc()).limit(5).all()

@@ -1641,3 +1641,6 @@ NameError: name 're' is not defined. Did you forget to import 're'
 [2026-04-05 15:48:21] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
 [2026-04-05 16:38:24] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
 [2026-04-05 16:38:24] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-04-05 16:46:26] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 16:52:43] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 16:52:52] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---

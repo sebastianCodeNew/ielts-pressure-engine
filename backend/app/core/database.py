@@ -186,8 +186,10 @@ def init_db():
         logger.error(f"Base.metadata.create_all failed: {e}")
     
     # MIGRATION LOGIC (Manual but robust)
+    # Using engine.begin() for atomic transactions — auto-commits on success, auto-rolls-back on error.
+    # This prevents "Connection is closed" errors that occurred with engine.connect() + manual commit.
     try:
-        with engine.connect() as conn:
+        with engine.begin() as conn:
             # 1. Question Attempts
             cols_qa = get_columns(conn, "question_attempts")
             migrations_qa = {
@@ -284,7 +286,7 @@ def init_db():
                 except Exception as e:
                     logger.error(f"Migration skipped (error_logs): {e}")
 
-            conn.commit()
+            # No manual conn.commit() needed — engine.begin() auto-commits on success
     except Exception as e:
         logger.error(f"Migration block failed completely: {e}")
     logger.info("--- Database Schema Verified & Migrated ---")

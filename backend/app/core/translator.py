@@ -1,4 +1,5 @@
 import os
+import re
 import asyncio
 from langchain_core.messages import SystemMessage
 
@@ -78,8 +79,6 @@ async def batch_translate_to_indonesian_async(texts: list[str]) -> list[str]:
             async with translation_semaphore:
                 response = await llm.ainvoke([SystemMessage(content=prompt)])
                 lines = response.content.strip().splitlines()
-                
-                import re
                 for line in lines:
                     match = re.search(r'ID_(\d+)[:\-]\s*(.*)', line)
                     if match:
@@ -92,8 +91,6 @@ async def batch_translate_to_indonesian_async(texts: list[str]) -> list[str]:
             for i, t in chunk:
                 if not results[i]:
                     results[i] = await translate_to_indonesian_async(t)
-
-    return results
 
     return results
 
@@ -123,8 +120,6 @@ async def translate_checkpoint_words_async(words: list[str]) -> tuple[list[str],
     try:
         response = await llm.ainvoke([SystemMessage(content=prompt)])
         lines = [ln.strip() for ln in response.content.splitlines() if ln.strip()]
-
-        import re
         parsed: dict[str, tuple[str, str]] = {}
         for ln in lines:
             # Resilient split against || or | separators
@@ -149,7 +144,6 @@ async def translate_checkpoint_words_async(words: list[str]) -> tuple[list[str],
         return translations, meanings
     except Exception as e:
         logger.error(f"Checkpoint translation error (Async): {e}", exc_info=True)
-        import asyncio
         tasks = [translate_to_indonesian_async(w) for w in words]
         translations = await asyncio.gather(*tasks)
         meanings = ["Makna sederhana tidak tersedia." for _ in words]
