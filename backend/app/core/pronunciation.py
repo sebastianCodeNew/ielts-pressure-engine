@@ -36,6 +36,7 @@ def analyze_pronunciation(audio_path: str) -> Dict[str, float]:
                 try:
                     # Decodes and resamples in one C++ pass using our shared model's infrastructure
                     y = decode_audio(audio_path, sampling_rate=22050)
+                    sr = 22050
                 finally:
                     whisper_lock.release()
             else:

@@ -807,3 +807,837 @@ NameError: name 're' is not defined. Did you forget to import 're'
 [2026-03-29 10:40:09] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
 [2026-03-29 10:40:09] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
 [2026-03-29 10:40:09] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:42:33] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:42:33] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:42:34] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:42:34] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:42:34] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:42:35] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:42:35] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:42:36] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:42:36] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:42:36] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:42:36] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:42:36] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:42:36] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:42:36] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:42:36] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:42:38] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:42:38] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:42:38] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:42:38] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:42:38] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:42:38] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:42:39] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:42:39] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:42:39] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:42:39] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:42:39] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:42:39] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:42:53] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:42:53] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:42:54] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:42:54] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:42:54] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:42:55] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:42:55] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:42:56] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:42:57] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:42:57] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:42:57] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:42:57] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:42:57] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:42:57] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:42:57] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:42:59] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:42:59] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:42:59] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:42:59] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:42:59] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:42:59] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:43:00] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:43:00] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:43:00] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:43:00] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:43:00] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:43:00] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:43:37] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:43:37] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:43:39] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:43:39] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:43:39] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:43:39] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:43:39] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:43:40] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:43:41] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:43:41] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:43:41] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:43:41] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:43:41] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:43:41] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:43:41] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:43:43] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:43:43] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:43:43] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:43:43] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:43:43] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:43:43] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:43:43] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:43:43] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:43:43] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:43:43] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:43:43] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:43:43] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:44:57] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:44:57] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:44:57] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:44:57] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:44:58] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:44:58] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:44:58] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:44:59] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:45:00] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:45:01] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:45:01] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:45:01] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:45:01] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:45:01] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:45:01] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:45:01] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:45:01] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:45:01] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:45:01] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:45:01] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:45:01] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:45:02] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:45:02] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:45:02] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:45:02] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:45:02] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:45:02] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:48:01] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-29 10:48:03] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-29 10:48:03] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-29 10:48:03] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-29 10:48:03] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-29 10:48:03] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-29 10:48:03] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-29 10:49:02] [ERROR] [ielts_engine] - FATAL UNHANDLED ERROR for /api/v1/exams/history: 'QuestionAttempt' object has no attribute 'audio_path'
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\main.py", line 126, in global_exception_handler_middleware
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 355, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 243, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 140, in get_detailed_history
+    "audio_url": f"/audio/{os.path.basename(a.audio_path)}" if a.audio_path else None,
+                                                               ^^^^^^^^^^^^
+AttributeError: 'QuestionAttempt' object has no attribute 'audio_path'
+[2026-03-29 10:49:03] [ERROR] [ielts_engine] - FATAL UNHANDLED ERROR for /api/v1/exams/history: 'QuestionAttempt' object has no attribute 'audio_path'
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\main.py", line 126, in global_exception_handler_middleware
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 355, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 243, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 140, in get_detailed_history
+    "audio_url": f"/audio/{os.path.basename(a.audio_path)}" if a.audio_path else None,
+                                                               ^^^^^^^^^^^^
+AttributeError: 'QuestionAttempt' object has no attribute 'audio_path'
+[2026-03-29 10:49:04] [ERROR] [ielts_engine] - FATAL UNHANDLED ERROR for /api/v1/exams/history: 'QuestionAttempt' object has no attribute 'audio_path'
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\main.py", line 126, in global_exception_handler_middleware
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 355, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 243, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 140, in get_detailed_history
+    "audio_url": f"/audio/{os.path.basename(a.audio_path)}" if a.audio_path else None,
+                                                               ^^^^^^^^^^^^
+AttributeError: 'QuestionAttempt' object has no attribute 'audio_path'
+[2026-03-29 10:49:05] [ERROR] [ielts_engine] - FATAL UNHANDLED ERROR for /api/v1/exams/history: 'QuestionAttempt' object has no attribute 'audio_path'
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\main.py", line 126, in global_exception_handler_middleware
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 355, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\fastapi\routing.py", line 243, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 140, in get_detailed_history
+    "audio_url": f"/audio/{os.path.basename(a.audio_path)}" if a.audio_path else None,
+                                                               ^^^^^^^^^^^^
+AttributeError: 'QuestionAttempt' object has no attribute 'audio_path'
+[2026-03-29 10:49:15] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 82, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-29 10:49:18] [ERROR] [ielts_engine] - Error processing exam audio: 'da829353-8e09-4335-86a9-e7f81d5becf7'
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 189, in submit_exam_audio
+    intervention = await process_user_attempt(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\engine.py", line 51, in process_user_attempt
+    lock = await get_session_lock(session_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\engine.py", line 34, in get_session_lock
+    return session_locks[session_id]
+           ~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Roaming\uv\python\cpython-3.12.12-windows-x86_64-none\Lib\weakref.py", line 136, in __getitem__
+    o = self.data[key]()
+        ~~~~~~~~~^^^^^
+KeyError: 'da829353-8e09-4335-86a9-e7f81d5becf7'
+[2026-03-29 10:49:19] [ERROR] [ielts_engine] - Error processing exam audio: 'da829353-8e09-4335-86a9-e7f81d5becf7'
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 189, in submit_exam_audio
+    intervention = await process_user_attempt(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\engine.py", line 51, in process_user_attempt
+    lock = await get_session_lock(session_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\engine.py", line 34, in get_session_lock
+    return session_locks[session_id]
+           ~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Roaming\uv\python\cpython-3.12.12-windows-x86_64-none\Lib\weakref.py", line 136, in __getitem__
+    o = self.data[key]()
+        ~~~~~~~~~^^^^^
+KeyError: 'da829353-8e09-4335-86a9-e7f81d5becf7'
+[2026-03-29 10:49:21] [ERROR] [ielts_engine] - Error processing exam audio: 'da829353-8e09-4335-86a9-e7f81d5becf7'
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 189, in submit_exam_audio
+    intervention = await process_user_attempt(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\engine.py", line 51, in process_user_attempt
+    lock = await get_session_lock(session_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\engine.py", line 34, in get_session_lock
+    return session_locks[session_id]
+           ~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Roaming\uv\python\cpython-3.12.12-windows-x86_64-none\Lib\weakref.py", line 136, in __getitem__
+    o = self.data[key]()
+        ~~~~~~~~~^^^^^
+KeyError: 'da829353-8e09-4335-86a9-e7f81d5becf7'
+[2026-03-29 10:49:23] [ERROR] [ielts_engine] - Error processing exam audio: 'da829353-8e09-4335-86a9-e7f81d5becf7'
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 189, in submit_exam_audio
+    intervention = await process_user_attempt(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\engine.py", line 51, in process_user_attempt
+    lock = await get_session_lock(session_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\engine.py", line 34, in get_session_lock
+    return session_locks[session_id]
+           ~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\user\AppData\Roaming\uv\python\cpython-3.12.12-windows-x86_64-none\Lib\weakref.py", line 136, in __getitem__
+    o = self.data[key]()
+        ~~~~~~~~~^^^^^
+KeyError: 'da829353-8e09-4335-86a9-e7f81d5becf7'
+[2026-03-29 10:49:34] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:49:34] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:49:57] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:49:57] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:49:57] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:49:57] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-29 10:49:57] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-29 10:49:57] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-31 18:11:29] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 18:11:31] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-31 18:11:31] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-31 18:11:31] [INFO] [ielts_engine] - --- Audio Cleanup: Removed 4 expired files ---
+[2026-03-31 18:11:31] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-31 18:11:31] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-31 18:11:31] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-31 18:11:31] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-31 18:13:38] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 18:13:40] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-31 18:13:40] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-31 18:13:40] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-31 18:13:40] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-31 18:13:40] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-31 18:13:40] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-31 18:13:40] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-31 18:13:40] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-31 18:30:35] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 82, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-31 18:31:39] [ERROR] [ielts_engine] - Health check failed: name 'text' is not defined
+[2026-03-31 18:39:41] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 18:39:44] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-31 18:39:44] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-31 18:39:44] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-31 18:39:44] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-31 18:39:44] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-31 18:39:44] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-31 19:12:44] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-31 19:12:44] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-31 19:12:45] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 19:12:47] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-31 19:12:47] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-31 19:12:47] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-31 19:12:47] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-31 19:12:47] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-31 19:12:47] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-31 19:31:59] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-31 19:31:59] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-31 19:32:01] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 19:32:02] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-31 19:32:02] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-31 19:32:02] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-31 19:32:02] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-31 19:32:02] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-31 19:32:02] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-31 19:32:31] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-31 19:32:31] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-31 19:32:32] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 19:32:33] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-31 19:32:33] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-31 19:32:33] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-31 19:32:33] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-31 19:32:33] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-31 19:32:33] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-31 19:32:35] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-31 19:32:35] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-31 19:32:36] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 19:32:38] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-31 19:32:38] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-31 19:32:38] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-31 19:32:38] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-31 19:32:38] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-31 19:32:38] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-31 19:32:45] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-31 19:32:45] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-31 19:32:46] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 19:32:48] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-31 19:32:48] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-31 19:32:48] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-31 19:32:48] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-31 19:32:48] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-31 19:32:48] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-31 19:40:43] [ERROR] [ielts_engine] - Translation endpoint error: name 're' is not defined
+[2026-03-31 20:41:08] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-31 20:41:08] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-31 20:41:10] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 20:41:12] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-31 20:41:12] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-31 20:41:12] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-31 20:41:12] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-31 20:41:12] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-31 20:41:12] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-31 20:42:54] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 82, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-31 20:42:56] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 82, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-31 20:42:56] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 20:42:59] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 82, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-31 20:43:56] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 82, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-31 20:43:58] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 82, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-31 20:43:59] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 20:44:02] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 82, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-31 20:49:15] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-31 20:49:15] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-31 20:49:16] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 20:49:18] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-31 20:49:18] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-31 20:49:18] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-31 20:49:18] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-31 20:49:18] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-31 20:49:18] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-31 20:49:23] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-31 20:49:23] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-31 20:49:25] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 20:49:33] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 20:49:34] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-31 20:49:34] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-31 20:49:34] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-31 20:49:34] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-31 20:49:34] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-31 20:49:34] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-31 20:49:36] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-31 20:49:36] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-31 20:49:38] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 20:49:39] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-31 20:49:39] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-31 20:49:39] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-31 20:49:39] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-31 20:49:39] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-31 20:49:39] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-31 20:49:48] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-31 20:49:48] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-31 20:49:49] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 20:49:51] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-31 20:49:51] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-31 20:49:51] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-31 20:49:51] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-31 20:49:51] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-31 20:49:51] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-31 20:50:00] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-03-31 20:50:00] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-03-31 20:50:01] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 20:50:03] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-03-31 20:50:03] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-03-31 20:50:03] [ERROR] [ielts_engine] - Failed to get table info for error_logs: This Connection is closed
+[2026-03-31 20:50:03] [ERROR] [ielts_engine] - Migration skipped (error_logs): This Connection is closed
+[2026-03-31 20:50:03] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-03-31 20:50:03] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-03-31 21:01:20] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 83, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-31 21:01:21] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 83, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-31 21:01:22] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 21:01:25] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 83, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-31 21:03:36] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 83, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-31 21:03:38] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 83, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-31 21:03:39] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 21:03:42] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 83, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-31 21:05:20] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 83, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-31 21:05:21] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 83, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-31 21:05:22] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 21:05:25] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 83, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-31 22:42:25] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 83, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-31 22:42:27] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 83, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-03-31 22:42:28] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-03-31 22:42:31] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 83, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-04-05 14:37:30] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 14:37:33] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-04-05 14:37:33] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-04-05 14:37:33] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-04-05 14:37:33] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-04-05 14:40:20] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 83, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-04-05 14:40:22] [ERROR] [ielts_engine] - Start Exam translation error: name 're' is not defined
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\api\v1\endpoints\exams.py", line 83, in start_exam
+    prompt_tr = await translate_to_indonesian_async(initial_prompt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\translator.py", line 25, in translate_to_indonesian_async
+    cached = get_cached_translation(text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 57, in get_cached_translation
+    cleaned_text = _normalize_text(source_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\cache.py", line 50, in _normalize_text
+    t = re.sub(r'\s+', ' ', t)
+        ^^
+NameError: name 're' is not defined. Did you forget to import 're'
+[2026-04-05 14:41:12] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-04-05 14:41:12] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-04-05 14:44:22] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 14:44:24] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-04-05 14:44:24] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-04-05 14:44:24] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-04-05 14:44:24] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-04-05 14:44:51] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-04-05 14:44:51] [INFO] [ielts_engine] - --- Shutdown Complete ---
+[2026-04-05 15:48:20] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 15:48:21] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-04-05 15:48:21] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-04-05 15:48:21] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-04-05 15:48:21] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-04-05 16:38:24] [INFO] [ielts_engine] - --- Shutting down: Cleaning up resources ---
+[2026-04-05 16:38:24] [INFO] [ielts_engine] - --- Shutdown Complete ---

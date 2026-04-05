@@ -67,4 +67,5 @@ async def calculate_coherence_async(target_prompt: str, user_response: str) -> f
     if norm_a == 0 or norm_b == 0:
         return 0.0
         
-    return float(dot_product / (norm_a * norm_b))
+    similarity = float(dot_product / (norm_a * norm_b))
+    return max(0.0, similarity)

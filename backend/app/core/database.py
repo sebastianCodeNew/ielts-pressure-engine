@@ -8,7 +8,7 @@ from app.core.logger import logger
 
 engine = create_engine(
     settings.DATABASE_URL, 
-    connect_args={"check_same_thread": False, "timeout": 60}
+    connect_args={"check_same_thread": False, "timeout": 120}
 )
 
 @event.listens_for(engine, "connect")
@@ -213,7 +213,8 @@ def init_db():
                     try:
                         conn.execute(text(f"ALTER TABLE question_attempts ADD COLUMN {col} {col_type}"))
                     except Exception as e:
-                        logger.warning(f"Migration skipped (question_attempts.{col}): {e}")
+                        if "duplicate column name" not in str(e).lower():
+                            logger.warning(f"Migration error (question_attempts.{col}): {e}")
         
             # 2. Exam Sessions
             cols_es = get_columns(conn, "exam_sessions")
@@ -228,7 +229,8 @@ def init_db():
                     try:
                         conn.execute(text(f"ALTER TABLE exam_sessions ADD COLUMN {col} {col_type}"))
                     except Exception as e:
-                        logger.warning(f"Migration skipped (exam_sessions.{col}): {e}")
+                        if "duplicate column name" not in str(e).lower():
+                            logger.warning(f"Migration error (exam_sessions.{col}): {e}")
         
             # 3. Users
             cols_u = get_columns(conn, "users")
@@ -263,7 +265,8 @@ def init_db():
                         if col == "interval_days":
                             conn.execute(text("UPDATE vocabulary_items SET interval_days = 1 WHERE interval_days IS NULL"))
                     except Exception as e:
-                        logger.warning(f"Migration skipped (vocabulary_items.{col}): {e}")
+                        if "duplicate column name" not in str(e).lower():
+                            logger.warning(f"Migration error (vocabulary_items.{col}): {e}")
             
             # 5. Achievements & Error Logs (v12.0)
             cols_ach = get_columns(conn, "user_achievements")
@@ -273,15 +276,15 @@ def init_db():
                 except Exception as e:
                     logger.error(f"Migration skipped (user_achievements): {e}")
 
-        cols_err = get_columns(conn, "error_logs")
-        if "error_type" not in cols_err:
-            try:
-                conn.execute(text("ALTER TABLE error_logs ADD COLUMN error_type TEXT"))
-                conn.execute(text("ALTER TABLE error_logs ADD COLUMN count INTEGER DEFAULT 1"))
-            except Exception as e:
-                logger.error(f"Migration skipped (error_logs): {e}")
+            cols_err = get_columns(conn, "error_logs")
+            if "error_type" not in cols_err:
+                try:
+                    conn.execute(text("ALTER TABLE error_logs ADD COLUMN error_type TEXT"))
+                    conn.execute(text("ALTER TABLE error_logs ADD COLUMN count INTEGER DEFAULT 1"))
+                except Exception as e:
+                    logger.error(f"Migration skipped (error_logs): {e}")
 
-        conn.commit()
+            conn.commit()
     except Exception as e:
         logger.error(f"Migration block failed completely: {e}")
     logger.info("--- Database Schema Verified & Migrated ---")

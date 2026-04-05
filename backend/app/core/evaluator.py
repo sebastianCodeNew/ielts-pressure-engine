@@ -9,7 +9,7 @@ async def extract_signals_async(attempt: UserAttempt, current_prompt_text: str =
     transcript = attempt.transcript or ""
     
     # 0. Short-circuit for failures or silence (v14.0 - Failure Safe)
-    if not transcript or transcript.strip() == "" or "[TRANSCRIPTION_FAILED]" in transcript:
+    if not transcript or transcript.strip() == "" or "[TRANSCRIPTION_FAILED]" in transcript or "[SYSTEM_ERROR" in transcript:
         return SignalMetrics(
             fluency_wpm=0.0,
             hesitation_ratio=1.0,
@@ -81,16 +81,24 @@ async def extract_signals_async(attempt: UserAttempt, current_prompt_text: str =
     # Clause density calculation: rewarding connectors appearing between word sequences
     grammar_complexity = len(connectors) / word_count if word_count > 0 else 0
 
-    from app.core.logger import logger
+    # 5. FINAL CALIBRATION & BOUNDS CHECKING (v18.0)
+    def bound_metric(val: float, high: float = 1.0) -> float:
+        try:
+            return round(min(high, max(0.0, float(val))), 2)
+        except (ValueError, TypeError):
+            return 0.0
+
     logger.info(f"Signals (Async) -> WPM: {wpm:.1f}, LexDiv: {lexical_diversity:.2f}, Coherence: {coherence:.2f}")
 
     return SignalMetrics(
-        fluency_wpm=round(wpm, 2),
-        hesitation_ratio=hesitation_score,
+        fluency_wpm=bound_metric(wpm, 400.0),
+        hesitation_ratio=bound_metric(hesitation_score, 1.0),
+        # v20.0: Grammar errors are currently derived from overall complexity & LLM feedback 
+        # in formulate_strategy_async. Explicit count is kept at 0 to prioritize coherence.
         grammar_error_count=0,
         filler_count=filler_count,
-        coherence_score=round(coherence, 2),
-        lexical_diversity=round(lexical_diversity, 2),
-        grammar_complexity=round(grammar_complexity, 2),
+        coherence_score=bound_metric(coherence, 1.0),
+        lexical_diversity=bound_metric(lexical_diversity, 1.0),
+        grammar_complexity=bound_metric(grammar_complexity, 1.0),
         is_complete=True
     )

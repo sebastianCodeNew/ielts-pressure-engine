@@ -174,6 +174,10 @@ async def global_exception_handler(request: Request, exc: Exception):
 # Register API v1
 app.include_router(api_router, prefix="/api/v1")
 
+# NEW: General Translation Endpoint (v20.0 - Frontend Support)
+from app.api.v1.endpoints.translate import router as translate_router
+app.include_router(translate_router, prefix="/api/translate", tags=["translate"])
+
 # Serve audio files for Audio Mirror feature
 from fastapi.staticfiles import StaticFiles
 AUDIO_DIR = settings.AUDIO_STORAGE_DIR

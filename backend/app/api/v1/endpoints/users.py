@@ -1,23 +1,24 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db, User, ExamSession
+from app.core.config import settings
 from typing import List
 
 router = APIRouter()
 
 @router.get("/me")
-def get_user_profile(user_id: str = "default_user", db: Session = Depends(get_db)):
+def get_user_profile(user_id: str = settings.DEFAULT_USER_ID, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
 @router.get("/me/stats")
-def get_user_stats(user_id: str = "default_user", db: Session = Depends(get_db)):
+def get_user_stats(user_id: str = settings.DEFAULT_USER_ID, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         # Auto-create for MVP/Onboarding flow
-        user = User(id=user_id, username=user_id, target_band="7.0", weakness="General")
+        user = User(id=user_id, username=user_id, target_band="9.0", weakness="General")
         db.add(user)
         db.commit()
     
@@ -47,7 +48,7 @@ def get_user_stats(user_id: str = "default_user", db: Session = Depends(get_db))
     }
 
 @router.get("/me/history")
-def get_user_history(user_id: str = "default_user", db: Session = Depends(get_db)):
+def get_user_history(user_id: str = settings.DEFAULT_USER_ID, db: Session = Depends(get_db)):
     sessions = db.query(ExamSession).filter(ExamSession.user_id == user_id).order_by(ExamSession.start_time.desc()).all()
     return [
         {
@@ -66,7 +67,7 @@ class UserProfileUpdate(BaseModel):
     weakness: str
 
 @router.put("/me")
-def update_user_profile(profile: UserProfileUpdate, user_id: str = "default_user", db: Session = Depends(get_db)):
+def update_user_profile(profile: UserProfileUpdate, user_id: str = settings.DEFAULT_USER_ID, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -77,7 +78,7 @@ def update_user_profile(profile: UserProfileUpdate, user_id: str = "default_user
     return {"status": "updated", "target_band": user.target_band, "weakness": user.weakness}
 
 @router.get("/me/weakness-report")
-def get_weakness_report(user_id: str = "default_user", db: Session = Depends(get_db)):
+def get_weakness_report(user_id: str = settings.DEFAULT_USER_ID, db: Session = Depends(get_db)):
     """Comprehensive weakness analysis across all sessions."""
     from app.core.database import QuestionAttempt
     from collections import Counter

@@ -8,19 +8,28 @@ from app.core.config import settings
 whisper_lock = threading.Lock()
 _model = None
 
-# 1. HARDWARE DEPENDENCY CHECK (v8.0/v18.0)
+# 1. HARDWARE DEPENDENCY CHECK (v18.2 - Robust Multi-Path Detection)
 import shutil
 FFMPEG_PATH = shutil.which("ffmpeg")
+
 if not FFMPEG_PATH:
-    # Fallback to discovered extension path on Windows
-    local_ff = r"C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe"
-    if os.path.exists(local_ff):
-        FFMPEG_PATH = local_ff
-        os.environ["PATH"] += os.pathsep + os.path.dirname(local_ff)
+    # Check common local installation paths and VS Code extension fallbacks
+    POSSIBLE_FFMPEG_PATHS = [
+        os.path.join(os.getcwd(), "ffmpeg.exe"),
+        os.path.join(os.getcwd(), "bin", "ffmpeg.exe"),
+        r"C:\ffmpeg\bin\ffmpeg.exe",
+        r"C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe" # User-specific fallback
+    ]
+    for path in POSSIBLE_FFMPEG_PATHS:
+        if os.path.exists(path):
+            FFMPEG_PATH = path
+            # Add to PATH so sub-processes can find it if needed
+            os.environ["PATH"] += os.pathsep + os.path.dirname(path)
+            break
 
 FFMPEG_AVAILABLE = FFMPEG_PATH is not None
 if not FFMPEG_AVAILABLE:
-    logger.error("CRITICAL: FFmpeg not found in system PATH. Audio transcription will fail.")
+    logger.error("CRITICAL: FFmpeg not found in system PATH or common local directories. Audio features will fail!")
 else:
     logger.info(f"--- FFmpeg detected: {FFMPEG_PATH} ---")
 

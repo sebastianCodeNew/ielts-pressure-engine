@@ -1,12 +1,13 @@
 import uuid
 from typing import List, Optional
+from collections import Counter
 import shutil
 import asyncio
 from app.core.logger import logger
 import os
 import re
 import random
-from sqlalchemy import func
+from sqlalchemy import func, text
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -15,6 +16,7 @@ from app.schemas import ExamStartRequest, ExamSessionSchema, Intervention, ExamS
 from app.core.engine import process_user_attempt 
 from app.core.translator import translate_to_indonesian_async, translate_checkpoint_words_async
 from app.core.config import settings
+from app.core.scoring import WELCOME_BRIEFING, calculate_band_score, WPM_MULTIPLIER
 
 router = APIRouter()
 
@@ -114,7 +116,7 @@ async def start_exam(request: ExamStartRequest, db: Session = Depends(get_db)):
         checkpoint_words=new_session.initial_keywords,
         checkpoint_words_translated=tr_list,
         checkpoint_words_meanings=mn_list,
-        briefing_text="Welcome. We have set your target to Band 9.0 per your request to maximize performance."
+        briefing_text=WELCOME_BRIEFING
     )
 
 @router.get("/history")
@@ -139,10 +141,28 @@ async def get_detailed_history(db: Session = Depends(get_db)):
             "feedback_translated": a.feedback_translated,
             "audio_url": f"/audio/{os.path.basename(a.audio_path)}" if a.audio_path else None,
             "keywords_hit": a.keywords_hit or [],
-            "score": round((a.wpm or 0) / 15.0, 1) if a.wpm else 0.0,
+            "score": calculate_band_score(a.wpm, WPM_MULTIPLIER, is_wpm=True),
             "date": a.created_at.strftime("%b %d, %Y")
         } for a in attempts
     ]
+
+@router.get("/health")
+async def health_check(db: Session = Depends(get_db)):
+    """Detailed health check for database and storage."""
+    try:
+        # Check database
+        db.execute(text("SELECT 1"))
+        # Check storage
+        storage_ok = os.path.exists(settings.AUDIO_STORAGE_DIR) and os.access(settings.AUDIO_STORAGE_DIR, os.W_OK)
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "storage": "writable" if storage_ok else "error",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        raise HTTPException(status_code=503, detail="Service unhealthy")
 
 @router.post("/{session_id}/submit-audio", response_model=Intervention)
 async def submit_exam_audio(
@@ -156,18 +176,12 @@ async def submit_exam_audio(
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # 1. File Validation
-    filename = file.filename or "response.webm"
-    ext = os.path.splitext(filename)[1].lower()
-    if ext not in settings.ALLOWED_EXTENSIONS:
-        raise HTTPException(status_code=400, detail=f"Unsupported file extension: {ext}")
-    
-    # Read content to check size
-    content = await file.read()
-    if len(content) > settings.MAX_AUDIO_SIZE_BYTES:
+    # 1. File Validation (Fast check before reading content)
+    if file.size and file.size > settings.MAX_AUDIO_SIZE_BYTES:
         raise HTTPException(status_code=400, detail="File too large")
+
+    content = await file.read()
     if len(content) < 100:
-        # Return graceful intervention instead of crashing/400
         return Intervention(
             action_id="MAINTAIN",
             next_task_prompt="Please try again with a longer recording.",
@@ -176,15 +190,11 @@ async def submit_exam_audio(
         )
 
     temp_filename = os.path.abspath(f"temp_exam_{session_id}_{uuid.uuid4().hex}{ext}")
-    
-    AUDIO_DIR = settings.AUDIO_STORAGE_DIR
-    os.makedirs(AUDIO_DIR, exist_ok=True)
-    persistent_filename = f"{AUDIO_DIR}/{session_id}_{uuid.uuid4()}{ext}"
+    persistent_filename = None
     
     try:
         with open(temp_filename, "wb") as buffer:
             buffer.write(content)
-        shutil.copy(temp_filename, persistent_filename)
 
         intervention = await process_user_attempt(
             file_path=temp_filename,
@@ -196,6 +206,15 @@ async def submit_exam_audio(
             is_refactor=is_refactor
         )
         
+        # Only persist audio if processing was at least attempted successfully (not crashed)
+        AUDIO_DIR = settings.AUDIO_STORAGE_DIR
+        os.makedirs(AUDIO_DIR, exist_ok=True)
+        persistent_filename = f"{AUDIO_DIR}/{session_id}_{uuid.uuid4()}{ext}"
+        
+        # v20.0: Wrap sync file operation to prevent blocking event loop
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, shutil.copy, temp_filename, persistent_filename)
+
         latest_qa = db.query(QuestionAttempt).filter(
             QuestionAttempt.session_id == session_id
         ).order_by(QuestionAttempt.id.desc()).first()
@@ -209,13 +228,25 @@ async def submit_exam_audio(
         return intervention
     except Exception as e:
         logger.error(f"Error processing exam audio: {e}", exc_info=True)
+        # If we created a persistent file but crashed later, we might want to cleanup,
+        # but here we only create it AFTER process_user_attempt succeeds.
         raise HTTPException(status_code=500, detail="Error processing audio submission")
     finally:
+        # v20.0: Hardened cleanup for Windows file-locking resilience
         if os.path.exists(temp_filename):
             try:
                 os.remove(temp_filename)
+                logger.debug(f"Submission temp file {temp_filename} removed.")
+            except PermissionError:
+                # On Windows, sometimes FFmpeg or the engine still holds the handle for a split second
+                try: 
+                    await asyncio.sleep(1) # Corrected: use await asyncio.sleep to prevent blocking
+                    os.remove(temp_filename)
+                    logger.info(f"Locked file {temp_filename} cleaned up after retry.")
+                except Exception:
+                    logger.error(f"Failed to remove locked submission file {temp_filename}. Manual cleanup or background task will handle it.")
             except Exception as e:
-                print(f"CRITICAL: Failed to delete temp file {temp_filename}. Error: {e}")
+                logger.error(f"Failed to delete temp file {temp_filename}: {e}")
 
 @router.get("/{session_id}/summary", response_model=ExamSummary)
 def get_exam_summary(session_id: str, db: Session = Depends(get_db)):
@@ -265,19 +296,20 @@ def get_exam_summary(session_id: str, db: Session = Depends(get_db)):
 async def analyze_shadowing(
     target_text: str,
     skill_id: Optional[str] = Query(None),
-    user_id: str = Query("default_user"),
+    user_id: str = Query(settings.DEFAULT_USER_ID),
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
     """
     Analyzes a specific sentence shadow attempt and persists progress if skill_id is provided.
     """
-    import asyncio
     temp_filename = f"shadow_{uuid.uuid4()}.webm"
     
     try:
+        loop = asyncio.get_running_loop()
+        # v20.0: Wrap sync file operation to prevent blocking event loop
         with open(temp_filename, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+            await loop.run_in_executor(None, shutil.copyfileobj, file.file, buffer)
 
         loop = asyncio.get_running_loop()
         # 1. Transcribe the shadow attempt (CPU-bound)
@@ -358,9 +390,8 @@ async def analyze_shadowing(
             except PermissionError:
                 # On Windows, sometimes FFmpeg or the engine still holds the handle for a split second
                 logger.warning(f"File {temp_filename} is locked. Retrying cleanup in 1s...")
-                import time
                 try: 
-                    time.sleep(1)
+                    await asyncio.sleep(1)
                     os.remove(temp_filename)
                 except Exception:
                     logger.error(f"Failed to remove locked shadowing file {temp_filename}. Manual cleanup required.")

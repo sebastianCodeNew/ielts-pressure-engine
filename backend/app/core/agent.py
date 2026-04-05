@@ -11,6 +11,7 @@ from app.schemas import SignalMetrics, Intervention
 from app.core.config import settings
 
 from app.core.llm import get_llm
+from app.core.scoring import calculate_band_score, WPM_MULTIPLIER, COHERENCE_MULTIPLIER, LEXICAL_MULTIPLIER, GRAMMAR_MULTIPLIER, PRONUNCIATION_MULTIPLIER
 
 # Initialize centralized LLM
 llm = get_llm(timeout=60) # Keep increased timeout for stability
@@ -221,11 +222,11 @@ def _extract_and_parse_intervention(content: str, state_stress: float, current_m
         }
         if current_metrics:
             fallback_metrics = {
-                "Fluency": round(min(max(current_metrics.fluency_wpm / 18.0, 1.0), 9.0), 1),
-                "Coherence": round(min(max(current_metrics.coherence_score * 9.0, 1.0), 9.0), 1),
-                "Lexical": round(min(max(current_metrics.lexical_diversity * 14.0, 1.0), 9.0), 1),
-                "Grammar": round(min(max(current_metrics.grammar_complexity * 35.0, 1.0), 9.0), 1),
-                "Pronunciation": round(min(max((getattr(current_metrics, 'pronunciation_score', 0.5) or 0.5) * 9.0, 1.0), 9.0), 1)
+                "Fluency": calculate_band_score(current_metrics.fluency_wpm, WPM_MULTIPLIER, is_wpm=True),
+                "Coherence": calculate_band_score(current_metrics.coherence_score, COHERENCE_MULTIPLIER),
+                "Lexical": calculate_band_score(current_metrics.lexical_diversity, LEXICAL_MULTIPLIER),
+                "Grammar": calculate_band_score(current_metrics.grammar_complexity, GRAMMAR_MULTIPLIER),
+                "Pronunciation": calculate_band_score(getattr(current_metrics, 'pronunciation_score', 0.5), PRONUNCIATION_MULTIPLIER)
             }
 
         safe_data = {
@@ -265,14 +266,14 @@ def formulate_strategy(
     # ... historical average calculation unchanged ...
     avg_fluency, avg_coherence, avg_lexical, avg_grammar = 5.0, 5.0, 5.0, 5.0
     if state.history:
-        f_scores = [h.metrics.fluency_wpm / 15 for h in state.history if h.metrics.fluency_wpm]
-        c_scores = [h.metrics.coherence_score * 9 for h in state.history if h.metrics.coherence_score]
-        l_scores = [h.metrics.lexical_diversity * 15 for h in state.history if h.metrics.lexical_diversity]
-        g_scores = [h.metrics.grammar_complexity * 40 for h in state.history if h.metrics.grammar_complexity]
-        if f_scores: avg_fluency = min(9, sum(f_scores) / len(f_scores))
-        if c_scores: avg_coherence = min(9, sum(c_scores) / len(c_scores))
-        if l_scores: avg_lexical = min(9, sum(l_scores) / len(l_scores))
-        if g_scores: avg_grammar = min(9, sum(g_scores) / len(g_scores))
+        f_scores = [calculate_band_score(h.metrics.fluency_wpm, WPM_MULTIPLIER, is_wpm=True) for h in state.history if h.metrics.fluency_wpm]
+        c_scores = [calculate_band_score(h.metrics.coherence_score, COHERENCE_MULTIPLIER) for h in state.history if h.metrics.coherence_score]
+        l_scores = [calculate_band_score(h.metrics.lexical_diversity, LEXICAL_MULTIPLIER) for h in state.history if h.metrics.lexical_diversity]
+        g_scores = [calculate_band_score(h.metrics.grammar_complexity, GRAMMAR_MULTIPLIER) for h in state.history if h.metrics.grammar_complexity]
+        if f_scores: avg_fluency = sum(f_scores) / len(f_scores)
+        if c_scores: avg_coherence = sum(c_scores) / len(c_scores)
+        if l_scores: avg_lexical = sum(l_scores) / len(l_scores)
+        if g_scores: avg_grammar = sum(g_scores) / len(g_scores)
 
     scores = {"Fluency": avg_fluency, "Coherence": avg_coherence, "Lexical": avg_lexical, "Grammar": avg_grammar}
     lowest_area = min(scores, key=scores.get)
@@ -283,7 +284,7 @@ def formulate_strategy(
     ])
 
     try:
-        transcription_failed = not user_transcript or user_transcript.strip() == "" or "[TRANSCRIPTION_FAILED]" in user_transcript
+        transcription_failed = not user_transcript or user_transcript.strip() == "" or "[TRANSCRIPTION_FAILED]" in user_transcript or "[SYSTEM_ERROR" in user_transcript
         
         formatted_prompt = prompt_template.format(
             stress_level=state.stress_level,
@@ -347,14 +348,14 @@ async def _formulate_strategy_async_inner(
     """
     avg_fluency, avg_coherence, avg_lexical, avg_grammar = 5.0, 5.0, 5.0, 5.0
     if state.history:
-        f_vals = [h.metrics.fluency_wpm / 15 for h in state.history if h.metrics.fluency_wpm]
-        c_vals = [h.metrics.coherence_score * 9 for h in state.history if h.metrics.coherence_score]
-        l_vals = [h.metrics.lexical_diversity * 15 for h in state.history if h.metrics.lexical_diversity]
-        g_vals = [h.metrics.grammar_complexity * 40 for h in state.history if h.metrics.grammar_complexity]
-        if f_vals: avg_fluency = min(9, sum(f_vals) / len(f_vals))
-        if c_vals: avg_coherence = min(9, sum(c_vals) / len(c_vals))
-        if l_vals: avg_lexical = min(9, sum(l_vals) / len(l_vals))
-        if g_vals: avg_grammar = min(9, sum(g_vals) / len(g_vals))
+        f_vals = [calculate_band_score(h.metrics.fluency_wpm, WPM_MULTIPLIER, is_wpm=True) for h in state.history if h.metrics.fluency_wpm]
+        c_vals = [calculate_band_score(h.metrics.coherence_score, COHERENCE_MULTIPLIER) for h in state.history if h.metrics.coherence_score]
+        l_vals = [calculate_band_score(h.metrics.lexical_diversity, LEXICAL_MULTIPLIER) for h in state.history if h.metrics.lexical_diversity]
+        g_vals = [calculate_band_score(h.metrics.grammar_complexity, GRAMMAR_MULTIPLIER) for h in state.history if h.metrics.grammar_complexity]
+        if f_vals: avg_fluency = sum(f_vals) / len(f_vals)
+        if c_vals: avg_coherence = sum(c_vals) / len(c_vals)
+        if l_vals: avg_lexical = sum(l_vals) / len(l_vals)
+        if g_vals: avg_grammar = sum(g_vals) / len(g_vals)
     
     scores = {"Fluency": avg_fluency, "Coherence": avg_coherence, "Lexical": avg_lexical, "Grammar": avg_grammar}
     lowest_area = min(scores, key=scores.get)
@@ -364,7 +365,7 @@ async def _formulate_strategy_async_inner(
         for h in state.history[-3:]
     ])
 
-    transcription_failed = not user_transcript or user_transcript.strip() == "" or "[TRANSCRIPTION_FAILED]" in user_transcript
+    transcription_failed = not user_transcript or user_transcript.strip() == "" or "[TRANSCRIPTION_FAILED]" in user_transcript or "[SYSTEM_ERROR" in user_transcript
 
     formatted = prompt_template.format(
         stress_level=state.stress_level,
