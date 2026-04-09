@@ -83,7 +83,7 @@ export function TrainingCockpit() {
   const [feedback, setFeedback] = useState<FeedbackData | null>(null);
   const [processing, setProcessing] = useState(false);
   const [showStats, setShowStats] = useState(false);
-  const [targetBand, setTargetBand] = useState("7.5");
+  const [targetBand, setTargetBand] = useState("9.0");
   const [finalScore, setFinalScore] = useState<number | null>(null);
 
   // Vault State
@@ -472,8 +472,9 @@ export function TrainingCockpit() {
             }
           }
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error("Submission failed:", e);
+        setLastError(e.message || "Submission failed. Please check your connection and try again.");
       } finally {
         setProcessing(false);
         setIsProcessingAudio(false); // v11.0

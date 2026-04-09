@@ -211,6 +211,16 @@ export default function ExamSimulator() {
     }
   }, []);
 
+  // Cleanup Audio Mirror on unmount
+  useEffect(() => {
+    return () => {
+      if (audioMirrorRef.current) {
+        audioMirrorRef.current.pause();
+        audioMirrorRef.current = null;
+      }
+    };
+  }, []);
+
   // Handle Prep Timer
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -315,8 +325,9 @@ export default function ExamSimulator() {
 
   const handlePlayMirror = () => {
     if (!feedback?.user_audio_url) return;
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-    const audioUrl = `${apiBase.replace("/api", "")}${feedback.user_audio_url}`;
+    const baseHost = ApiClient.getBaseHost();
+    const pathPrefix = feedback.user_audio_url.startsWith("/") ? "" : "/";
+    const audioUrl = `${baseHost}${pathPrefix}${feedback.user_audio_url}`;
     
     if (audioMirrorRef.current) {
       audioMirrorRef.current.pause();

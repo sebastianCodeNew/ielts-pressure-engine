@@ -3,14 +3,22 @@ from app.core.semantic import calculate_coherence_async
 from app.core.logger import logger
 import re
 
-async def extract_signals_async(attempt: UserAttempt, current_prompt_text: str = "general topic") -> SignalMetrics:
+
+async def extract_signals_async(
+    attempt: UserAttempt, current_prompt_text: str = "general topic"
+) -> SignalMetrics:
     """
     Analyzes the input for both mechanical (WPM) and semantic (Coherence) signals (Async).
     """
     transcript = attempt.transcript or ""
-    
+
     # 0. Short-circuit for failures or silence (v14.0 - Failure Safe)
-    if not transcript or transcript.strip() == "" or "[TRANSCRIPTION_FAILED]" in transcript or "[SYSTEM_ERROR" in transcript:
+    if (
+        not transcript
+        or transcript.strip() == ""
+        or "[TRANSCRIPTION_FAILED]" in transcript
+        or "[SYSTEM_ERROR" in transcript
+    ):
         return SignalMetrics(
             fluency_wpm=0.0,
             hesitation_ratio=1.0,
@@ -19,18 +27,27 @@ async def extract_signals_async(attempt: UserAttempt, current_prompt_text: str =
             coherence_score=0.0,
             lexical_diversity=0.0,
             grammar_complexity=0.0,
-            is_complete=False
+            is_complete=False,
         )
 
     # 1. Mechanical Analysis
     word_count = len(transcript.split()) if transcript else 0
-    wpm = (word_count / (attempt.audio_duration / 60)) if attempt.audio_duration > 0 else 0
-    wpm = min(400.0, float(wpm))  # Cap WPM to human bounds in case of timestamp glitches
+    
+    # v24.1: Robust WPM - avoid spikes on extremely short audio (<0.5s)
+    # 0.5s is roughly 1 word at 120 WPM; anything less is likely noise or a glitch.
+    if attempt.audio_duration > 0.5:
+        wpm = (word_count / (attempt.audio_duration / 60))
+    else:
+        wpm = 0.0
+
+    wpm = min(
+        400.0, float(wpm)
+    )  # Cap WPM to human bounds in case of timestamp glitches
 
     # Advanced Filler Detection (v7.0)
     fillers = re.findall(
-        r"\b(um|uh|er|ah|like|you know|basically|actually|well|to be honest|as I was saying|what I mean is|sort of|kind of)\b", 
-        transcript.lower()
+        r"\b(um|uh|er|ah|like|you know|basically|actually|well|to be honest|as I was saying|what I mean is|sort of|kind of)\b",
+        transcript.lower(),
     )
     filler_count = len(fillers)
 
@@ -59,25 +76,25 @@ async def extract_signals_async(attempt: UserAttempt, current_prompt_text: str =
 
     # 2. Semantic Analysis (Async)
     coherence = await calculate_coherence_async(current_prompt_text, transcript)
-    
+
     # 3. Lexical Diversity (v13.0 - Length Calibrated)
     unique_words = set(transcript.lower().split())
-    # PENALTY: Very short responses (<15 words) have their diversity capped 
+    # PENALTY: Very short responses (<15 words) have their diversity capped
     # to prevent "perfect" TTR scores for simple sentences.
     ttr = len(unique_words) / word_count if word_count > 0 else 0
     if word_count < 15:
         lexical_diversity = ttr * (word_count / 15.0)
     else:
         lexical_diversity = ttr
-    
+
     # Apply redundancy penalty (v14.0)
     lexical_diversity = max(0.0, lexical_diversity - redundancy_penalty)
-    
+
     # 4. Grammar Complexity & Cohesion (v13.0 - Clause Density)
     # Looking for connectors that typically link subordinate clauses
     connectors = re.findall(
-        r"\b(because|although|however|therefore|while|if|which|that|furthermore|moreover|subsequently|consequently|nonetheless|nevertheless|despite|whereas)\b", 
-        transcript.lower()
+        r"\b(because|although|however|therefore|while|if|which|that|furthermore|moreover|subsequently|consequently|nonetheless|nevertheless|despite|whereas)\b",
+        transcript.lower(),
     )
     # Clause density calculation: rewarding connectors appearing between word sequences
     grammar_complexity = len(connectors) / word_count if word_count > 0 else 0
@@ -89,17 +106,19 @@ async def extract_signals_async(attempt: UserAttempt, current_prompt_text: str =
         except (ValueError, TypeError):
             return 0.0
 
-    logger.info(f"Signals (Async) -> WPM: {wpm:.1f}, LexDiv: {lexical_diversity:.2f}, Coherence: {coherence:.2f}")
+    logger.info(
+        f"Signals (Async) -> WPM: {wpm:.1f}, LexDiv: {lexical_diversity:.2f}, Coherence: {coherence:.2f}"
+    )
 
     return SignalMetrics(
         fluency_wpm=bound_metric(wpm, 400.0),
         hesitation_ratio=bound_metric(hesitation_score, 1.0),
-        # v20.0: Grammar errors are currently derived from overall complexity & LLM feedback 
+        # v20.0: Grammar errors are currently derived from overall complexity & LLM feedback
         # in formulate_strategy_async. Explicit count is kept at 0 to prioritize coherence.
         grammar_error_count=0,
         filler_count=filler_count,
         coherence_score=bound_metric(coherence, 1.0),
         lexical_diversity=bound_metric(lexical_diversity, 1.0),
         grammar_complexity=bound_metric(grammar_complexity, 1.0),
-        is_complete=True
+        is_complete=True,
     )

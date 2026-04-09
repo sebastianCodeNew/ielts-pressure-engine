@@ -5,6 +5,9 @@ const API_BASE_URL =
 const DEFAULT_USER_ID = process.env.NEXT_PUBLIC_DEFAULT_USER_ID || "default_user";
 
 export class ApiClient {
+  static getBaseHost(): string {
+    return API_BASE_URL.replace(/\/api\/?$/, "");
+  }
   private static pendingRequests = new Set<string>();
 
   private static async fetchWithRetry(
@@ -14,7 +17,7 @@ export class ApiClient {
   ): Promise<Response> {
     try {
       const controller = new AbortController();
-      const timeoutMs = 120000;
+      const timeoutMs = 150000; // Increased to 150s for heavy transcription/LLM tasks
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
       const response = await fetch(url, {

@@ -1,11 +1,12 @@
 import sys
 import os
+import asyncio
 from dotenv import load_dotenv
 
 # Ensure we can import app
 sys.path.append(os.path.join(os.path.dirname(__file__), "app"))
 
-from app.core.evaluator import extract_signals
+from app.core.evaluator import extract_signals_async
 from app.schemas import UserAttempt
 from app.core.database import SessionModel, init_db, engine
 from sqlalchemy.orm import sessionmaker
@@ -18,7 +19,7 @@ def test_filler_detection():
     transcript = "I went to the, um, store and it was, uh, really closed, you know?"
     attempt = UserAttempt(task_id="test", transcript=transcript, audio_duration=5.0)
     
-    signals = extract_signals(attempt)
+    signals = asyncio.run(extract_signals_async(attempt))
     print(f"Transcript: '{transcript}'")
     print(f"Filler Count detected: {signals.filler_count}")
     

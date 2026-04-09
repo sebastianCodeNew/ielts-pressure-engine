@@ -11,6 +11,9 @@ from app.core.database import init_db, SessionLocal, engine, Base, ErrorLog
 from sqlalchemy import text
 from app.core.engine import process_user_attempt
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 # Mocking the AI components to avoid real API costs/delays, 
 # OR use a specific "TEST_MODE" flag if we want real integration.
 # For this "Omnibus", we'll run against the real logic but maybe mock the heavy ML parts 
@@ -21,7 +24,7 @@ from app.core.engine import process_user_attempt
 client = TestClient(app)
 
 def run_omnibus_test():
-    print("🚀 STARTING OMNIBUS TEST: Phases 8-11 Integration Check\n")
+    print("STARTING OMNIBUS TEST: Phases 8-11 Integration Check\n")
     
     # -1. Initialize Database
     print("Initializing Database...")
@@ -60,10 +63,10 @@ def run_omnibus_test():
     briefing = data.get('briefing_text', 'NO DATA')
     
     if "Welcome" in briefing:
-        print(f"✅ Exam Started. Session ID: {session_id}")
-        print(f"✅ Briefing Received: \"{briefing}\"")
+        print(f"[OK] Exam Started. Session ID: {session_id}")
+        print(f"[OK] Briefing Received: \"{briefing}\"")
     else:
-        print("❌ Briefing missing or malformed.")
+        print("[FAIL] Briefing missing or malformed.")
 
     # 2. Simulate Audio Submission (Verifies Phase 8 Analysis & Logic)
     # We need a dummy file. 
@@ -84,7 +87,7 @@ def run_omnibus_test():
     
     if response.status_code == 200:
         intervention = response.json()
-        print("✅ Audio submission processed.")
+        print("[OK] Audio submission processed.")
         feedback_text = intervention.get('feedback_markdown') or "No feedback provided."
         print(f"   -> Feedback: {feedback_text[:50]}...")
         print(f"   -> Next Prompt: {intervention.get('next_task_prompt')}")
@@ -114,9 +117,9 @@ def run_omnibus_test():
     briefing_2 = data_2.get('briefing_text', '')
     
     if "Subject-Verb Agreement" in briefing_2:
-        print(f"✅ PERSISTENCE CONFIRMED! Briefing referenced past error: \"{briefing_2}\"")
+        print(f"[OK] PERSISTENCE CONFIRMED! Briefing referenced past error: \"{briefing_2}\"")
     else:
-        print(f"❌ Persistence check failed. Briefing: \"{briefing_2}\"")
+        print(f"[FAIL] Persistence check failed. Briefing: \"{briefing_2}\"")
 
     # 4. Verify Phase 9 Gym (Drills/Recommendations)
     # Assuming Gym uses the 'stats' endpoint or similar
@@ -126,12 +129,12 @@ def run_omnibus_test():
     db = SessionLocal()
     user = db.query(ErrorLog).filter(ErrorLog.user_id == TEST_USER_ID).first()
     if user:
-        print(f"✅ Error Logs found in DB for Gym prescriptions.")
+        print(f"[OK] Error Logs found in DB for Gym prescriptions.")
     else:
-        print("❌ No error logs found.")
+        print("[FAIL] No error logs found.")
     db.close()
 
-    print("\n🎉 OMNIBUS TEST COMPLETE.")
+    print("\nOMNIBUS TEST COMPLETE.")
     
     # Cleanup
     if os.path.exists("test_audio_dummy.webm"):

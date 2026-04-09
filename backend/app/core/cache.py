@@ -1,10 +1,13 @@
-import sqlite3
 import os
+import sqlite3
 import re
 from contextlib import contextmanager
 from app.core.logger import logger
 
-DB_PATH = "translation_memory.db"
+# v24.0: Use absolute path to ensure consistency across different startup directories
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DB_PATH = os.path.join(BASE_DIR, "translation_memory.db")
+
 
 @contextmanager
 def get_db_connection():
@@ -27,6 +30,7 @@ def get_db_connection():
         if conn:
             conn.close()
 
+
 def init_cache_db():
     """
     Initializes the translation memory database with unambiguous naming.
@@ -41,45 +45,51 @@ def init_cache_db():
         """)
         conn.commit()
 
+
 def _normalize_text(text: str) -> str:
     """Consistently normalizes text for cache lookups (v16.0 - High Performance)."""
     if not text:
         return ""
     # 1. Lowercase
     t = text.lower().strip()
-    # 2. Collapse internal whitespace 
-    t = re.sub(r'\s+', ' ', t)
+    # 2. Collapse internal whitespace
+    t = re.sub(r"\s+", " ", t)
     # 3. Strip non-alphanumeric punctuation from start/end to increase cache hits
     # (e.g. "Hometown." == "Hometown!")
-    t = re.sub(r'^[^\w\s]+|[^\w\s]+$', '', t)
+    t = re.sub(r"^[^\w\s]+|[^\w\s]+$", "", t)
     return t.strip()
+
 
 def get_cached_translation(source_text: str) -> str | None:
     cleaned_text = _normalize_text(source_text)
     if not cleaned_text:
         return None
-        
+
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT target_text FROM translation_memory WHERE source_text = ?", (cleaned_text,))
+            cursor.execute(
+                "SELECT target_text FROM translation_memory WHERE source_text = ?",
+                (cleaned_text,),
+            )
             result = cursor.fetchone()
             return result[0] if result else None
     except Exception as e:
         logger.error(f"Cache Search Error: {e}")
         return None
 
+
 def save_translation_to_cache(source_text: str, target_text: str):
     cleaned_text = _normalize_text(source_text)
     if not cleaned_text or not target_text:
         return
-        
+
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT OR REPLACE INTO translation_memory (source_text, target_text) VALUES (?, ?)", 
-                (cleaned_text, target_text)
+                "INSERT OR REPLACE INTO translation_memory (source_text, target_text) VALUES (?, ?)",
+                (cleaned_text, target_text),
             )
             conn.commit()
     except Exception as e:

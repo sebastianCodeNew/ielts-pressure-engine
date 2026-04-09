@@ -2,3 +2,131 @@
 [2026-04-05 16:53:13] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
 [2026-04-05 16:55:12] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
 [2026-04-05 16:55:32] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 16:57:34] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 16:57:57] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 16:58:13] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 16:58:30] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 17:03:48] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 17:56:57] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 18:08:35] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 18:09:01] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 18:09:47] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 18:10:29] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 18:10:43] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 18:10:43] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-04-05 18:10:45] [ERROR] [ielts_engine] - Cache DB Connection Error: no such table: translation_memory
+[2026-04-05 18:10:45] [ERROR] [ielts_engine] - Cache Search Error: no such table: translation_memory
+[2026-04-05 18:10:46] [ERROR] [ielts_engine] - Cache DB Connection Error: no such table: translation_memory
+[2026-04-05 18:10:46] [ERROR] [ielts_engine] - Cache Save Error: no such table: translation_memory
+[2026-04-05 18:11:06] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 18:11:06] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-04-05 18:11:09] [ERROR] [ielts_engine] - Cache DB Connection Error: no such table: translation_memory
+[2026-04-05 18:11:09] [ERROR] [ielts_engine] - Cache Search Error: no such table: translation_memory
+[2026-04-05 18:11:09] [ERROR] [ielts_engine] - Cache DB Connection Error: no such table: translation_memory
+[2026-04-05 18:11:09] [ERROR] [ielts_engine] - Cache Save Error: no such table: translation_memory
+[2026-04-05 18:11:09] [INFO] [ielts_engine] - --- Processing Attempt (ExamMode=True, Prompt='Tell me about your family.') ---
+[2026-04-05 18:11:09] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-04-05 18:11:13] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-04-05 18:11:13] [ERROR] [ielts_engine] - TRANSCRIPTION CRASH: [Errno 1094995529] Invalid data found when processing input: 'C:\\Sebastian\\Project\\ielts-pressure-engine\\temp_exam_282de160-cf72-42c4-a499-69bb016e576d_14ef9092a3e04a348ea20f1bf91cd622.webm'
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\transcriber.py", line 92, in transcribe_audio
+    segments, info = whisper_model.transcribe(file_path, beam_size=5)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\faster_whisper\transcribe.py", line 876, in transcribe
+    audio = decode_audio(audio, sampling_rate=sampling_rate)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\faster_whisper\audio.py", line 46, in decode_audio
+    with av.open(input_file, mode="r", metadata_errors="ignore") as container:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "av/container/core.py", line 548, in av.container.core.open
+    return InputContainer(
+    ^^^^^^^^^^^
+  File "av/container/core.py", line 344, in av.container.core.Container.__cinit__
+    self.err_check(res)
+    ^^^^^^^^^^^
+  File "av/container/core.py", line 366, in av.container.core.Container.err_check
+    return err_check(value, filename=self.name)
+    ^^^^^^^^^^^
+  File "av/error.py", line 411, in av.error.err_check
+    raise cls(code, message, filename, log)
+    ^^^^^^^^^^^
+av.error.InvalidDataError: [Errno 1094995529] Invalid data found when processing input: 'C:\\Sebastian\\Project\\ielts-pressure-engine\\temp_exam_282de160-cf72-42c4-a499-69bb016e576d_14ef9092a3e04a348ea20f1bf91cd622.webm'
+[2026-04-05 18:11:13] [ERROR] [ielts_engine] - Cache DB Connection Error: no such table: translation_memory
+[2026-04-05 18:11:13] [ERROR] [ielts_engine] - Cache Search Error: no such table: translation_memory
+[2026-04-05 18:11:15] [ERROR] [ielts_engine] - Cache DB Connection Error: no such table: translation_memory
+[2026-04-05 18:11:15] [ERROR] [ielts_engine] - Cache Save Error: no such table: translation_memory
+[2026-04-05 18:11:15] [INFO] [ielts_engine] - DEBUG: Processed Transcript -> [TRANSCRIPTION_FAILED].
+[2026-04-05 18:11:15] [ERROR] [ielts_engine] - Engine detected transcription failure: [TRANSCRIPTION_FAILED].
+[2026-04-05 18:11:15] [ERROR] [ielts_engine] - CRITICAL ENGINE ERROR: 1 validation error for Intervention
+constraints
+  Field required [type=missing, input_value={'action_id': 'MAINTAIN',....', 'stress_level': 0.5}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\engine.py", line 203, in process_user_attempt
+    error_intervention = Intervention(
+                         ^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\pydantic\main.py", line 250, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Intervention
+constraints
+  Field required [type=missing, input_value={'action_id': 'MAINTAIN',....', 'stress_level': 0.5}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+[2026-04-05 18:11:43] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 18:11:43] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-04-05 18:11:46] [ERROR] [ielts_engine] - Cache DB Connection Error: no such table: translation_memory
+[2026-04-05 18:11:46] [ERROR] [ielts_engine] - Cache Search Error: no such table: translation_memory
+[2026-04-05 18:11:46] [ERROR] [ielts_engine] - Cache DB Connection Error: no such table: translation_memory
+[2026-04-05 18:11:46] [ERROR] [ielts_engine] - Cache Save Error: no such table: translation_memory
+[2026-04-05 18:11:46] [INFO] [ielts_engine] - --- Processing Attempt (ExamMode=True, Prompt='Do you like traveling?') ---
+[2026-04-05 18:11:46] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-04-05 18:11:49] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-04-05 18:11:49] [ERROR] [ielts_engine] - TRANSCRIPTION CRASH: [Errno 1094995529] Invalid data found when processing input: 'C:\\Sebastian\\Project\\ielts-pressure-engine\\temp_exam_28c5effb-928e-4220-8c92-ceed4103a2c7_4c8955f981d84210abd558116871ac44.webm'
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\transcriber.py", line 92, in transcribe_audio
+    segments, info = whisper_model.transcribe(file_path, beam_size=5)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\faster_whisper\transcribe.py", line 876, in transcribe
+    audio = decode_audio(audio, sampling_rate=sampling_rate)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\faster_whisper\audio.py", line 46, in decode_audio
+    with av.open(input_file, mode="r", metadata_errors="ignore") as container:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "av/container/core.py", line 548, in av.container.core.open
+    return InputContainer(
+    ^^^^^^^^^^^
+  File "av/container/core.py", line 344, in av.container.core.Container.__cinit__
+    self.err_check(res)
+    ^^^^^^^^^^^
+  File "av/container/core.py", line 366, in av.container.core.Container.err_check
+    return err_check(value, filename=self.name)
+    ^^^^^^^^^^^
+  File "av/error.py", line 411, in av.error.err_check
+    raise cls(code, message, filename, log)
+    ^^^^^^^^^^^
+av.error.InvalidDataError: [Errno 1094995529] Invalid data found when processing input: 'C:\\Sebastian\\Project\\ielts-pressure-engine\\temp_exam_28c5effb-928e-4220-8c92-ceed4103a2c7_4c8955f981d84210abd558116871ac44.webm'
+[2026-04-05 18:11:49] [ERROR] [ielts_engine] - Cache DB Connection Error: no such table: translation_memory
+[2026-04-05 18:11:49] [ERROR] [ielts_engine] - Cache Search Error: no such table: translation_memory
+[2026-04-05 18:11:51] [ERROR] [ielts_engine] - Cache DB Connection Error: no such table: translation_memory
+[2026-04-05 18:11:51] [ERROR] [ielts_engine] - Cache Save Error: no such table: translation_memory
+[2026-04-05 18:11:51] [INFO] [ielts_engine] - DEBUG: Processed Transcript -> [TRANSCRIPTION_FAILED].
+[2026-04-05 18:11:51] [ERROR] [ielts_engine] - Engine detected transcription failure: [TRANSCRIPTION_FAILED].
+[2026-04-05 18:11:51] [ERROR] [ielts_engine] - CRITICAL ENGINE ERROR: 1 validation error for Intervention
+constraints
+  Field required [type=missing, input_value={'action_id': 'MAINTAIN',....', 'stress_level': 0.5}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\engine.py", line 203, in process_user_attempt
+    error_intervention = Intervention(
+                         ^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\pydantic\main.py", line 250, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Intervention
+constraints
+  Field required [type=missing, input_value={'action_id': 'MAINTAIN',....', 'stress_level': 0.5}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+[2026-04-05 18:11:53] [ERROR] [ielts_engine] - Cache DB Connection Error: no such table: translation_memory
+[2026-04-05 18:11:53] [ERROR] [ielts_engine] - Cache Search Error: no such table: translation_memory
+[2026-04-05 18:11:54] [ERROR] [ielts_engine] - Cache DB Connection Error: no such table: translation_memory
+[2026-04-05 18:11:54] [ERROR] [ielts_engine] - Cache Save Error: no such table: translation_memory

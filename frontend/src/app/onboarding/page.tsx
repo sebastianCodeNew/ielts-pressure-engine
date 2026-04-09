@@ -11,7 +11,7 @@ import { ApiClient } from "@/lib/api";
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    targetBand: "7.5",
+    targetBand: "9.0",
     weakness: "Fluency",
     examDate: "Next Month"
   });
@@ -82,7 +82,7 @@ export default function OnboardingPage() {
                       onChange={(e) => setFormData({...formData, targetBand: e.target.value})}
                       className="w-full p-4 bg-zinc-900 border border-zinc-800 rounded-2xl text-white font-bold focus:border-red-600 outline-none transition-all"
                     >
-                        {["6.0", "6.5", "7.0", "7.5", "8.0", "8.5", "9.0"].map(v => (
+                        {["9.0"].map(v => (
                             <option key={v} value={v}>Band {v}</option>
                         ))}
                     </select>

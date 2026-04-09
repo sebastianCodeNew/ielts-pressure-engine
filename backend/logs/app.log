@@ -1644,3 +1644,144 @@ NameError: name 're' is not defined. Did you forget to import 're'
 [2026-04-05 16:46:26] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
 [2026-04-05 16:52:43] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
 [2026-04-05 16:52:52] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-04-05 17:06:16] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 17:11:42] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 17:12:03] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 17:19:22] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 17:28:28] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 17:29:32] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 17:37:33] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-05 17:39:39] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-06 20:13:06] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-06 20:13:06] [INFO] [ielts_engine] - --- Audio Storage Initialized: audio_storage ---
+[2026-04-06 20:13:06] [INFO] [ielts_engine] - Environment Check: AI API Key found.
+[2026-04-06 20:13:06] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-04-06 20:13:06] [INFO] [ielts_engine] - --- Databases Loaded & Migrated ---
+[2026-04-06 20:30:41] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-06 21:30:48] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-06 21:38:56] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-06 22:25:28] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-06 22:28:32] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-06 22:32:54] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-06 22:32:54] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-04-06 22:32:57] [INFO] [ielts_engine] - --- Processing Attempt (ExamMode=True, Prompt='How do you usually spend your weekends?') ---
+[2026-04-06 22:32:57] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-04-06 22:33:01] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-04-06 22:33:01] [ERROR] [ielts_engine] - TRANSCRIPTION CRASH: [Errno 1094995529] Invalid data found when processing input: 'C:\\Sebastian\\Project\\ielts-pressure-engine\\backend\\temp_exam_cb4b7f56-10ff-4bec-b799-16023054362c_d474257c10a84d7eb469fa139eb60fb6.webm'
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\transcriber.py", line 121, in transcribe_audio
+    segments, info = whisper_model.transcribe(file_path, beam_size=5)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\faster_whisper\transcribe.py", line 876, in transcribe
+    audio = decode_audio(audio, sampling_rate=sampling_rate)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\faster_whisper\audio.py", line 46, in decode_audio
+    with av.open(input_file, mode="r", metadata_errors="ignore") as container:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "av/container/core.py", line 548, in av.container.core.open
+    return InputContainer(
+    ^^^^^^^^^^^
+  File "av/container/core.py", line 344, in av.container.core.Container.__cinit__
+    self.err_check(res)
+    ^^^^^^^^^^^
+  File "av/container/core.py", line 366, in av.container.core.Container.err_check
+    return err_check(value, filename=self.name)
+    ^^^^^^^^^^^
+  File "av/error.py", line 411, in av.error.err_check
+    raise cls(code, message, filename, log)
+    ^^^^^^^^^^^
+av.error.InvalidDataError: [Errno 1094995529] Invalid data found when processing input: 'C:\\Sebastian\\Project\\ielts-pressure-engine\\backend\\temp_exam_cb4b7f56-10ff-4bec-b799-16023054362c_d474257c10a84d7eb469fa139eb60fb6.webm'
+[2026-04-06 22:33:01] [INFO] [ielts_engine] - DEBUG: Processed Transcript -> [TRANSCRIPTION_FAILED].
+[2026-04-06 22:33:01] [ERROR] [ielts_engine] - Engine detected transcription failure: [TRANSCRIPTION_FAILED].
+[2026-04-06 22:33:01] [ERROR] [ielts_engine] - CRITICAL ENGINE ERROR: 1 validation error for Intervention
+constraints
+  Field required [type=missing, input_value={'action_id': 'MAINTAIN',....', 'stress_level': 0.5}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\engine.py", line 203, in process_user_attempt
+    error_intervention = Intervention(
+                         ^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\pydantic\main.py", line 250, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Intervention
+constraints
+  Field required [type=missing, input_value={'action_id': 'MAINTAIN',....', 'stress_level': 0.5}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+[2026-04-06 22:33:41] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-06 22:33:41] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-04-06 22:33:44] [INFO] [ielts_engine] - --- Processing Attempt (ExamMode=True, Prompt='What kind of music do you like?') ---
+[2026-04-06 22:33:44] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-04-06 22:33:48] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-04-06 22:33:48] [ERROR] [ielts_engine] - TRANSCRIPTION CRASH: [Errno 1094995529] Invalid data found when processing input: 'C:\\Sebastian\\Project\\ielts-pressure-engine\\backend\\temp_exam_18634924-ea9b-406f-9cc1-761694cc2d33_cfe50d4246384ab4be8255cd554af638.webm'
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\transcriber.py", line 121, in transcribe_audio
+    segments, info = whisper_model.transcribe(file_path, beam_size=5)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\faster_whisper\transcribe.py", line 876, in transcribe
+    audio = decode_audio(audio, sampling_rate=sampling_rate)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\faster_whisper\audio.py", line 46, in decode_audio
+    with av.open(input_file, mode="r", metadata_errors="ignore") as container:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "av/container/core.py", line 548, in av.container.core.open
+    return InputContainer(
+    ^^^^^^^^^^^
+  File "av/container/core.py", line 344, in av.container.core.Container.__cinit__
+    self.err_check(res)
+    ^^^^^^^^^^^
+  File "av/container/core.py", line 366, in av.container.core.Container.err_check
+    return err_check(value, filename=self.name)
+    ^^^^^^^^^^^
+  File "av/error.py", line 411, in av.error.err_check
+    raise cls(code, message, filename, log)
+    ^^^^^^^^^^^
+av.error.InvalidDataError: [Errno 1094995529] Invalid data found when processing input: 'C:\\Sebastian\\Project\\ielts-pressure-engine\\backend\\temp_exam_18634924-ea9b-406f-9cc1-761694cc2d33_cfe50d4246384ab4be8255cd554af638.webm'
+[2026-04-06 22:33:48] [INFO] [ielts_engine] - DEBUG: Processed Transcript -> [TRANSCRIPTION_FAILED].
+[2026-04-06 22:33:48] [ERROR] [ielts_engine] - Engine detected transcription failure: [TRANSCRIPTION_FAILED].
+[2026-04-06 22:33:48] [ERROR] [ielts_engine] - CRITICAL ENGINE ERROR: 1 validation error for Intervention
+constraints
+  Field required [type=missing, input_value={'action_id': 'MAINTAIN',....', 'stress_level': 0.5}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\engine.py", line 203, in process_user_attempt
+    error_intervention = Intervention(
+                         ^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\pydantic\main.py", line 250, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Intervention
+constraints
+  Field required [type=missing, input_value={'action_id': 'MAINTAIN',....', 'stress_level': 0.5}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+[2026-04-06 22:37:21] [INFO] [ielts_engine] - --- FFmpeg detected: C:\Users\user\.vscode\extensions\video-binaries\ffmpeg.exe ---
+[2026-04-06 22:37:21] [INFO] [ielts_engine] - --- Database Schema Verified & Migrated ---
+[2026-04-06 22:37:27] [INFO] [ielts_engine] - --- Processing Attempt (ExamMode=True, Prompt='What kind of music do you like?') ---
+[2026-04-06 22:37:27] [INFO] [ielts_engine] - --- Loading Whisper Model (medium.en) ---
+[2026-04-06 22:37:30] [INFO] [ielts_engine] - --- Whisper Model Loaded ---
+[2026-04-06 22:37:30] [ERROR] [ielts_engine] - TRANSCRIPTION CRASH: [Errno 1094995529] Invalid data found when processing input: 'C:\\Sebastian\\Project\\ielts-pressure-engine\\backend\\temp_exam_8db79a29-43f6-433c-96c2-1e7bef458e57_24911502c44f482ab5c06794724a1d4b.webm'
+Traceback (most recent call last):
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\app\core\transcriber.py", line 121, in transcribe_audio
+    segments, info = whisper_model.transcribe(file_path, beam_size=5)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\faster_whisper\transcribe.py", line 876, in transcribe
+    audio = decode_audio(audio, sampling_rate=sampling_rate)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Sebastian\Project\ielts-pressure-engine\backend\venv\Lib\site-packages\faster_whisper\audio.py", line 46, in decode_audio
+    with av.open(input_file, mode="r", metadata_errors="ignore") as container:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "av/container/core.py", line 548, in av.container.core.open
+    return InputContainer(
+    ^^^^^^^^^^^
+  File "av/container/core.py", line 344, in av.container.core.Container.__cinit__
+    self.err_check(res)
+    ^^^^^^^^^^^
+  File "av/container/core.py", line 366, in av.container.core.Container.err_check
+    return err_check(value, filename=self.name)
+    ^^^^^^^^^^^
+  File "av/error.py", line 411, in av.error.err_check
+    raise cls(code, message, filename, log)
+    ^^^^^^^^^^^
+av.error.InvalidDataError: [Errno 1094995529] Invalid data found when processing input: 'C:\\Sebastian\\Project\\ielts-pressure-engine\\backend\\temp_exam_8db79a29-43f6-433c-96c2-1e7bef458e57_24911502c44f482ab5c06794724a1d4b.webm'
+[2026-04-06 22:37:30] [INFO] [ielts_engine] - DEBUG: Processed Transcript -> [TRANSCRIPTION_FAILED].
+[2026-04-06 22:37:30] [ERROR] [ielts_engine] - Engine detected transcription failure: [TRANSCRIPTION_FAILED].

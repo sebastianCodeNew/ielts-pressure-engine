@@ -1,23 +1,32 @@
-import os
 from app.core.logger import logger
 import json
 import re
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+)
 from app.core.state import AgentState
 from app.schemas import SignalMetrics, Intervention
 
 from app.core.config import settings
 
 from app.core.llm import get_llm
-from app.core.scoring import calculate_band_score, WPM_MULTIPLIER, COHERENCE_MULTIPLIER, LEXICAL_MULTIPLIER, GRAMMAR_MULTIPLIER, PRONUNCIATION_MULTIPLIER
-
-# Initialize centralized LLM
-llm = get_llm(timeout=60) # Keep increased timeout for stability
+from app.core.scoring import (
+    calculate_band_score,
+    WPM_MULTIPLIER,
+    COHERENCE_MULTIPLIER,
+    LEXICAL_MULTIPLIER,
+    GRAMMAR_MULTIPLIER,
+    PRONUNCIATION_MULTIPLIER,
+)
 
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import PromptTemplate
+
+# Initialize centralized LLM
+llm = get_llm(timeout=60)  # Keep increased timeout for stability
 
 # Configure Output Parser
 parser = PydanticOutputParser(pydantic_object=Intervention)
@@ -175,15 +184,39 @@ prompt_template = PromptTemplate(
 
     {format_instructions}
     """,
-    input_variables=["stress_level", "fluency_trend", "consecutive_failures", "wpm", "hesitation", "coherence", "lexical_diversity", "grammar_complexity", "history", "current_part", "target_band", "weakness", "context_override", "user_transcript", "avg_fluency", "avg_coherence", "avg_lexical", "avg_grammar", "lowest_area", "chronic_issues"],
+    input_variables=[
+        "stress_level",
+        "fluency_trend",
+        "consecutive_failures",
+        "wpm",
+        "hesitation",
+        "coherence",
+        "lexical_diversity",
+        "grammar_complexity",
+        "history",
+        "current_part",
+        "target_band",
+        "weakness",
+        "context_override",
+        "user_transcript",
+        "avg_fluency",
+        "avg_coherence",
+        "avg_lexical",
+        "avg_grammar",
+        "lowest_area",
+        "chronic_issues",
+    ],
     partial_variables={
         "format_instructions": parser.get_format_instructions(),
         "stress_inc_threshold": settings.STRESS_INCREASE_THRESHOLD,
-        "stress_dec_threshold": settings.STRESS_DECREASE_THRESHOLD
-    }
+        "stress_dec_threshold": settings.STRESS_DECREASE_THRESHOLD,
+    },
 )
 
-def _extract_and_parse_intervention(content: str, state_stress: float, current_metrics: SignalMetrics = None) -> Intervention:
+
+def _extract_and_parse_intervention(
+    content: str, state_stress: float, current_metrics: SignalMetrics = None
+) -> Intervention:
     """
     Helper to extract JSON from LLM response and parse/validate as Intervention.
     v16.0: Now accepts current_metrics for intelligent fallback scoring.
@@ -191,15 +224,15 @@ def _extract_and_parse_intervention(content: str, state_stress: float, current_m
     # 1. OPTIMIZED JSON EXTRACTION (v16.0 - Markdown Resistant)
     if "```" in content:
         # Try to find content within any markdown block
-        match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', content)
+        match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", content)
         if match:
             content = match.group(1)
     else:
         # Fallback to general brace-matching for conversational preamble
-        match = re.search(r'\{[\s\S]*\}', content)
+        match = re.search(r"\{[\s\S]*\}", content)
         if match:
             content = match.group(0)
-    
+
     # 2. Parse Output
     try:
         data = parser.parse(content)
@@ -212,53 +245,81 @@ def _extract_and_parse_intervention(content: str, state_stress: float, current_m
         try:
             raw_data = json.loads(content)
         except Exception as json_err:
-            logger.error(f"json.loads failed: {json_err}. Using absolute safe fallback.")
+            logger.error(
+                f"json.loads failed: {json_err}. Using absolute safe fallback."
+            )
             raw_data = {}
-        
+
         # FULL SCHEMA FALLBACK (v16.0 - No feature loss)
         # Intelligently calculate scores if metrics are available
         fallback_metrics = {
-            "Fluency": 5.0, "Coherence": 5.0, "Lexical": 5.0, "Grammar": 5.0, "Pronunciation": 5.0
+            "Fluency": 5.0,
+            "Coherence": 5.0,
+            "Lexical": 5.0,
+            "Grammar": 5.0,
+            "Pronunciation": 5.0,
         }
         if current_metrics:
             fallback_metrics = {
-                "Fluency": calculate_band_score(current_metrics.fluency_wpm, WPM_MULTIPLIER, is_wpm=True),
-                "Coherence": calculate_band_score(current_metrics.coherence_score, COHERENCE_MULTIPLIER),
-                "Lexical": calculate_band_score(current_metrics.lexical_diversity, LEXICAL_MULTIPLIER),
-                "Grammar": calculate_band_score(current_metrics.grammar_complexity, GRAMMAR_MULTIPLIER),
-                "Pronunciation": calculate_band_score(getattr(current_metrics, 'pronunciation_score', 0.5), PRONUNCIATION_MULTIPLIER)
+                "Fluency": calculate_band_score(
+                    current_metrics.fluency_wpm, WPM_MULTIPLIER, is_wpm=True
+                ),
+                "Coherence": calculate_band_score(
+                    current_metrics.coherence_score, COHERENCE_MULTIPLIER
+                ),
+                "Lexical": calculate_band_score(
+                    current_metrics.lexical_diversity, LEXICAL_MULTIPLIER
+                ),
+                "Grammar": calculate_band_score(
+                    current_metrics.grammar_complexity, GRAMMAR_MULTIPLIER
+                ),
+                "Pronunciation": calculate_band_score(
+                    getattr(current_metrics, "pronunciation_score", 0.5),
+                    PRONUNCIATION_MULTIPLIER,
+                ),
             }
 
         safe_data = {
             "action_id": raw_data.get("action_id", "MAINTAIN"),
-            "next_task_prompt": raw_data.get("next_task_prompt", "Thank you. Please continue speaking."),
-            "next_task_prompt_translated": raw_data.get("next_task_prompt_translated", "Terima kasih. Lanjutkan bicara."),
+            "next_task_prompt": raw_data.get(
+                "next_task_prompt", "Thank you. Please continue speaking."
+            ),
+            "next_task_prompt_translated": raw_data.get(
+                "next_task_prompt_translated", "Terima kasih. Lanjutkan bicara."
+            ),
             "topic_core": raw_data.get("topic_core", "General"),
             "constraints": raw_data.get("constraints", {"timer": 45}),
             "ideal_response": raw_data.get("ideal_response", ""),
             "ideal_response_translated": raw_data.get("ideal_response_translated", ""),
-            "feedback_markdown": raw_data.get("feedback_markdown", "Very well done, keep up your performance."),
-            "feedback_translated": raw_data.get("feedback_translated", "Bagus sekali, pertahankan performa Anda."),
+            "feedback_markdown": raw_data.get(
+                "feedback_markdown", "Very well done, keep up your performance."
+            ),
+            "feedback_translated": raw_data.get(
+                "feedback_translated", "Bagus sekali, pertahankan performa Anda."
+            ),
             "target_keywords": raw_data.get("target_keywords", []),
             "realtime_word_bank": raw_data.get("realtime_word_bank", []),
             "checkpoint_words": raw_data.get("checkpoint_words", []),
-            "checkpoint_words_translated": raw_data.get("checkpoint_words_translated", []),
+            "checkpoint_words_translated": raw_data.get(
+                "checkpoint_words_translated", []
+            ),
             "checkpoint_words_meanings": raw_data.get("checkpoint_words_meanings", []),
             "correction_drill": raw_data.get("correction_drill", ""),
             "reasoning": raw_data.get("reasoning", "IELTS Band 7+ criteria focus."),
             "is_probing": raw_data.get("is_probing", False),
             "stress_level": raw_data.get("stress_level", state_stress),
-            "radar_metrics": raw_data.get("radar_metrics", fallback_metrics)
+            "radar_metrics": raw_data.get("radar_metrics", fallback_metrics),
         }
         return Intervention(**safe_data)
 
+
 def formulate_strategy(
-    state: AgentState, 
-    current_metrics: SignalMetrics, 
+    state: AgentState,
+    current_metrics: SignalMetrics,
     current_part: str = "PART_1",
     context_override: str = None,
     user_transcript: str = "",
-    chronic_issues: str = ""
+    chronic_issues: str = "",
 ) -> Intervention:
     """
     Decides the next intervention based on the full User Session State.
@@ -266,26 +327,58 @@ def formulate_strategy(
     # ... historical average calculation unchanged ...
     avg_fluency, avg_coherence, avg_lexical, avg_grammar = 5.0, 5.0, 5.0, 5.0
     if state.history:
-        f_scores = [calculate_band_score(h.metrics.fluency_wpm, WPM_MULTIPLIER, is_wpm=True) for h in state.history if h.metrics.fluency_wpm]
-        c_scores = [calculate_band_score(h.metrics.coherence_score, COHERENCE_MULTIPLIER) for h in state.history if h.metrics.coherence_score]
-        l_scores = [calculate_band_score(h.metrics.lexical_diversity, LEXICAL_MULTIPLIER) for h in state.history if h.metrics.lexical_diversity]
-        g_scores = [calculate_band_score(h.metrics.grammar_complexity, GRAMMAR_MULTIPLIER) for h in state.history if h.metrics.grammar_complexity]
-        if f_scores: avg_fluency = sum(f_scores) / len(f_scores)
-        if c_scores: avg_coherence = sum(c_scores) / len(c_scores)
-        if l_scores: avg_lexical = sum(l_scores) / len(l_scores)
-        if g_scores: avg_grammar = sum(g_scores) / len(g_scores)
+        f_scores = [
+            calculate_band_score(h.metrics.fluency_wpm, WPM_MULTIPLIER, is_wpm=True)
+            for h in state.history
+            if h.metrics.fluency_wpm
+        ]
+        c_scores = [
+            calculate_band_score(h.metrics.coherence_score, COHERENCE_MULTIPLIER)
+            for h in state.history
+            if h.metrics.coherence_score
+        ]
+        l_scores = [
+            calculate_band_score(h.metrics.lexical_diversity, LEXICAL_MULTIPLIER)
+            for h in state.history
+            if h.metrics.lexical_diversity
+        ]
+        g_scores = [
+            calculate_band_score(h.metrics.grammar_complexity, GRAMMAR_MULTIPLIER)
+            for h in state.history
+            if h.metrics.grammar_complexity
+        ]
+        if f_scores:
+            avg_fluency = sum(f_scores) / len(f_scores)
+        if c_scores:
+            avg_coherence = sum(c_scores) / len(c_scores)
+        if l_scores:
+            avg_lexical = sum(l_scores) / len(l_scores)
+        if g_scores:
+            avg_grammar = sum(g_scores) / len(g_scores)
 
-    scores = {"Fluency": avg_fluency, "Coherence": avg_coherence, "Lexical": avg_lexical, "Grammar": avg_grammar}
+    scores = {
+        "Fluency": avg_fluency,
+        "Coherence": avg_coherence,
+        "Lexical": avg_lexical,
+        "Grammar": avg_grammar,
+    }
     lowest_area = min(scores, key=scores.get)
 
-    history_str = "\n".join([
-        f"- Attempt {h.attempt_id}: {h.outcome} (WPM: {h.metrics.fluency_wpm}, Coherence: {h.metrics.coherence_score})" 
-        for h in state.history[-3:]
-    ])
+    history_str = "\n".join(
+        [
+            f"- Attempt {h.attempt_id}: {h.outcome} (WPM: {h.metrics.fluency_wpm}, Coherence: {h.metrics.coherence_score})"
+            for h in state.history[-3:]
+        ]
+    )
 
     try:
-        transcription_failed = not user_transcript or user_transcript.strip() == "" or "[TRANSCRIPTION_FAILED]" in user_transcript or "[SYSTEM_ERROR" in user_transcript
-        
+        transcription_failed = (
+            not user_transcript
+            or user_transcript.strip() == ""
+            or "[TRANSCRIPTION_FAILED]" in user_transcript
+            or "[SYSTEM_ERROR" in user_transcript
+        )
+
         formatted_prompt = prompt_template.format(
             stress_level=state.stress_level,
             fluency_trend=state.fluency_trend,
@@ -306,19 +399,21 @@ def formulate_strategy(
             avg_lexical=avg_lexical,
             avg_grammar=avg_grammar,
             lowest_area=lowest_area,
-            chronic_issues=chronic_issues or "None identified."
+            chronic_issues=chronic_issues or "None identified.",
         )
-        
+
         response = llm.invoke(formatted_prompt)
-        intervention = _extract_and_parse_intervention(response.content, state.stress_level, current_metrics)
+        intervention = _extract_and_parse_intervention(
+            response.content, state.stress_level, current_metrics
+        )
 
         if transcription_failed:
             intervention.ideal_response = ""
             intervention.correction_drill = None
             intervention.quiz_question = None
-            
+
         return intervention
-        
+
     except Exception as e:
         logger.error(f"AGENT ERROR: {e}", exc_info=True)
         return Intervention(
@@ -326,46 +421,80 @@ def formulate_strategy(
             next_task_prompt="Continue.",
             constraints={"timer": 45},
             feedback_markdown=" **AI Evaluator Timeout**: Evaluasi AI sedang lambat. Silakan lanjut.",
-            target_keywords=[]
+            target_keywords=[],
+            ideal_response="",
         )
+
 
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=4, max=10),
     retry=retry_if_exception_type(Exception),
-    reraise=True
+    reraise=True,
 )
 async def _formulate_strategy_async_inner(
-    state: AgentState, 
-    current_metrics: SignalMetrics, 
+    state: AgentState,
+    current_metrics: SignalMetrics,
     current_part: str = "PART_1",
     context_override: str = None,
     user_transcript: str = "",
-    chronic_issues: str = ""
+    chronic_issues: str = "",
 ) -> Intervention:
     """
     Inner function with retry logic. Called by the public wrapper.
     """
     avg_fluency, avg_coherence, avg_lexical, avg_grammar = 5.0, 5.0, 5.0, 5.0
     if state.history:
-        f_vals = [calculate_band_score(h.metrics.fluency_wpm, WPM_MULTIPLIER, is_wpm=True) for h in state.history if h.metrics.fluency_wpm]
-        c_vals = [calculate_band_score(h.metrics.coherence_score, COHERENCE_MULTIPLIER) for h in state.history if h.metrics.coherence_score]
-        l_vals = [calculate_band_score(h.metrics.lexical_diversity, LEXICAL_MULTIPLIER) for h in state.history if h.metrics.lexical_diversity]
-        g_vals = [calculate_band_score(h.metrics.grammar_complexity, GRAMMAR_MULTIPLIER) for h in state.history if h.metrics.grammar_complexity]
-        if f_vals: avg_fluency = sum(f_vals) / len(f_vals)
-        if c_vals: avg_coherence = sum(c_vals) / len(c_vals)
-        if l_vals: avg_lexical = sum(l_vals) / len(l_vals)
-        if g_vals: avg_grammar = sum(g_vals) / len(g_vals)
-    
-    scores = {"Fluency": avg_fluency, "Coherence": avg_coherence, "Lexical": avg_lexical, "Grammar": avg_grammar}
+        f_vals = [
+            calculate_band_score(h.metrics.fluency_wpm, WPM_MULTIPLIER, is_wpm=True)
+            for h in state.history
+            if h.metrics.fluency_wpm
+        ]
+        c_vals = [
+            calculate_band_score(h.metrics.coherence_score, COHERENCE_MULTIPLIER)
+            for h in state.history
+            if h.metrics.coherence_score
+        ]
+        l_vals = [
+            calculate_band_score(h.metrics.lexical_diversity, LEXICAL_MULTIPLIER)
+            for h in state.history
+            if h.metrics.lexical_diversity
+        ]
+        g_vals = [
+            calculate_band_score(h.metrics.grammar_complexity, GRAMMAR_MULTIPLIER)
+            for h in state.history
+            if h.metrics.grammar_complexity
+        ]
+        if f_vals:
+            avg_fluency = sum(f_vals) / len(f_vals)
+        if c_vals:
+            avg_coherence = sum(c_vals) / len(c_vals)
+        if l_vals:
+            avg_lexical = sum(l_vals) / len(l_vals)
+        if g_vals:
+            avg_grammar = sum(g_vals) / len(g_vals)
+
+    scores = {
+        "Fluency": avg_fluency,
+        "Coherence": avg_coherence,
+        "Lexical": avg_lexical,
+        "Grammar": avg_grammar,
+    }
     lowest_area = min(scores, key=scores.get)
 
-    history_str = "\n".join([
-        f"- Attempt {h.attempt_id}: {h.outcome} (WPM: {h.metrics.fluency_wpm}, Coherence: {h.metrics.coherence_score})" 
-        for h in state.history[-3:]
-    ])
+    history_str = "\n".join(
+        [
+            f"- Attempt {h.attempt_id}: {h.outcome} (WPM: {h.metrics.fluency_wpm}, Coherence: {h.metrics.coherence_score})"
+            for h in state.history[-3:]
+        ]
+    )
 
-    transcription_failed = not user_transcript or user_transcript.strip() == "" or "[TRANSCRIPTION_FAILED]" in user_transcript or "[SYSTEM_ERROR" in user_transcript
+    transcription_failed = (
+        not user_transcript
+        or user_transcript.strip() == ""
+        or "[TRANSCRIPTION_FAILED]" in user_transcript
+        or "[SYSTEM_ERROR" in user_transcript
+    )
 
     formatted = prompt_template.format(
         stress_level=state.stress_level,
@@ -387,11 +516,13 @@ async def _formulate_strategy_async_inner(
         avg_grammar=avg_grammar,
         lowest_area=lowest_area,
         chronic_issues=chronic_issues or "None.",
-        context_override=context_override or "None provided."
+        context_override=context_override or "None provided.",
     )
-    
+
     response = await llm.ainvoke(formatted)
-    intervention = _extract_and_parse_intervention(response.content, state.stress_level, current_metrics)
+    intervention = _extract_and_parse_intervention(
+        response.content, state.stress_level, current_metrics
+    )
 
     if transcription_failed:
         intervention.ideal_response = ""
@@ -402,12 +533,12 @@ async def _formulate_strategy_async_inner(
 
 
 async def formulate_strategy_async(
-    state: AgentState, 
-    current_metrics: SignalMetrics, 
+    state: AgentState,
+    current_metrics: SignalMetrics,
     current_part: str = "PART_1",
     context_override: str = None,
     user_transcript: str = "",
-    chronic_issues: str = ""
+    chronic_issues: str = "",
 ) -> Intervention:
     """
     Public wrapper: calls the retrying inner function and catches total failure
@@ -415,8 +546,12 @@ async def formulate_strategy_async(
     """
     try:
         return await _formulate_strategy_async_inner(
-            state, current_metrics, current_part,
-            context_override, user_transcript, chronic_issues
+            state,
+            current_metrics,
+            current_part,
+            context_override,
+            user_transcript,
+            chronic_issues,
         )
     except Exception as e:
         logger.error(f"AGENT ERROR (all retries exhausted): {e}", exc_info=True)
@@ -425,5 +560,6 @@ async def formulate_strategy_async(
             next_task_prompt="Continue.",
             constraints={"timer": 45},
             feedback_markdown="⚠️ **AI Evaluator Timeout**: Evaluasi AI sedang lambat. Silakan lanjut.",
-            target_keywords=[]
+            target_keywords=[],
+            ideal_response="",
         )

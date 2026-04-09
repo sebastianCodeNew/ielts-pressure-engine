@@ -1,15 +1,18 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel
 from app.core.translator import translate_to_indonesian_async
 from app.core.logger import logger
 
 router = APIRouter()
 
+
 class TranslationRequest(BaseModel):
     text: str
 
+
 class TranslationResponse(BaseModel):
     translated_text: str
+
 
 @router.post("/", response_model=TranslationResponse)
 async def translate_text(request: TranslationRequest):
@@ -18,7 +21,7 @@ async def translate_text(request: TranslationRequest):
     """
     if not request.text:
         return TranslationResponse(translated_text="")
-        
+
     try:
         translated = await translate_to_indonesian_async(request.text)
         return TranslationResponse(translated_text=translated)

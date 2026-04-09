@@ -38,7 +38,15 @@ export function useAudioRecorder() {
       setIsRecording(true);
     } catch (err: any) {
       console.error("Error accessing microphone:", err);
-      setError(err.message || "Could not access microphone.");
+      if (err.name === "NotAllowedError" || err.message.includes("Permission denied")) {
+        setError("Microphone access denied. Please allow microphone access in your browser settings to continue the exam.");
+      } else if (err.name === "NotReadableError" || err.message.includes("Hardware error")) {
+        setError("Microphone is in use by another application or there is a hardware error. Please check your system.");
+      } else if (err.name === "NotFoundError" || err.message.includes("Requested device not found")) {
+        setError("No microphone found. Please connect a microphone to continue.");
+      } else {
+        setError(err.message || "Could not access microphone.");
+      }
     }
   }, []);
 

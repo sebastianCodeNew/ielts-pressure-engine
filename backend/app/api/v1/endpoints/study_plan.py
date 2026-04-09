@@ -20,14 +20,21 @@ llm = ChatOpenAI(
     timeout=60,
 )
 
+
 @router.get("/", response_model=StudyPlan)
 def generate_study_plan(user_id: str = "default_user", db: Session = Depends(get_db)):
     # 1. Fetch recent performance
-    recent_attempts = db.query(QuestionAttempt).filter(
-        QuestionAttempt.session_id.in_(
-            db.query(ExamSession.id).filter(ExamSession.user_id == user_id)
+    recent_attempts = (
+        db.query(QuestionAttempt)
+        .filter(
+            QuestionAttempt.session_id.in_(
+                db.query(ExamSession.id).filter(ExamSession.user_id == user_id)
+            )
         )
-    ).order_by(QuestionAttempt.created_at.desc()).limit(10).all()
+        .order_by(QuestionAttempt.created_at.desc())
+        .limit(10)
+        .all()
+    )
 
     # 2. Extract weak points
     summary = "User performance summary:\n"
@@ -53,36 +60,42 @@ def generate_study_plan(user_id: str = "default_user", db: Session = Depends(get
     
     CRITICAL: Output ONLY the JSON. No conversational filler.
     """
-    
+
     try:
         response = llm.invoke([SystemMessage(content=prompt)])
         content = response.content.strip()
-        
+
         # Robust JSON Extraction
         json_match = re.search(r"```json\s*(.*?)\s*```", content, re.DOTALL)
         if json_match:
             clean_json = json_match.group(1).strip()
         else:
-            match = re.search(r'\[.*\]', content, re.DOTALL)
+            match = re.search(r"\[.*\]", content, re.DOTALL)
             if match:
                 clean_json = match.group(0)
             else:
                 clean_json = content
-            
+
         plan_data = json.loads(clean_json)
-        
-        items = [StudyPlanItem(day=d['day'], focus=d['focus'], tasks=d['tasks']) for d in plan_data]
-        
-        return StudyPlan(
-            user_id=user_id,
-            created_at=datetime.utcnow(),
-            plan=items
-        )
+
+        items = [
+            StudyPlanItem(day=d["day"], focus=d["focus"], tasks=d["tasks"])
+            for d in plan_data
+        ]
+
+        return StudyPlan(user_id=user_id, created_at=datetime.utcnow(), plan=items)
     except Exception as e:
         logger.error(f"STUDY PLAN ERROR: {e}", exc_info=True)
         # Fallback plan
         return StudyPlan(
             user_id=user_id,
             created_at=datetime.utcnow(),
-            plan=[StudyPlanItem(day=f"Day {i+1}", focus="General Practice", tasks=["Practice Part 1", "Review Vocab", "Record yourself"]) for i in range(7)]
+            plan=[
+                StudyPlanItem(
+                    day=f"Day {i + 1}",
+                    focus="General Practice",
+                    tasks=["Practice Part 1", "Review Vocab", "Record yourself"],
+                )
+                for i in range(7)
+            ],
         )
